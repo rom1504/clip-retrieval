@@ -10,10 +10,11 @@ from PIL import Image
 from io import BytesIO
 from PIL import Image
 import base64
+import os
 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model, preprocess = clip.load("ViT-B/32", device=device)
+model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
 
 indices = json.load(open("indices_paths.json"))
 
@@ -75,7 +76,7 @@ class KnnService(Resource):
             prepro = preprocess(img).unsqueeze(0)
             query = model.encode_image(prepro).cpu().detach().numpy().astype("float32")
         
-        index = image_index if modality == "image" else test_index
+        index = image_index if modality == "image" else text_index
 
         D, I = index.search(query, num_images)
         results = []
