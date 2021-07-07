@@ -32,7 +32,7 @@ Output folder will contain:
 ## clip back
 
 First install it by running:
-```
+```bash
 python3 -m venv .env
 source .env/bin/activate
 pip install -U pip
@@ -40,7 +40,7 @@ pip install clip-by-openai faiss-cpu fire flask flask_cors flask_restful
 ```
 
 Then run (output_folder is the output of clip batch)
-```
+```bash
 echo '{"example_index": "output_folder"}' > indices_paths.json
 python clip_back.py 1234
 ```
@@ -58,4 +58,16 @@ At this point you have a simple flask server running on port 1234 and that can a
     "indice_name": "example_index"
 }
 ```
-  
+and returns:
+```js
+[
+    {
+        "image": "base 64 of an image",
+        "text": "some result text"
+    },
+    {
+        "image": "base 64 of an image",
+        "text": "some result text"
+    }
+]
+```
