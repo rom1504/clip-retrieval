@@ -35,7 +35,7 @@ Output folder will contain:
 Once the embeddings are computed, you may want to filter out the data by a specific query.
 For that you can run `python clip_filter.py --query "dog" --output_folder "dog/" --indice_name "example_index"`
 It will copy the 100 best images for this query in the output folder.
-Using the `--num_images` or `--threshold` may be helpful to refine the filter
+Using the `--num_results` or `--threshold` may be helpful to refine the filter
 
 ## Clip back
 

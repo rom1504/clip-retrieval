@@ -50,7 +50,7 @@ def main(query, output_folder, indice_name, num_results=100, threshold=None):
     min_D = min(D)
     max_D = max(D)
     print(f"The minimum distance is {min_D:.2f} and the maximum is {max_D:.2f}")
-    print("You may want to use these numbers to increase your --num_images parameter. Or use the --threshold parameter.")
+    print("You may want to use these numbers to increase your --num_results parameter. Or use the --threshold parameter.")
     print(f"Copying the images in {output_folder}")
 
     for _, i in zip(D, I):
