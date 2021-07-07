@@ -1,4 +1,4 @@
-#!pip install clip-by-openai torch faiss
+#!pip install clip-by-openai faiss-cpu fire
 import torch
 import clip
 from PIL import Image
@@ -29,7 +29,6 @@ class ImageDataset(Dataset):
                  ):
         super().__init__()
         path = Path(folder)
-        self.model = model
         self.enable_text = enable_text
         self.enable_image = enable_image
 
@@ -76,13 +75,14 @@ class ImageDataset(Dataset):
             description = descriptions[self.description_index]
             tokenized_text  = self.tokenizer([description[:255]])[0]
 
-        return {"image_tensor": image_tensor, "text_tokens": tokenized_text, "image_path": str(image_file), "text": description}
+        return {"image_tensor": image_tensor, "text_tokens": tokenized_text, "image_filename": str(image_file), "text": description}
     
 
-def main(dataset_path, output_folder, batch_size=256, num_prepro_workers=32, description_index=0, enable_text=True, enable_image=True):
+def main(dataset_path, output_folder, batch_size=256, num_prepro_workers=8, description_index=0, enable_text=True, enable_image=True):
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, preprocess = clip.load("ViT-B/32", device=device)
-    os.mkdir(output_folder)
+    model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
+    if not os.path.exists(output_folder):
+        os.mkdir(output_folder)
     data = DataLoader(ImageDataset(preprocess, dataset_path, description_index=description_index, enable_text=enable_text, enable_image=enable_image), \
         batch_size=batch_size, shuffle=False, num_workers=num_prepro_workers, pin_memory=True, prefetch_factor=2)
     if enable_image:
@@ -101,7 +101,7 @@ def main(dataset_path, output_folder, batch_size=256, num_prepro_workers=32, des
             if enable_text:
                 text_features = model.encode_text(item["text_tokens"].cuda())
                 text_embeddings.append(text_features.cpu().numpy())
-                descriptions.extend(item["description"])
+                descriptions.extend(item["text"])
 
     if enable_image:
         img_emb_mat = np.concatenate(image_embeddings)
