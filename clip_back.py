@@ -68,15 +68,16 @@ class KnnService(Resource):
         if text_input is not None:
             text = clip.tokenize([text_input]).to(device)
             text_features = model.encode_text(text)
+            text_features /= text_features.norm(dim=-1, keepdim=True)
             query = text_features.cpu().detach().numpy().astype("float32")
-            query /= query.norm(dim=-1, keepdim=True)
         if image_input is not None:
             binary_data = base64.b64decode(image_input)
             img_data = BytesIO(binary_data)
             img = Image.open(img_data)
             prepro = preprocess(img).unsqueeze(0)
-            query = model.encode_image(prepro).cpu().detach().numpy().astype("float32")
-            query /= query.norm(dim=-1, keepdim=True)
+            image_features = model.encode_image(prepro)
+            image_features /= image_features.norm(dim=-1, keepdim=True)
+            query = image_features.cpu().detach().numpy().astype("float32")
         
         index = image_index if modality == "image" else text_index
 
