@@ -1,8 +1,9 @@
 # clip-retrieval
 Easily computing clip embeddings and building a clip retrieval system with them.
 
-* clip batch allow you to quickly (1500 sample/s on a 3080) compute image and text embeddings and indices
-* clip back host the indices with a simple flask service
+* clip batch allows you to quickly (1500 sample/s on a 3080) compute image and text embeddings and indices
+* clip filter allows you to filter out the data using the clip embeddings
+* clip back hosts the indices with a simple flask service
 * clip service is a simple ui querying the back
 
 End to end this make it possible to build a simple semantic search system.
@@ -29,7 +30,14 @@ Output folder will contain:
 * image.index containing a brute force faiss index for images
 * text.index containing a brute force faiss index for texts
 
-## clip back
+## Clip filter
+
+Once the embeddings are computed, you may want to filter out the data by a specific query.
+For that you can run `python clip_filter.py --query "dog" --output_folder "dog/" --indice_name "example_index"`
+It will copy the 100 best images for this query in the output folder.
+Using the `--num_images` or `--threshold` may be helpful to refine the filter
+
+## Clip back
 
 First install it by running:
 ```bash
