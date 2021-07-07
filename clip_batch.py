@@ -96,10 +96,12 @@ def main(dataset_path, output_folder, batch_size=256, num_prepro_workers=8, desc
         with torch.no_grad():
             if enable_image:
                 image_features = model.encode_image(item["image_tensor"].cuda())
+                image_features /= image_features.norm(dim=-1, keepdim=True)
                 image_embeddings.append(image_features.cpu().numpy())
                 image_names.extend(item["image_filename"])
             if enable_text:
                 text_features = model.encode_text(item["text_tokens"].cuda())
+                text_features /= text_features.norm(dim=-1, keepdim=True)
                 text_embeddings.append(text_features.cpu().numpy())
                 descriptions.extend(item["text"])
 
