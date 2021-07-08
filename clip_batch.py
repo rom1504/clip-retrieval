@@ -1,4 +1,4 @@
-#!pip install clip-by-openai faiss-cpu fire
+#!pip install clip-anytorch faiss-cpu fire
 import torch
 import clip
 from PIL import Image
@@ -17,7 +17,6 @@ from tqdm import tqdm
 import numpy as np
 import faiss
 import os
-
 
 class ImageDataset(Dataset):
     def __init__(self,
@@ -51,7 +50,7 @@ class ImageDataset(Dataset):
 
         self.keys = list(keys)
         if self.enable_text:
-            self.tokenizer = clip.tokenize
+            self.tokenizer = lambda text: clip.tokenize([text], truncate_text=True)[0]
             self.text_files = {k: v for k, v in text_files.items() if k in keys}
             self.description_index = description_index
         if self.enable_image:
@@ -73,7 +72,7 @@ class ImageDataset(Dataset):
             text_file = self.text_files[key]
             descriptions = text_file.read_text().split('\n')
             description = descriptions[self.description_index]
-            tokenized_text  = self.tokenizer([description[:255]])[0]
+            tokenized_text  = self.tokenizer(description)
 
         return {"image_tensor": image_tensor, "text_tokens": tokenized_text, "image_filename": str(image_file), "text": description}
     

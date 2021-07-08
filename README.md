@@ -16,7 +16,7 @@ First install it by running:
 python3 -m venv .env
 source .env/bin/activate
 pip install -U pip
-pip install clip-by-openai faiss-cpu fire
+pip install clip-anytorch faiss-cpu fire
 ```
 
 Then put some images in a `example_folder` and some text with the same name (or use --enable_text=False) then
@@ -44,7 +44,7 @@ First install it by running:
 python3 -m venv .env
 source .env/bin/activate
 pip install -U pip
-pip install clip-by-openai faiss-cpu fire flask flask_cors flask_restful 
+pip install clip-anytorch faiss-cpu fire flask flask_cors flask_restful 
 ```
 
 Then run (output_folder is the output of clip batch)
