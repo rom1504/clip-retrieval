@@ -50,7 +50,7 @@ class ImageDataset(Dataset):
 
         self.keys = list(keys)
         if self.enable_text:
-            self.tokenizer = lambda text: clip.tokenize([text], truncate_text=True)[0]
+            self.tokenizer = lambda text: clip.tokenize([text], truncate=True)[0]
             self.text_files = {k: v for k, v in text_files.items() if k in keys}
             self.description_index = description_index
         if self.enable_image:
