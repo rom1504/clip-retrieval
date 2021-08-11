@@ -1,1 +1,11 @@
 .env
+*.egg-info
+.vscode
+.env
+__pycache__
+myimglist.txt
+.ipynb_checkpoints
+output_folder
+indice_folder
+image_folder
+cat

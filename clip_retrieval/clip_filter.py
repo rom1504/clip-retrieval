@@ -6,28 +6,22 @@ import os
 import shutil
 import fire
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
-model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
 
-indices = json.load(open("indices_paths.json"))
+def clip_filter(query, output_folder, indice_folder, num_results=100, threshold=None):
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model, _ = clip.load("ViT-B/32", device=device, jit=False)
 
-indices_loaded = {}
-
-for name, indice_folder in indices.items():
-    image_present = os.path.exists(indice_folder+"/image_list")
     with open(indice_folder+"/image_list") as f:
-        image_list = f.read().split("\n")
+        image_list = [x for x in f.read().split("\n") if x !=""]
     image_index = faiss.read_index(indice_folder+"/image.index")
-    indices_loaded[name]={
+    indices_loaded={
         'image_list': image_list,
         'image_index': image_index,
     }
 
-def main(query, output_folder, indice_name, num_results=100, threshold=None):
     text_input = query
-    indice_name = indice_name
-    image_index = indices_loaded[indice_name]["image_index"]
-    image_list = indices_loaded[indice_name]["image_list"]
+    image_index = indices_loaded["image_index"]
+    image_list = indices_loaded["image_list"]
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
 
@@ -59,4 +53,4 @@ def main(query, output_folder, indice_name, num_results=100, threshold=None):
 
 
 if __name__ == '__main__':
-  fire.Fire(main)
+  fire.Fire(clip_filter)

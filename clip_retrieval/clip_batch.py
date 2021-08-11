@@ -34,18 +34,22 @@ class ImageDataset(Dataset):
         if self.enable_text:
             text_files = [*path.glob('**/*.txt')]
             text_files = {text_file.stem: text_file for text_file in text_files}
+            if len(text_files) == 0:
+                self.enable_text = False
         if self.enable_image:
             image_files = [
                 *path.glob('**/*.png'), *path.glob('**/*.jpg'),
                 *path.glob('**/*.jpeg'), *path.glob('**/*.bmp')
             ]
             image_files = {image_file.stem: image_file for image_file in image_files}
+            if len(image_files) == 0:
+                self.enable_image = False
 
-        if enable_text and enable_image:
+        if self.enable_text and self.enable_image:
             keys = (image_files.keys() & text_files.keys())
-        elif enable_text:
+        elif self.enable_text:
             keys = text_files.keys()
-        elif enable_image:
+        elif self.enable_image:
             keys = image_files.keys()
 
         self.keys = list(keys)
@@ -63,9 +67,13 @@ class ImageDataset(Dataset):
     def __getitem__(self, ind):
         key = self.keys[ind]
 
+        output = {}
+
         if self.enable_image:
             image_file = self.image_files[key]
             image_tensor = self.image_transform(PIL.Image.open(image_file))
+            output["image_filename"] = str(image_file)
+            output["image_tensor"] = image_tensor
 
 
         if self.enable_text:
@@ -73,17 +81,21 @@ class ImageDataset(Dataset):
             descriptions = text_file.read_text().split('\n')
             description = descriptions[self.description_index]
             tokenized_text  = self.tokenizer(description)
+            output["text_tokens"] = tokenized_text
+            output["text"] = description
 
-        return {"image_tensor": image_tensor, "text_tokens": tokenized_text, "image_filename": str(image_file), "text": description}
+        return output
     
 
-def main(dataset_path, output_folder, batch_size=256, num_prepro_workers=8, description_index=0, enable_text=True, enable_image=True):
+def clip_batch(dataset_path, output_folder, batch_size=256, num_prepro_workers=8, description_index=0, enable_text=True, enable_image=True):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
-    data = DataLoader(ImageDataset(preprocess, dataset_path, description_index=description_index, enable_text=enable_text, enable_image=enable_image), \
-        batch_size=batch_size, shuffle=False, num_workers=num_prepro_workers, pin_memory=True, prefetch_factor=2)
+    dataset = ImageDataset(preprocess, dataset_path, description_index=description_index, enable_text=enable_text, enable_image=enable_image)
+    enable_text = dataset.enable_text
+    enable_image = dataset.enable_image
+    data = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_prepro_workers, pin_memory=True, prefetch_factor=2)
     if enable_image:
         image_embeddings = []
         image_names = []
@@ -94,12 +106,12 @@ def main(dataset_path, output_folder, batch_size=256, num_prepro_workers=8, desc
     for i, item in enumerate(tqdm(data)):
         with torch.no_grad():
             if enable_image:
-                image_features = model.encode_image(item["image_tensor"].cuda())
+                image_features = model.encode_image(item["image_tensor"].to(device))
                 image_features /= image_features.norm(dim=-1, keepdim=True)
                 image_embeddings.append(image_features.cpu().numpy())
                 image_names.extend(item["image_filename"])
             if enable_text:
-                text_features = model.encode_text(item["text_tokens"].cuda())
+                text_features = model.encode_text(item["text_tokens"].to(device))
                 text_features /= text_features.norm(dim=-1, keepdim=True)
                 text_embeddings.append(text_features.cpu().numpy())
                 descriptions.extend(item["text"])
@@ -125,4 +137,4 @@ def main(dataset_path, output_folder, batch_size=256, num_prepro_workers=8, desc
         faiss.write_index(text_index, output_folder +"/text.index")
     
 if __name__ == '__main__':
-  fire.Fire(main)
+  fire.Fire(clip_batch)

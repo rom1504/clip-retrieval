@@ -11,49 +11,23 @@ from io import BytesIO
 from PIL import Image
 import base64
 import os
+import fire
 
-
-device = "cuda" if torch.cuda.is_available() else "cpu"
-model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
-
-indices = json.load(open("indices_paths.json"))
-
-indices_loaded = {}
-
-for name, indice_folder in indices.items():
-    image_present = os.path.exists(indice_folder+"/image_list")
-    text_present = os.path.exists(indice_folder+"/description_list")
-    if image_present:
-        with open(indice_folder+"/image_list") as f:
-            image_list = f.read().split("\n")
-        image_index = faiss.read_index(indice_folder+"/image.index")
-    else:
-        image_list = None
-        image_index = None
-    if text_present:
-        with open(indice_folder+"/description_list") as f:
-            description_list = f.read().split("\n")
-        text_index = faiss.read_index(indice_folder+"/text.index")
-    else:
-        description_list = None
-        text_index = None
-    indices_loaded[name]={
-        'image_list': image_list,
-        'description_list': description_list,
-        'image_index': image_index,
-        'text_index': text_index
-    }
 
 class Health(Resource):
     def get(self):
         return "ok"
 
 class IndicesList(Resource):
-    def get(self):
-        return list(indices.keys())
+    def get(self, **kwargs):
+        return list(kwargs['indices'].keys())
 
 class KnnService(Resource):
-    def post(self):
+    def post(self, **kwargs):
+        indices_loaded = kwargs['indices_loaded']
+        device = kwargs['device']
+        model = kwargs['model']
+        preprocess = kwargs['preprocess']
         json_data = request.get_json(force=True)
         text_input = json_data["text"] if "text" in json_data else None
         image_input = json_data["image"] if "image" in json_data else None
@@ -91,15 +65,50 @@ class KnnService(Resource):
             img.save(buffered, format="JPEG")
             img_str = base64.b64encode(buffered.getvalue()).decode("utf-8") 
             results.append({"image": img_str, "text": description})
-        return results        
-        
+        return results
 
-app = Flask(__name__)
-api = Api(app)
-api.add_resource(IndicesList, '/indices-list')
-api.add_resource(KnnService, '/knn-service')
-api.add_resource(Health, '/')
+
+def clip_back(indices_paths="indices_paths.json", port=1234):
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
+
+    indices = json.load(open(indices_paths))
+
+    indices_loaded = {}
+
+    for name, indice_folder in indices.items():
+        image_present = os.path.exists(indice_folder+"/image_list")
+        text_present = os.path.exists(indice_folder+"/description_list")
+        if image_present:
+            with open(indice_folder+"/image_list") as f:
+                image_list = [x for x in f.read().split("\n") if x !=""]
+            image_index = faiss.read_index(indice_folder+"/image.index")
+        else:
+            image_list = None
+            image_index = None
+        if text_present:
+            with open(indice_folder+"/description_list") as f:
+                description_list = [x for x in f.read().split("\n") if x !=""]
+            text_index = faiss.read_index(indice_folder+"/text.index")
+        else:
+            description_list = None
+            text_index = None
+        indices_loaded[name]={
+            'image_list': image_list,
+            'description_list': description_list,
+            'image_index': image_index,
+            'text_index': text_index
+        }
+
+    app = Flask(__name__)
+    api = Api(app)
+    api.add_resource(IndicesList, '/indices-list', resource_class_kwargs={'indices': indices})
+    api.add_resource(KnnService, '/knn-service', resource_class_kwargs={'indices_loaded': indices_loaded, 'device': device, \
+    'model': model, 'preprocess': preprocess})
+    api.add_resource(Health, '/')
+    CORS(app)
+    app.run(host="0.0.0.0", port=port, debug=False)
+
 
 if __name__ == '__main__':
-    CORS(app)
-    app.run(host="0.0.0.0", port=int(sys.argv[1]), debug=False)
+  fire.Fire(clip_back)
