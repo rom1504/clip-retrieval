@@ -92,7 +92,7 @@ class ImageDataset(Dataset):
                 return self.__getitem__(ind+1)
             image_tensor = self.image_transform(pil_image)
             output["image_filename"] = str(image_file)
-            output["image_tensor"] = image_tenso
+            output["image_tensor"] = image_tensor
 
         if self.enable_text:
             text_file = self.text_files[key]
