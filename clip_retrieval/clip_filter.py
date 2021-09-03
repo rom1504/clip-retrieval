@@ -5,14 +5,25 @@ import json
 import os
 import shutil
 import fire
+from pathlib import Path
+import pandas as pd
 
 
 def clip_filter(query, output_folder, indice_folder, num_results=100, threshold=None):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, _ = clip.load("ViT-B/32", device=device, jit=False)
 
-    with open(indice_folder+"/image_list") as f:
-        image_list = [x for x in f.read().split("\n") if x !=""]
+    data_dir = Path(indice_folder+"/metadata")
+    df = pd.concat(
+        pd.read_parquet(parquet_file)
+        for parquet_file in data_dir.glob('*.parquet')
+    )
+
+    url_list = None
+    if "url" in df:
+        url_list = df["url"].tolist()
+
+    image_list = df["image_path"].tolist()
     image_index = faiss.read_index(indice_folder+"/image.index")
     indices_loaded={
         'image_list': image_list,
@@ -45,11 +56,15 @@ def clip_filter(query, output_folder, indice_folder, num_results=100, threshold=
     max_D = max(D)
     print(f"The minimum distance is {min_D:.2f} and the maximum is {max_D:.2f}")
     print("You may want to use these numbers to increase your --num_results parameter. Or use the --threshold parameter.")
+
     print(f"Copying the images in {output_folder}")
 
     for _, i in zip(D, I):
         path = image_list[i]
-        shutil.copy(path, output_folder)
+        if os.path.exists(path):
+            shutil.copy(path, output_folder)
+        if url_list is not None:
+            print(url_list[i])
 
 
 if __name__ == '__main__':

@@ -36,7 +36,11 @@ if __name__ == "__main__":
             'faiss-cpu',
             'flask',
             'flask_restful',
-            'flask_cors'
+            'flask_cors',
+            'pandas',
+            'pyarrow',
+            'autofaiss',
+            'pyyaml'
         ],
         classifiers=[
             'Development Status :: 4 - Beta',

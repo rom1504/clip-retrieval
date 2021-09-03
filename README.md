@@ -5,8 +5,9 @@
 
 Easily computing clip embeddings and building a clip retrieval system with them.
 
-* clip batch allows you to quickly (1500 sample/s on a 3080) compute image and text embeddings and indices
-* clip filter allows you to filter out the data using the clip embeddings
+* clip inference allows you to quickly (1500 sample/s on a 3080) compute image and text embeddings
+* clip index builds efficient indices out of the embeddings
+* clip filter allows you to filter out the data using the clip index
 * clip back hosts the indices with a simple flask service
 * clip service is a simple ui querying the back
 
@@ -17,7 +18,7 @@ Interested to learn about semantic search in general ? You can read by [medium p
 
 pip install clip-retrieval
 
-## clip batch
+## clip inference
 
 Get some images in an `example_folder`, for example by doing:
 ```
@@ -29,15 +30,42 @@ img2dataset --url_list=myimglist.txt --output_folder=image_folder --thread_count
 ```
 You can also put text files with the same names as the images in that folder, to get the text embeddings.
 
-Then run `clip-retrieval batch --dataset_path image_folder --output_folder indice_folder`
+Then run `clip-retrieval inference --input_dataset image_folder --output_folder embeddings_folder`
 
 Output folder will contain:
-* description_list containing the list of caption line by line
-* image_list containing the file path of images line by line
-* img_emb.npy containing the image embeddings as numpy
-* text_emb.npy containing the text embeddings as numpy
+* img_emb/
+    * img_emb_0.npy containing the image embeddings as numpy
+* text_emb/
+    * text_emb_0.npy containing the text embeddings as numpy
+* metadata/
+    * metadata_0.parquet containing the image paths, captions and metadata
+
+### API
+
+clip_inference turn a set of text+image into clip embeddings
+
+* **input_dataset** Path to input dataset. Folder if input_format is files. Bash brace pattern such as "{000..150}.tar" (see https://pypi.org/project/braceexpand/) if webdataset (*required*)
+* **output_folder** Folder where the clip embeddings will be saved, as well as metadata (*required*)
+* **input_format** files or webdataset (default *files*)
+* **cache_path** cache path for webdataset (default *None*)
+* **batch_size** Number of items to do the inference on at once (default *256*)
+* **num_prepro_workers** Number of processes to do the preprocessing (default *8*)
+* **enable_text** Enable text processing (default *True*)
+* **enable_image** Enable image processing (default *True*)
+* **enable_metadata** Enable metadata processing (default *False*)
+* **write_batch_size** Write batch size (default *10**6*)
+* **subset_size** Only process a subset of this size (default *None*)
+
+## Clip index
+
+Clip index takes as input the output of clip inference and makes an index out of it using [autofaiss](https://github.com/criteo/autofaiss)
+
+`clip-retrieval index --input_folder embeddings_folder --output_folder index_folder`
+
+The output is a folder containing:
 * image.index containing a brute force faiss index for images
 * text.index containing a brute force faiss index for texts
+* metadata.arrow containing the metadata in a format that is easy to memory map
 
 ## Clip filter
 
@@ -48,7 +76,7 @@ Using the `--num_results` or `--threshold` may be helpful to refine the filter
 
 ## Clip back
 
-Then run (output_folder is the output of clip batch)
+Then run (output_folder is the output of clip index)
 ```bash
 echo '{"example_index": "output_folder"}' > indices_paths.json
 clip-retrieval back --port 1234 --indices-paths indices_paths.json
@@ -92,4 +120,13 @@ python3 -m venv .env
 source .env/bin/activate
 pip install -U pip
 pip install -e .
+```
+
+to run tests:
+```
+pip install -r requirements-test.txt
+```
+then 
+```
+python -m pytest -v tests -s
 ```
