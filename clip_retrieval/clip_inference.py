@@ -84,9 +84,15 @@ class ImageDataset(Dataset):
 
         if self.enable_image:
             image_file = self.image_files[key]
-            image_tensor = self.image_transform(PIL.Image.open(image_file))
+            try:
+                pil_image = Image.open(image_file)
+            except: # Corrupted image, skip.
+                tqdm.tqdm.write(str(image_file) + ' is not a valid image file')
+                tqdm.tqdm.write("Skipping.")
+                return self.__getitem__(ind+1)
+            image_tensor = self.image_transform(pil_image)
             output["image_filename"] = str(image_file)
-            output["image_tensor"] = image_tensor
+            output["image_tensor"] = image_tenso
 
         if self.enable_text:
             text_file = self.text_files[key]
