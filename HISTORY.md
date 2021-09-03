@@ -1,3 +1,7 @@
+## 2.0.3
+
+* fix finding the last batch number (continuing output)
+
 ## 2.0.2
 
 * add warn and continue handler to avoid crashing
