@@ -1,3 +1,7 @@
+## 2.0.2
+
+* add warn and continue handler to avoid crashing
+
 ## 2.0.1
 
 * add missing webdataset dep
