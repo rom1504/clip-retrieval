@@ -40,7 +40,8 @@ if __name__ == "__main__":
             'pandas',
             'pyarrow',
             'autofaiss',
-            'pyyaml'
+            'pyyaml',
+            'webdataset'
         ],
         classifiers=[
             'Development Status :: 4 - Beta',
