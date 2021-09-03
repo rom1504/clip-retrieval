@@ -1,3 +1,7 @@
+## 2.0.1
+
+* add missing webdataset dep
+
 ## 2.0.0
 
 * webdataset input format
