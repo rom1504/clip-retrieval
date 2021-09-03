@@ -40,6 +40,8 @@ Output folder will contain:
 * metadata/
     * metadata_0.parquet containing the image paths, captions and metadata
 
+This scales to million of samples. At 1400 sample/s of a 3080, 10M samples can be processed in 2h.
+
 ### API
 
 clip_inference turn a set of text+image into clip embeddings
@@ -67,12 +69,16 @@ The output is a folder containing:
 * text.index containing a brute force faiss index for texts
 * metadata.arrow containing the metadata in a format that is easy to memory map
 
+Thanks to autofaiss and faiss, this scales to hundred of million of samples in a few hours.
+
 ## Clip filter
 
 Once the embeddings are computed, you may want to filter out the data by a specific query.
 For that you can run `clip-retrieval filter --query "cat" --output_folder "cat/" --indice_folder "indice_folder"`
 It will copy the 100 best images for this query in the output folder.
 Using the `--num_results` or `--threshold` may be helpful to refine the filter
+
+Thanks to fast knn index, this can run in real time (<10ms) for large K values (100000), and in minutes for very large K values.
 
 ## Clip back
 
@@ -108,6 +114,8 @@ and returns:
     }
 ]
 ```
+
+This achieve low latency status (10ms). Throughput is about 100 query/s. For high throughput, using a grpc server is required.
 
 ## For development
 
