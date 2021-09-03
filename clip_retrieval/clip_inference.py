@@ -165,7 +165,7 @@ class OutputSink:
             if len(existing_top_level_files) == 0:
                 batch_init_num=-1
             else:
-                batch_init_num=max([int(x.split("/")[-1].split(".")[0]) for x in existing_top_level_files])
+                batch_init_num=max([int(x.split("/")[-1].split(".")[0].split("_")[1]) for x in existing_top_level_files])
         if enable_image and not os.path.exists(self.img_emb_folder):
             os.mkdir(self.img_emb_folder)
         if enable_text and not os.path.exists(self.text_emb_folder):
