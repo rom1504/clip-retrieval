@@ -109,7 +109,7 @@ def create_webdataset(
                 enable_image=True,
                 enable_metadata=False,
                 cache_path=None,):
-    dataset = wds.WebDataset(urls, cache_dir=cache_path, cache_size=10**10)
+    dataset = wds.WebDataset(urls, cache_dir=cache_path, cache_size=10**10, handler=wds.handlers.warn_and_continue)
     tokenizer = lambda text: clip.tokenize([text], truncate=True)[0]
 
     def filter_dataset(item):
@@ -145,7 +145,7 @@ def create_webdataset(
             output["metadata"] = metadata
         return output
 
-    transformed_dataset = filtered_dataset.map(preprocess_dataset)
+    transformed_dataset = filtered_dataset.map(preprocess_dataset, handler=wds.handlers.warn_and_continue)
     return transformed_dataset
 
 class OutputSink:
