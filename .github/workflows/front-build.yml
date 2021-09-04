@@ -47,7 +47,6 @@ jobs:
           cp -R ../build/* ./
       - name: Create commits
         run: |
-          cd front
           git config user.name 'rom1504bot'
           git config user.email 'rom1504bot@users.noreply.github.com'
           git add --all
