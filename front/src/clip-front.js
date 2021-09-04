@@ -28,6 +28,7 @@ class ClipFront extends LitElement {
     this.numImages = 20
     this.models = []
     this.images = []
+    this.blacklist = {}
     this.initModels()
   }
 
@@ -48,7 +49,8 @@ class ClipFront extends LitElement {
       numImages: { type: Number },
       models: { type: Array },
       currentIndex: { type: String },
-      backendHost: { type: String }
+      backendHost: { type: String },
+      blacklist: { type: Object }
     }
   }
 
@@ -78,8 +80,16 @@ class ClipFront extends LitElement {
     if (image['url'] !== undefined) {
       src = image['url']
     }
-    return html`<img width="150" src="${src}" alt="${image['text']}"" title="${image['text']}" style="margin:1px;" 
-    @error=${(e) => { e.path[0].style = 'display:none;' }} />`
+    /*
+    // useful for testing broken images
+    const hashCode = s => s.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0)
+
+    const disp =  hashCode(src) % 2 == 0
+    src = (disp ? "" : "sss") +src
+    */
+    return html`<img width="150" src="${src}" alt="${image['text']}"" title="${image['text']}"
+    style=${'margin:1px; ' + (this.blacklist[src] !== undefined ? 'display:none' : 'display:inline')}
+    @error=${() => { this.blacklist = { ...this.blacklist, ...{ [src]: true } } }} />`
   }
 
   static get styles () {
