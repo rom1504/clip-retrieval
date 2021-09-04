@@ -78,7 +78,8 @@ class ClipFront extends LitElement {
     if (image['url'] !== undefined) {
       src = image['url']
     }
-    return html`<img width="150" src="${src}" alt="${image['text']}"" title="${image['text']}" style="margin:1px;" />`
+    return html`<img width="150" src="${src}" alt="${image['text']}"" title="${image['text']}" style="margin:1px;" 
+    @error=${(e) => { e.path[0].style = 'display:none;' }} />`
   }
 
   static get styles () {
