@@ -83,6 +83,7 @@ class KnnService(Resource):
                 output["text"] = description
             if url_list is not None:
                 output["url"] = url_list[i]
+            output["similarity"] = d.item()
             results.append(output)
         return results
 
@@ -101,7 +102,7 @@ def clip_back(indices_paths="indices_paths.json", port=1234):
         data_dir = Path(indice_folder+"/metadata")
         metadata_df = pd.concat(
             pd.read_parquet(parquet_file)
-            for parquet_file in data_dir.glob('*.parquet')
+            for parquet_file in sorted(data_dir.glob('*.parquet'))
         )
 
         url_list = None

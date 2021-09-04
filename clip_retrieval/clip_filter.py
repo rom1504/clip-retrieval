@@ -16,7 +16,7 @@ def clip_filter(query, output_folder, indice_folder, num_results=100, threshold=
     data_dir = Path(indice_folder+"/metadata")
     df = pd.concat(
         pd.read_parquet(parquet_file)
-        for parquet_file in data_dir.glob('*.parquet')
+        for parquet_file in sorted(data_dir.glob('*.parquet'))
     )
 
     url_list = None
