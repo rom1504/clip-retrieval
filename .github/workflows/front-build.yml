@@ -41,7 +41,6 @@ jobs:
           cp -R build/ ../
           rm -Rf ./*
           git checkout gh-pages
-          cp CNAME ../build/
           rm -Rf ./*
           rm -Rf .github .gitignore .gitpod .gitpod.DockerFile .npmignore .npmrc
           cp -R ../build/* ./
