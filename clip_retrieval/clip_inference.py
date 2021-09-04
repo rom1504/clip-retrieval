@@ -263,7 +263,7 @@ def clip_inference(
     else:
         raise Exception(f"No such input format {input_format}")
 
-    data = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_prepro_workers, pin_memory=False, prefetch_factor=2)
+    data = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_prepro_workers, pin_memory=True, prefetch_factor=2)
     output_sink = OutputSink(output_folder, enable_text, enable_image, enable_metadata, write_batch_size)
 
     c = 0
