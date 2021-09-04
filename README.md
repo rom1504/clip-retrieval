@@ -12,7 +12,7 @@ Easily computing clip embeddings and building a clip retrieval system with them.
 * clip service is a simple ui querying the back
 
 End to end this make it possible to build a simple semantic search system.
-Interested to learn about semantic search in general ? You can read by [medium post](https://rom1504.medium.com/semantic-search-with-embeddings-index-anything-8fb18556443c) on the topic.
+Interested to learn about semantic search in general ? You can read my [medium post](https://rom1504.medium.com/semantic-search-with-embeddings-index-anything-8fb18556443c) on the topic.
 
 ## Install
 
