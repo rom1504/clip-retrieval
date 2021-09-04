@@ -67,7 +67,7 @@ Clip index takes as input the output of clip inference and makes an index out of
 The output is a folder containing:
 * image.index containing a brute force faiss index for images
 * text.index containing a brute force faiss index for texts
-* metadata.arrow containing the metadata in a format that is easy to memory map
+* metadata folder containing the parquet metadata
 
 Thanks to autofaiss and faiss, this scales to hundred of million of samples in a few hours.
 
