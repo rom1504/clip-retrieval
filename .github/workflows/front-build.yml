@@ -38,7 +38,8 @@ jobs:
           cd front 
           npm install
           npm run build
-          cp -R build/ ../
+          cp -R build/ ../../
+          cd ..
           rm -Rf ./*
           git checkout gh-pages
           rm -Rf ./*
