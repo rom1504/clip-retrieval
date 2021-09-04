@@ -14,6 +14,8 @@ Easily computing clip embeddings and building a clip retrieval system with them.
 End to end this make it possible to build a simple semantic search system.
 Interested to learn about semantic search in general ? You can read my [medium post](https://rom1504.medium.com/semantic-search-with-embeddings-index-anything-8fb18556443c) on the topic.
 
+[<img src="./clip-front-pic.png" alt="viewer" width="500">](https://rom1504.github.io/clip-retrieval/)
+
 ## Install
 
 pip install clip-retrieval
