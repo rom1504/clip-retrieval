@@ -3,7 +3,7 @@
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rom1504/clip-retrieval/blob/master/notebook/clip-retrieval-getting-started.ipynb)
 [![Try it on gitpod](https://img.shields.io/badge/try-on%20gitpod-brightgreen.svg)](https://gitpod.io/#https://github.com/rom1504/clip-retrieval)
 
-Easily computing clip embeddings and building a clip retrieval system with them.
+Easily compute clip embeddings and build a clip retrieval system with them. 100M in 20h using a 3080.
 
 * clip inference allows you to quickly (1500 sample/s on a 3080) compute image and text embeddings
 * clip index builds efficient indices out of the embeddings
