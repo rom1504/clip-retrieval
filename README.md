@@ -16,6 +16,13 @@ Interested to learn about semantic search in general ? You can read my [medium p
 
 [<img src="./clip-front-pic.png" alt="viewer" width="500">](https://rom1504.github.io/clip-retrieval/)
 
+## Who is using clip retrieval ?
+
+* [cah-prepro](https://github.com/rom1504/cah-prepro) preprocess the 400M image+text crawling at home dataset. clip-retrieval is used to compute 400M clip embeddings and the indices
+* [autofaiss](https://github.com/criteo/autofaiss) uses clip-retrieval to display an example of use (see the multimodal notebook example there)
+* [afiaka87 openai demo](https://gist.github.com/afiaka87/f662486fc45199fa4394f3456c8246d7#file-dalle_blog_semantic_search-ipynb) shows how to look among the 1M example released by openai for their DALL-E demo
+* [antarctic-captions by dzryk](https://github.com/dzryk/antarctic-captions) uses autofaiss and clip inference as a way to generate anchors for the image to text task with great success
+
 ## Install
 
 pip install clip-retrieval
