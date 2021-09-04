@@ -57,6 +57,8 @@ clip_inference turn a set of text+image into clip embeddings
 * **enable_metadata** Enable metadata processing (default *False*)
 * **write_batch_size** Write batch size (default *10**6*)
 * **subset_size** Only process a subset of this size (default *None*)
+* **wds_image_key** Key to use for images in webdataset. (default *jpg*)
+* **wds_caption_key** Key to use for captions in webdataset. (default *txt*)
 
 ## Clip index
 
