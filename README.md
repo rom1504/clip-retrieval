@@ -9,7 +9,7 @@ Easily computing clip embeddings and building a clip retrieval system with them.
 * clip index builds efficient indices out of the embeddings
 * clip filter allows you to filter out the data using the clip index
 * clip back hosts the indices with a simple flask service
-* clip service is a simple ui querying the back
+* clip front is a simple ui querying the back. Check it out at [clip-retrieval ui](https://rom1504.github.io/clip-retrieval/)
 
 End to end this make it possible to build a simple semantic search system.
 Interested to learn about semantic search in general ? You can read my [medium post](https://rom1504.medium.com/semantic-search-with-embeddings-index-anything-8fb18556443c) on the topic.
@@ -116,6 +116,12 @@ and returns:
 ```
 
 This achieve low latency status (10ms). Throughput is about 100 query/s. For high throughput, using a grpc server is required.
+
+## clip-front
+
+Clip front is a simple UI that connects to clip back and display the results.
+To run it, go to [front](front) and run `npm install` then `npm start`.
+You can also directly use it at [clip-retrieval ui](https://rom1504.github.io/clip-retrieval/)
 
 ## For development
 

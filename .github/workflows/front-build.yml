@@ -1,0 +1,60 @@
+name: front build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [14.x]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: cd front && npm install
+    - run: cd front && npm run build
+    - run: cd front && npm test
+  DeployPages:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' }}
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v2.3.1 # If you're using actions/checkout@v2 you must set persist-credentials to false in most cases for the deployment to work correctly.
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Build
+        run: |
+          cd front 
+          npm install
+          npm run build
+          cp -R build/ ../
+          rm -Rf ./*
+          git checkout gh-pages
+          cp CNAME ../build/
+          rm -Rf ./*
+          rm -Rf .github .gitignore .gitpod .gitpod.DockerFile .npmignore .npmrc
+          cp -R ../build/* ./
+      - name: Create commits
+        run: |
+          cd front
+          git config user.name 'rom1504bot'
+          git config user.email 'rom1504bot@users.noreply.github.com'
+          git add --all
+          git commit --amend -m "Update gh-pages"
+      - name: Deploy 🚀
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: gh-pages
+          force: true

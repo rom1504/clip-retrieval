@@ -22,7 +22,7 @@ export default class ClipService {
     console.log('calling', text, numImages)
     const result = JsonBigint.parse(await (await fetch(this.backend + `/knn-service`, {
       method: 'POST',
-      body:JSON.stringify({
+      body: JSON.stringify({
         text,
         image,
         modality,
