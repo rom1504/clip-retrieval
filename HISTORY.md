@@ -1,3 +1,7 @@
+## 2.0.4
+
+* fix clip back and filter to use sorted metadatas
+
 ## 2.0.3
 
 * fix finding the last batch number (continuing output)
