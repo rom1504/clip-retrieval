@@ -163,7 +163,7 @@ class ClipFront extends LitElement {
      
     </div>
     <div id="filter">
-      Clip retrieval ! <br />
+      <a href="https://github.com/rom1504/clip-retrieval">Clip retrieval</a> works by using embeddings computed with the CLIP model in an efficient knn index.<br />
     </div>
 
     <div id="products">
