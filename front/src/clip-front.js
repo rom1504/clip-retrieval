@@ -157,7 +157,7 @@ class ClipFront extends LitElement {
         <input id="searchBar" type="text" value=${this.text} @input=${e => { this.text = e.target.value }}/>
         <img src="assets/search.png" id="textSearch" @click=${e => { this.search() }} />
         Backend url: <input type="text" value=${this.backendHost} @input=${e => { this.backendHost = e.target.value }}/>
-        Model: <select @input=${e => { this.currentIndex = e.target.value }}>${this.models.map(model =>
+        Index: <select @input=${e => { this.currentIndex = e.target.value }}>${this.models.map(model =>
   html`<option value=${model} ?selected=${model === this.currentIndex}>${model}</option>`)}</select>
       </span>
      
