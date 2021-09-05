@@ -7,7 +7,6 @@ import json
   
 from pathlib import Path
 
-import PIL
 from torch.jit import Error
 from torch.utils import data
 
@@ -74,7 +73,7 @@ class ImageDataset(Dataset):
             self.image_transform = preprocess
         if self.enable_metadata:
             self.metadata_files = {k: v for k, v in metadata_files.items() if k in keys}
-
+        
     def __len__(self):
         return len(self.keys)
 
@@ -107,15 +106,17 @@ def create_webdataset(
                 image_transform,
                 enable_text=True,
                 enable_image=True,
+                image_key='jpg',
+                caption_key='txt',
                 enable_metadata=False,
                 cache_path=None,):
     dataset = wds.WebDataset(urls, cache_dir=cache_path, cache_size=10**10, handler=wds.handlers.warn_and_continue)
     tokenizer = lambda text: clip.tokenize([text], truncate=True)[0]
 
     def filter_dataset(item):
-        if enable_text and "txt" not in item:
+        if enable_text and caption_key not in item:
             return False
-        if enable_image and "jpg" not in item:
+        if enable_image and image_key not in item:
             return False
         if enable_metadata and "json" not in item:
             return False
@@ -126,14 +127,14 @@ def create_webdataset(
     def preprocess_dataset(item):
         output = {}
         if enable_image:
-            image_data = item["jpg"]
+            image_data = item[image_key]
             image = Image.open(io.BytesIO(image_data))
             image_tensor = image_transform(image)
             output["image_filename"] = item["__key__"]
             output["image_tensor"] = image_tensor
 
         if enable_text:
-            text = item["txt"]
+            text = item[caption_key]
             caption = text.decode("utf-8") 
             tokenized_text  = tokenizer(caption)
             output["text_tokens"] = tokenized_text
@@ -243,7 +244,10 @@ def clip_inference(
     enable_image=True,
     enable_metadata=False,
     write_batch_size=10**6,
-    subset_size=None):
+    subset_size=None,
+    wds_image_key="jpg",
+    wds_caption_key="txt",
+):
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
@@ -253,7 +257,9 @@ def clip_inference(
         enable_image = dataset.enable_image
         enable_metadata = dataset.enable_metadata
     elif input_format == "webdataset":
-        dataset = create_webdataset(input_dataset, preprocess, enable_text, enable_image, enable_metadata, cache_path)
+        dataset = create_webdataset(
+            input_dataset, preprocess, enable_text, enable_image, image_key=wds_image_key, 
+            caption_key=wds_caption_key, enable_metadata=enable_metadata, cache_path=cache_path)
     else:
         raise Exception(f"No such input format {input_format}")
 
