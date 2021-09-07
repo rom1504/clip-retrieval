@@ -9,7 +9,7 @@ if __name__ == "__main__":
         name = 'clip_retrieval',
         packages = find_packages(),
         include_package_data = True,
-        version = '2.1.0',
+        version = '2.2.0',
         license='MIT',
         description = 'Easily computing clip embeddings and building a clip retrieval system with them',
         long_description=long_description,

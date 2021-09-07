@@ -1,3 +1,7 @@
+## 2.2.0
+
+* expose max_index_memory_usage
+
 ## 2.1.0
 
 * --wds_image_key, --wds_caption_key options (thanks @afiaka87)
