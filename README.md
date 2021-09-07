@@ -99,6 +99,13 @@ echo '{"example_index": "output_folder"}' > indices_paths.json
 clip-retrieval back --port 1234 --indices-paths indices_paths.json
 ```
 
+A `--enable_hdf5 True` option can be passed to enable hdf5 caching for the metadata.
+HDF5 caching makes it possible to use the metadata with almost no memory usage.
+
+hdf5 caching is a good idea to use if:
+* you do not have enough ram to load the metadata in memory
+* your disk is fast (ie you have a ssd)
+
 At this point you have a simple flask server running on port 1234 and that can answer these queries:
 
 * `/indices-list` -> return a list of indices

@@ -13,6 +13,10 @@ import os
 import fire
 from pathlib import Path
 import pandas as pd
+import numpy as np
+
+import h5py
+from tqdm import tqdm
 
 
 class Health(Resource):
@@ -46,9 +50,7 @@ class KnnService(Resource):
         indice_name = json_data["indice_name"]
         image_index = self.indices_loaded[indice_name]["image_index"]
         text_index = self.indices_loaded[indice_name]["text_index"]
-        image_list = self.indices_loaded[indice_name]["image_list"]
-        description_list = self.indices_loaded[indice_name]["description_list"]
-        url_list = self.indices_loaded[indice_name]["url_list"]
+        metadata_provider = self.indices_loaded[indice_name]["metadata_provider"]
 
         if text_input is not None:
             text = clip.tokenize([text_input]).to(self.device)
@@ -68,27 +70,96 @@ class KnnService(Resource):
 
         D, I = index.search(query, num_images)
         results = []
-        for d, i in zip(D[0], I[0]):
+        metas = metadata_provider.get(I[0], ["url", "image_path", "caption"])
+        for key, (d, i) in enumerate(zip(D[0], I[0])):
             output = {}
-            if image_list is not None:
-                path = image_list[i]
+            meta = metas[key]
+            if "image_path" in meta:
+                path = meta["image_path"]
                 if os.path.exists(path):
                     img = Image.open(path)
                     buffered = BytesIO()
                     img.save(buffered, format="JPEG")
                     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8") 
                     output["image"] = img_str
-            if description_list is not None:
-                description = description_list[i]
-                output["text"] = description
-            if url_list is not None:
-                output["url"] = url_list[i]
+            for k, v in meta.items():
+                if isinstance(v, bytes):
+                    v = v.decode()
+                elif type(v).__module__ == np.__name__:
+                    v = v.item()
+                output[k] = v
             output["similarity"] = d.item()
             results.append(output)
         return results
 
+class ParquetMetadataProvider:
+    def __init__(self, parquet_folder):
+        data_dir = Path(parquet_folder)
+        self.metadata_df = pd.concat(
+            pd.read_parquet(parquet_file)
+            for parquet_file in sorted(data_dir.glob('*.parquet'))
+        )
 
-def clip_back(indices_paths="indices_paths.json", port=1234):
+    def get(self, ids, cols=None):
+        if cols is None:
+            cols = self.metadata_df.columns.tolist()
+        else:
+            cols = list(set(self.metadata_df.columns.tolist()) & set(cols))
+
+        return [self.metadata_df[i:(i+1)][cols].to_dict(orient='records')[0] for i in ids]
+
+
+def parquet_to_hdf5(parquet_folder, output_hdf5_file):
+    f = h5py.File(output_hdf5_file, 'w')
+    data_dir = Path(parquet_folder)
+    ds = f.create_group('dataset') 
+    for parquet_files in tqdm(sorted(data_dir.glob('*.parquet'))):
+        df = pd.read_parquet(parquet_files)
+        for k in df.keys():
+            if False and not (k == "url"):
+                continue
+            if False and not (k == "url" or k == 'caption'):
+                continue
+            col = df[k]
+            if col.dtype == 'float64' or col.dtype=='float32':
+                col=col.fillna(0.0)
+            if col.dtype == 'int64' or col.dtype=='int32':
+                col=col.fillna(0)
+            if col.dtype == 'object':
+                col=col.fillna('')
+            z = col.to_numpy()
+            if k not in ds:
+                ds.create_dataset(k, data=z, maxshape=(None,))
+            else:
+                prevlen = len(ds[k])
+                ds[k].resize((prevlen+len(z),))
+                ds[k][prevlen:] = z
+    
+    del ds
+    f.close()
+
+class Hdf5MetadataProvider:
+    def __init__(self, hdf5_file):
+        f = h5py.File(hdf5_file, 'r')
+        self.ds = f['dataset']
+    def get(self, ids, cols=None):
+        items = [{} for _ in range(len(ids))]
+        if cols is None:
+            cols = self.ds.keys()
+        else:
+            cols = list(self.ds.keys() & set(cols))
+        for k in cols:
+            # broken
+            sorted_ids = sorted([(k, i) for i, k in list(enumerate(ids))])
+            for_hdf5 = [k for k,_ in sorted_ids]
+            for_np = [i for _,i in sorted_ids]
+            g = self.ds[k][for_hdf5]
+            gg = g[for_np]
+            for i, e in enumerate(gg):
+                items[i][k] = e
+        return items
+
+def clip_back(indices_paths="indices_paths.json", port=1234, enable_hdf5=False):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
 
@@ -99,31 +170,25 @@ def clip_back(indices_paths="indices_paths.json", port=1234):
     for name, indice_folder in indices.items():
         image_present = os.path.exists(indice_folder+"/image.index")
         text_present = os.path.exists(indice_folder+"/text.index")
-        data_dir = Path(indice_folder+"/metadata")
-        metadata_df = pd.concat(
-            pd.read_parquet(parquet_file)
-            for parquet_file in sorted(data_dir.glob('*.parquet'))
-        )
+        hdf5_path = indice_folder+"/metadata.hdf5"
+        parquet_folder = indice_folder+"/metadata"
+        if enable_hdf5:
+            if not os.path.exists(hdf5_path):
+                parquet_to_hdf5(parquet_folder, hdf5_path)
+            metadata_provider = Hdf5MetadataProvider(hdf5_path)
+        else:
+            metadata_provider = ParquetMetadataProvider(parquet_folder)
 
-        url_list = None
-        if "url" in metadata_df:
-            url_list = metadata_df["url"].tolist()
         if image_present:
-            image_list = metadata_df["image_path"].tolist()
             image_index = faiss.read_index(indice_folder+"/image.index")
         else:
-            image_list = None
             image_index = None
         if text_present:
-            description_list = metadata_df["caption"].tolist()
             text_index = faiss.read_index(indice_folder+"/text.index")
         else:
-            description_list = None
             text_index = None
         indices_loaded[name]={
-            'image_list': image_list,
-            'url_list': url_list,
-            'description_list': description_list,
+            'metadata_provider': metadata_provider,
             'image_index': image_index,
             'text_index': text_index
         }

@@ -41,7 +41,8 @@ if __name__ == "__main__":
             'pyarrow',
             'autofaiss',
             'pyyaml',
-            'webdataset'
+            'webdataset',
+            'h5py'
         ],
         classifiers=[
             'Development Status :: 4 - Beta',
