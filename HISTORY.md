@@ -1,3 +1,8 @@
+## 2.1.0
+
+* --wds_image_key, --wds_caption_key options (thanks @afiaka87)
+* implement h5py caching in clip back
+
 ## 2.0.4
 
 * fix clip back and filter to use sorted metadatas
