@@ -160,6 +160,7 @@ class Hdf5MetadataProvider:
         return items
 
 def clip_back(indices_paths="indices_paths.json", port=1234, enable_hdf5=False):
+    print('loading clip...')
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
 
@@ -172,6 +173,7 @@ def clip_back(indices_paths="indices_paths.json", port=1234, enable_hdf5=False):
         text_present = os.path.exists(indice_folder+"/text.index")
         hdf5_path = indice_folder+"/metadata.hdf5"
         parquet_folder = indice_folder+"/metadata"
+        print('loading metadata...')
         if enable_hdf5:
             if not os.path.exists(hdf5_path):
                 parquet_to_hdf5(parquet_folder, hdf5_path)
@@ -179,6 +181,7 @@ def clip_back(indices_paths="indices_paths.json", port=1234, enable_hdf5=False):
         else:
             metadata_provider = ParquetMetadataProvider(parquet_folder)
 
+        print('loading indices...')
         if image_present:
             image_index = faiss.read_index(indice_folder+"/image.index")
         else:
