@@ -83,7 +83,7 @@ class ImageDataset(Dataset):
 
         if self.enable_image:
             image_file = self.image_files[key]
-            image_tensor = self.image_transform(PIL.Image.open(image_file))
+            image_tensor = self.image_transform(Image.open(image_file))
             output["image_filename"] = str(image_file)
             output["image_tensor"] = image_tensor
 
