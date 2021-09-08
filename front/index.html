@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clip Front</title>
+    <link rel="stylesheet" href="./style.css">
+  </head>
+
+  <body>
+    <div id="app">
+      <div class="topbar">
+        <span>
+          <h2>Clip Front</h2>
+        </span>
+        <span>
+          <p>Search By Text:</p>
+          <form @submit.prevent="getImages">
+            <input v-model="searchText" type="text">
+            <button type="submit">Search</button>
+          </form>
+        </span>
+        <!-- <span>
+        <p>Search By Image:</p>
+        <form @submit.prevent="getImages">
+          <input v-model="searchImage" type="text">
+          <button type="submit">Search</button>
+        </form>
+      </span> -->
+        <span>
+          <p>Backend URL:</p>
+          <form @submit.prevent="fetchBackend">
+            <input v-model="backendURL" type="text">
+            <button type="submit">Fetch</button>
+          </form>
+        </span>
+        <span>
+          <p>Index:</p>
+          <select v-model="selectedIndex">
+            <option v-for="item in indicesList" :key="item" :value="item">{{item}}</option>
+          </select>
+        </span>
+        <span>
+          <p>Image Count:</p>
+          <input v-model="imageCount" type="number" min="1" max="20" value="20">
+        </span>
+      </div>
+      <div class="images-container">
+        <div class="images">
+          <span @click="onImageClick(item)" class="captioned-image" v-for="item in imageList" :key="item.similarity">
+            <p class="image-similarity">%{{(item.similarity * 100).toFixed(2)}}</p>
+            <img class="image-itself" width="200" :src="item.url" :alt="item.caption">
+            <p class="image-caption">{{item.caption}}</p>
+          </span>
+        </div>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <script src="./script.js"></script>
+  </body>
+</html>

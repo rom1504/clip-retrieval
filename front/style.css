@@ -1,0 +1,112 @@
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  font-size: 18px;
+}
+
+.topbar {
+  width: 100%;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 16px;
+}
+
+.topbar span {
+  margin-left: 6px;
+  margin-right: 6px;
+}
+
+input,
+select,
+button {
+  padding: 2px;
+}
+
+.images {
+  display: inline-grid;
+  gap: 6px;
+  padding: 0 16px;
+  margin-bottom: 16px;
+}
+
+.captioned-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  border: 1px solid black;
+  padding: 4px;
+  cursor: pointer;
+}
+
+.image-similarity {
+  margin-bottom: 2px;
+}
+
+.image-caption {
+  margin-top: 6px;
+}
+
+.images-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+@media (min-width: 400px) {
+  .images {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 700px) {
+  .images {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1000px) {
+  .images {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1300px) {
+  .images {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (min-width: 1600px) {
+  .images {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media only screen and (max-width: 1000px) {
+  .topbar {
+    width: 100%;
+    height: unset;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar span {
+    margin-top: 6px;
+  }
+
+  input,
+  select,
+  button {
+    padding: 6px;
+  }
+}
