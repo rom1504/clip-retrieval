@@ -76,6 +76,7 @@ Clip index takes as input the output of clip inference and makes an index out of
 `clip-retrieval index --input_folder embeddings_folder --output_folder index_folder`
 
 An additional `--max_index_memory_usage "4G"` option allow configuring the amount of ram the index will consume. More ram, better knn recall.
+`--current_memory_available 16G` allows controlling how much ram is used during the creation process.
 
 The output is a folder containing:
 * image.index containing a brute force faiss index for images
