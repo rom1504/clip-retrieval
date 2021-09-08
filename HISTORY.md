@@ -1,3 +1,9 @@
+## 2.3.0
+
+* allows controlling the amount of ram used during the creation process of the index
+* add logs in clip back to inform when each thing is loaded
+* fix PIL call (thanks @pvl)
+
 ## 2.2.0
 
 * expose max_index_memory_usage
