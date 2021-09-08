@@ -87,7 +87,7 @@ class ClipFront extends LitElement {
     const disp =  hashCode(src) % 2 == 0
     src = (disp ? "" : "sss") +src
     */
-    return html`<img width="150" src="${src}" alt="${image['text']}"" title="${image['text']}"
+    return html`<img width="150" src="${src}" alt="${image['caption']}"" title="${image['caption']}"
     style=${'margin:1px; ' + (this.blacklist[src] !== undefined ? 'display:none' : 'display:inline')}
     @error=${() => { this.blacklist = { ...this.blacklist, ...{ [src]: true } } }} />`
   }
