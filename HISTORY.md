@@ -1,3 +1,7 @@
+## 2.4.0
+
+* add copy metadata option to clip index
+
 ## 2.3.0
 
 * allows controlling the amount of ram used during the creation process of the index
