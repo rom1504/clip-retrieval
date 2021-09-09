@@ -1,3 +1,7 @@
+## 2.5.0
+
+* add memory mapping option in clip back : 0 memory usage to load an index!
+
 ## 2.4.0
 
 * add copy metadata option to clip index
