@@ -159,7 +159,7 @@ class Hdf5MetadataProvider:
                 items[i][k] = e
         return items
 
-def clip_back(indices_paths="indices_paths.json", port=1234, enable_hdf5=False):
+def clip_back(indices_paths="indices_paths.json", port=1234, enable_hdf5=False, enable_faiss_memory_mapping=False):
     print('loading clip...')
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
@@ -183,11 +183,17 @@ def clip_back(indices_paths="indices_paths.json", port=1234, enable_hdf5=False):
 
         print('loading indices...')
         if image_present:
-            image_index = faiss.read_index(indice_folder+"/image.index")
+            if enable_faiss_memory_mapping:
+                image_index = faiss.read_index(indice_folder+"/image.index", faiss.IO_FLAG_MMAP|faiss.IO_FLAG_READ_ONLY)
+            else:
+                image_index = faiss.read_index(indice_folder+"/image.index")
         else:
             image_index = None
         if text_present:
-            text_index = faiss.read_index(indice_folder+"/text.index")
+            if enable_faiss_memory_mapping:
+                text_index = faiss.read_index(indice_folder+"/text.index", faiss.IO_FLAG_MMAP|faiss.IO_FLAG_READ_ONLY)
+            else:
+                text_index = faiss.read_index(indice_folder+"/text.index")
         else:
             text_index = None
         indices_loaded[name]={

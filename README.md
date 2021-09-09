@@ -97,11 +97,16 @@ Thanks to fast knn index, this can run in real time (<10ms) for large K values (
 
 ## Clip back
 
-Then run (output_folder is the output of clip index)
+Clip back is a simple knn service backend. If using both hdf5 and faiss memory mapping, it uses only the memory used by clip which is 4GB.
+
+Run (output_folder is the output of clip index)
 ```bash
 echo '{"example_index": "output_folder"}' > indices_paths.json
 clip-retrieval back --port 1234 --indices-paths indices_paths.json
 ```
+
+A `enable_faiss_memory_mapping=True` option can be passed to use an index with memory mapping.
+That decreases the memory usage to zero.
 
 A `--enable_hdf5 True` option can be passed to enable hdf5 caching for the metadata.
 HDF5 caching makes it possible to use the metadata with almost no memory usage.
