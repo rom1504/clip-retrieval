@@ -91,10 +91,10 @@ class ClipFront extends LitElement {
     src = (disp ? "" : "sss") +src
     */
     return html`
-    <figure style="margin:5px;width:150px;display:table">
+    <figure style="margin:5px;width:150px;display:table" 
+    style=${'margin:1px; ' + (this.blacklist[src] !== undefined ? 'display:none' : 'display:inline')}>
      ${this.displaySimilarities ? html`<p>${(image['similarity']).toFixed(4)}</p>` : ``}
       <img width="150" src="${src}" alt="${image['caption']}"" title="${image['caption']}"
-      style=${'margin:1px; ' + (this.blacklist[src] !== undefined ? 'display:none' : 'display:inline')}
       @error=${() => { this.blacklist = { ...this.blacklist, ...{ [src]: true } } }} />
       
       ${this.displayCaptions ? html`<figcaption>${image['caption']}</figcaption>` : ''}
@@ -217,7 +217,7 @@ class ClipFront extends LitElement {
       <label>Display captions<input type="checkbox" @click=${() => { this.displayCaptions = !this.displayCaptions }} /></label><br />
       <label>Display similarities<input type="checkbox" @click=${() => { this.displaySimilarities = !this.displaySimilarities }} /></label><br />
       <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>
-html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select>
+  html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select>
      </div>
 
     <div id="products">
