@@ -324,6 +324,7 @@ class ClipFront extends LitElement {
       <label>Display similarities<input type="checkbox" @click=${() => { this.displaySimilarities = !this.displaySimilarities }} /></label><br />
       <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>
   html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select>
+        <p>This UI may contain results with nudity and is best used by adults. The images are under their own copyright.</p>
      </div>
 
     <div id="products">
