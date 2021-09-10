@@ -1,3 +1,7 @@
+## 2.7.1
+
+* add folder name option and catch errors in clip index
+
 ## 2.7.0
 
 * package front in npm
