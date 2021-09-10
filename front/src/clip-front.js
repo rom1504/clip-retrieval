@@ -48,6 +48,7 @@ class ClipFront extends LitElement {
       service: { type: Object },
       images: { type: Array },
       image: { type: String },
+      imageUrl: { type: String },
       text: { type: String },
       numImages: { type: Number },
       modality: { type: String },
@@ -75,8 +76,13 @@ class ClipFront extends LitElement {
         this.imageSearch()
       }
     }
+    if (_changedProperties.has('imageUrl')) {
+      if (this.imageUrl !== undefined) {
+        this.imageUrlSearch()
+      }
+    }
     if (_changedProperties.has('modality')) {
-      if (this.image !== undefined || this.text !== '') {
+      if (this.image !== undefined || this.text !== '' || this.imageUrl !== undefined) {
         this.redoSearch()
       }
     }
@@ -85,14 +91,17 @@ class ClipFront extends LitElement {
   async redoSearch () {
     if (this.lastSearch === 'text') {
       this.textSearch()
-    } else {
+    } else if (this.lastSearch === 'image') {
       this.imageSearch()
+    } else if (this.lastSearch === 'imageUrl') {
+      this.imageUrlSearch()
     }
   }
 
   async textSearch () {
     this.image = undefined
-    const results = await this.service.callClipService(this.text, null, this.modality, this.numImages, this.currentIndex)
+    this.imageUrl = undefined
+    const results = await this.service.callClipService(this.text, null, null, this.modality, this.numImages, this.currentIndex)
     console.log(results)
     this.images = results
     this.lastSearch = 'text'
@@ -100,41 +109,21 @@ class ClipFront extends LitElement {
 
   async imageSearch () {
     this.text = ''
-    const results = await this.service.callClipService(null, this.image, this.modality, this.numImages, this.currentIndex)
+    this.imageUrl = undefined
+    const results = await this.service.callClipService(null, this.image, null, this.modality, this.numImages, this.currentIndex)
     console.log(results)
     this.images = results
     this.lastSearch = 'image'
   }
 
-  renderImage (image) {
-    let src
-    if (image['image'] !== undefined) {
-      src = `data:image/png;base64, ${image['image']}`
-    }
-    if (image['url'] !== undefined) {
-      src = image['url']
-    }
-    /*
-    // useful for testing broken images
-    const hashCode = s => s.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0)
-
-    const disp =  hashCode(src) % 2 == 0
-    src = (disp ? "" : "sss") +src
-    */
-    return html`
-    <figure style="margin:5px;width:150px;display:table" 
-    style=${'margin:1px; ' + (this.blacklist[src] !== undefined ? 'display:none' : 'display:inline')}>
-     ${this.displaySimilarities ? html`<p>${(image['similarity']).toFixed(4)}</p>` : ``}
-      <img width="150" src="${src}" alt="${image['caption']}"" title="${image['caption']}"
-      @error=${() => { this.blacklist = { ...this.blacklist, ...{ [src]: true } } }} />
-      
-      ${this.displayCaptions ? html`<figcaption>${image['caption']}</figcaption>` : ''}
-    
-    
-    </figure>
-    `
+  async imageUrlSearch () {
+    this.text = ''
+    this.image = undefined
+    const results = await this.service.callClipService(null, null, this.imageUrl, this.modality, this.numImages, this.currentIndex)
+    console.log(results)
+    this.images = results
+    this.lastSearch = 'imageUrl'
   }
-
   static get styles () {
     return css`
     input:-webkit-autofill,
@@ -185,6 +174,32 @@ class ClipFront extends LitElement {
       width: 22px;
       margin-left:1.5%;
       vertical-align:middle;
+      cursor:pointer;
+    }
+    .subImageSearch {
+      width: 22px;
+      height: 22px:
+      cursor:pointer;
+      float:right;
+      z-index:90;
+      display:None;
+    }
+    .subTextSearch {
+      width: 22px;
+      height: 22px:
+      cursor:pointer;
+      margin-left:5%;
+      margin-right:5%;
+      float:right;
+      z-index:90;
+      display:None;
+    }
+    figure:hover > .subImageSearch {
+      display:inline;
+      cursor:pointer;
+    }
+    figure:hover > .subTextSearch {
+      display:inline;
       cursor:pointer;
     }
     #products {
@@ -246,13 +261,51 @@ class ClipFront extends LitElement {
     }
   }
 
+  renderImage (image) {
+    let src
+    if (image['image'] !== undefined) {
+      src = `data:image/png;base64, ${image['image']}`
+    }
+    if (image['url'] !== undefined) {
+      src = image['url']
+    }
+    /*
+    // useful for testing broken images
+    const hashCode = s => s.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0)
+
+    const disp =  hashCode(src) % 2 == 0
+    src = (disp ? "" : "sss") +src
+    */
+    return html`
+    <figure style="margin:5px;width:150px;display:table" 
+    style=${'margin:1px; ' + (this.blacklist[src] !== undefined ? 'display:none' : 'display:inline')}>
+     ${this.displaySimilarities ? html`<p>${(image['similarity']).toFixed(4)}</p>` : ``}
+
+     <img src="assets/search.png" class="subTextSearch" @click=${() => { this.text = image['caption']; this.textSearch() }} />
+     <img src="assets/image-search.png" class="subImageSearch" @click=${() => {
+    if (image['image'] !== undefined) {
+      this.image = image['image']
+    } else if (image['url'] !== undefined) {
+      this.imageUrl = image['url']
+    }
+  }} />
+      <img width="150" src="${src}" alt="${image['caption']}"" title="${image['caption']}"
+      @error=${() => { this.blacklist = { ...this.blacklist, ...{ [src]: true } } }} />
+      
+      ${this.displayCaptions ? html`<figcaption>${image['caption']}</figcaption>` : ''}
+    
+    
+    </figure>
+    `
+  }
+
   render () {
     return html`
     <div id="all">
     <div id="searchLine">
       <span id="inputSearchBar">
-        <input id="searchBar" type="text" value=${this.text} @input=${e => { this.text = e.target.value }}/>
-        <img src="assets/search.png" id="textSearch" @click=${e => { this.textSearch() }} />
+        <input id="searchBar" type="text" .value=${this.text} @input=${e => { this.text = e.target.value }}/>
+        <img src="assets/search.png" id="textSearch" @click=${() => { this.textSearch() }} />
         <img src="assets/image-search.png" id="imageSearch" @click=${() => { this.shadowRoot.getElementById('filechooser').click() }} />
         <input type="file" id="filechooser" style="position:absolute;top:-100px" @change=${() =>
     this.updateImage(this.shadowRoot.getElementById('filechooser').files[0])}>
@@ -263,7 +316,8 @@ class ClipFront extends LitElement {
      
     </div>
     <div id="filter">
-    ${this.image !== undefined ? html`<img width="100px" src="data:image/png;base64, ${this.image}"" />` : ``}<br />
+      ${this.image !== undefined ? html`<img width="100px" src="data:image/png;base64, ${this.image}"" /><br />` : ``}
+      ${this.imageUrl !== undefined ? html`<img width="100px" src="${this.imageUrl}"" /><br />` : ``}
       <a href="https://github.com/rom1504/clip-retrieval">Clip retrieval</a> works by converting the text query to a CLIP embedding
       , then using that embedding to query a knn index of clip image embedddings<br /><br />
       <label>Display captions<input type="checkbox" @click=${() => { this.displayCaptions = !this.displayCaptions }} /></label><br />
