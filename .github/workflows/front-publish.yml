@@ -14,7 +14,9 @@ jobs:
       uses: actions/setup-node@master
       with:
         node-version: 14.0.0
-    - run: npm install
+    - run: cd front && npm install
+    - run: cd front && npm run build
+    - run: cd front && npm test
     - id: publish
       uses: JS-DevTools/npm-publish@v1
       with:
