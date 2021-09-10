@@ -1,5 +1,6 @@
 # clip-retrieval
 [![pypi](https://img.shields.io/pypi/v/clip-retrieval.svg)](https://pypi.python.org/pypi/clip-retrieval)
+[![NPM version](https://badge.fury.io/js/clip-retrieval-front.svg)](http://badge.fury.io/js/clip-retrieval-front)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/rom1504/clip-retrieval/blob/master/notebook/clip-retrieval-getting-started.ipynb)
 [![Try it on gitpod](https://img.shields.io/badge/try-on%20gitpod-brightgreen.svg)](https://gitpod.io/#https://github.com/rom1504/clip-retrieval)
 
@@ -147,7 +148,7 @@ This achieve low latency status (10ms). Throughput is about 100 query/s. For hig
 ## clip-front
 
 Clip front is a simple UI that connects to clip back and display the results.
-You use it at [clip-retrieval ui](https://rom1504.github.io/clip-retrieval/)
+You can use it at [clip-retrieval ui](https://rom1504.github.io/clip-retrieval/)
 
 Or you can run it yourself with:
 ```
