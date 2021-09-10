@@ -28,6 +28,7 @@ class ClipFront extends LitElement {
     this.numImages = 20
     this.models = []
     this.images = []
+    this.modality = 'image'
     this.blacklist = {}
     this.initModels()
   }
@@ -69,7 +70,7 @@ class ClipFront extends LitElement {
   }
 
   async search () {
-    const results = await this.service.callClipService(this.text, null, 'image', this.numImages, this.currentIndex)
+    const results = await this.service.callClipService(this.text, null, this.modality, this.numImages, this.currentIndex)
     console.log(results)
     this.images = results
   }
@@ -214,7 +215,9 @@ class ClipFront extends LitElement {
       <a href="https://github.com/rom1504/clip-retrieval">Clip retrieval</a> works by converting the text query to a CLIP embedding
       , then using that embedding to query a knn index of clip image embedddings<br /><br />
       <label>Display captions<input type="checkbox" @click=${() => { this.displayCaptions = !this.displayCaptions }} /></label><br />
-      <label>Display similarities<input type="checkbox" @click=${() => { this.displaySimilarities = !this.displaySimilarities }} /></label>
+      <label>Display similarities<input type="checkbox" @click=${() => { this.displaySimilarities = !this.displaySimilarities }} /></label><br />
+      <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>
+html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select>
      </div>
 
     <div id="products">
