@@ -1,4 +1,4 @@
-/* globals customElements */
+/* globals customElements, FileReader */
 import { LitElement, html, css } from 'lit-element'
 import ClipService from './clip-service'
 
@@ -22,7 +22,7 @@ class ClipFront extends LitElement {
     if (query != null) {
       this.text = query
     } else {
-      this.text = 'cat'
+      this.text = ''
     }
     this.service = new ClipService(this.backendHost)
     this.numImages = 20
@@ -30,6 +30,7 @@ class ClipFront extends LitElement {
     this.images = []
     this.modality = 'image'
     this.blacklist = {}
+    this.lastSearch = 'text'
     this.initModels()
   }
 
@@ -46,8 +47,10 @@ class ClipFront extends LitElement {
     return {
       service: { type: Object },
       images: { type: Array },
+      image: { type: String },
       text: { type: String },
       numImages: { type: Number },
+      modality: { type: String },
       models: { type: Array },
       currentIndex: { type: String },
       backendHost: { type: String },
@@ -59,7 +62,7 @@ class ClipFront extends LitElement {
 
   firstUpdated () {
     const searchElem = this.shadowRoot.getElementById('searchBar')
-    searchElem.addEventListener('keyup', e => { if (e.keyCode === 13) { this.search() } })
+    searchElem.addEventListener('keyup', e => { if (e.keyCode === 13) { this.textSearch() } })
   }
 
   updated (_changedProperties) {
@@ -67,12 +70,40 @@ class ClipFront extends LitElement {
       this.service.backend = this.backendHost
       this.initModels(true)
     }
+    if (_changedProperties.has('image')) {
+      if (this.image !== undefined) {
+        this.imageSearch()
+      }
+    }
+    if (_changedProperties.has('modality')) {
+      if (this.image !== undefined || this.text !== '') {
+        this.redoSearch()
+      }
+    }
   }
 
-  async search () {
+  async redoSearch () {
+    if (this.lastSearch === 'text') {
+      this.textSearch()
+    } else {
+      this.imageSearch()
+    }
+  }
+
+  async textSearch () {
+    this.image = undefined
     const results = await this.service.callClipService(this.text, null, this.modality, this.numImages, this.currentIndex)
     console.log(results)
     this.images = results
+    this.lastSearch = 'text'
+  }
+
+  async imageSearch () {
+    this.text = ''
+    const results = await this.service.callClipService(null, this.image, this.modality, this.numImages, this.currentIndex)
+    console.log(results)
+    this.images = results
+    this.lastSearch = 'image'
   }
 
   renderImage (image) {
@@ -144,6 +175,12 @@ class ClipFront extends LitElement {
     #inputSearchBar:hover > #searchBar {
       box-shadow: 0px 0px 7px  #ccc !important;
     }
+    #imageSearch {
+      width: 22px;
+      margin-left:0.5%;
+      vertical-align:middle;
+      cursor:pointer;
+    }
     #textSearch {
       width: 22px;
       margin-left:1.5%;
@@ -198,13 +235,27 @@ class ClipFront extends LitElement {
     `
   }
 
+  updateImage (file) {
+    var reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = () => {
+      this.image = reader.result.split(',')[1]
+    }
+    reader.onerror = (error) => {
+      console.log('Error: ', error)
+    }
+  }
+
   render () {
     return html`
     <div id="all">
     <div id="searchLine">
       <span id="inputSearchBar">
         <input id="searchBar" type="text" value=${this.text} @input=${e => { this.text = e.target.value }}/>
-        <img src="assets/search.png" id="textSearch" @click=${e => { this.search() }} />
+        <img src="assets/search.png" id="textSearch" @click=${e => { this.textSearch() }} />
+        <img src="assets/image-search.png" id="imageSearch" @click=${() => { this.shadowRoot.getElementById('filechooser').click() }} />
+        <input type="file" id="filechooser" style="position:absolute;top:-100px" @change=${() =>
+    this.updateImage(this.shadowRoot.getElementById('filechooser').files[0])}>
         Backend url: <input type="text" value=${this.backendHost} @input=${e => { this.backendHost = e.target.value }}/>
         Index: <select @input=${e => { this.currentIndex = e.target.value }}>${this.models.map(model =>
   html`<option value=${model} ?selected=${model === this.currentIndex}>${model}</option>`)}</select>
@@ -212,6 +263,7 @@ class ClipFront extends LitElement {
      
     </div>
     <div id="filter">
+    ${this.image !== undefined ? html`<img width="100px" src="data:image/png;base64, ${this.image}"" />` : ``}<br />
       <a href="https://github.com/rom1504/clip-retrieval">Clip retrieval</a> works by converting the text query to a CLIP embedding
       , then using that embedding to query a knn index of clip image embedddings<br /><br />
       <label>Display captions<input type="checkbox" @click=${() => { this.displayCaptions = !this.displayCaptions }} /></label><br />
