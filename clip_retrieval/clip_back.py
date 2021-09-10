@@ -61,7 +61,7 @@ class KnnService(Resource):
             binary_data = base64.b64decode(image_input)
             img_data = BytesIO(binary_data)
             img = Image.open(img_data)
-            prepro = self.preprocess(img).unsqueeze(0)
+            prepro = self.preprocess(img).unsqueeze(0).to(self.device)
             image_features = self.model.encode_image(prepro)
             image_features /= image_features.norm(dim=-1, keepdim=True)
             query = image_features.cpu().detach().numpy().astype("float32")
