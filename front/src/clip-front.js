@@ -50,7 +50,9 @@ class ClipFront extends LitElement {
       models: { type: Array },
       currentIndex: { type: String },
       backendHost: { type: String },
-      blacklist: { type: Object }
+      blacklist: { type: Object },
+      displaySimilarities: { type: Boolean },
+      displayCaptions: { type: Boolean }
     }
   }
 
@@ -87,9 +89,18 @@ class ClipFront extends LitElement {
     const disp =  hashCode(src) % 2 == 0
     src = (disp ? "" : "sss") +src
     */
-    return html`<img width="150" src="${src}" alt="${image['caption']}"" title="${image['caption']}"
-    style=${'margin:1px; ' + (this.blacklist[src] !== undefined ? 'display:none' : 'display:inline')}
-    @error=${() => { this.blacklist = { ...this.blacklist, ...{ [src]: true } } }} />`
+    return html`
+    <figure style="margin:5px;width:150px;display:table">
+     ${this.displaySimilarities ? html`<p>${(image['similarity']).toFixed(4)}</p>` : `` }
+      <img width="150" src="${src}" alt="${image['caption']}"" title="${image['caption']}"
+      style=${'margin:1px; ' + (this.blacklist[src] !== undefined ? 'display:none' : 'display:inline')}
+      @error=${() => { this.blacklist = { ...this.blacklist, ...{ [src]: true } } }} />
+      
+      ${this.displayCaptions ? html`<figcaption>${image['caption']}</figcaption>` : ''}
+    
+    
+    </figure>
+    `
   }
 
   static get styles () {
@@ -101,6 +112,14 @@ class ClipFront extends LitElement {
         -webkit-transition: "color 9999s ease-out, background-color 9999s ease-out";
         -webkit-transition-delay: 9999s;
     }
+
+
+    figcaption {
+      display: table-caption;
+      caption-side: bottom;
+      background: #fff;
+      padding: 0 0px 0px;
+    }​
 
     #searchBar, #searchBar:hover, #searchBar:focus, #searchBar:valid {
       border-radius: 25px;
@@ -135,6 +154,36 @@ class ClipFront extends LitElement {
       margin-top:50px;
       width:87%;
       float:right;
+      display: inline-grid;
+    }
+    @media (min-width: 400px) {
+      #products {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (min-width: 700px) {
+      #products{
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    
+    @media (min-width: 1000px) {
+      #products {
+        grid-template-columns: repeat(5, 1fr);
+      }
+    }
+    
+    @media (min-width: 1300px) {
+      #products {
+        grid-template-columns: repeat(7, 1fr);
+      }
+    }
+    
+    @media (min-width: 1600px) {
+      #products{
+        grid-template-columns: repeat(8, 1fr);
+      }
     }
     #filter {
       margin-top:50px;
@@ -163,8 +212,11 @@ class ClipFront extends LitElement {
      
     </div>
     <div id="filter">
-      <a href="https://github.com/rom1504/clip-retrieval">Clip retrieval</a> works by using embeddings computed with the CLIP model in an efficient knn index.<br />
-    </div>
+      <a href="https://github.com/rom1504/clip-retrieval">Clip retrieval</a> works by converting the text query to a CLIP embedding
+      , then using that embedding to query a knn index of clip image embedddings<br /><br />
+      <label>Display captions<input type="checkbox" @click=${() => this.displayCaptions = !this.displayCaptions} /></label><br />
+      <label>Display similarities<input type="checkbox" @click=${() => this.displaySimilarities = !this.displaySimilarities} /></label>
+     </div>
 
     <div id="products">
     ${this.images.map(image => this.renderImage(image))}
