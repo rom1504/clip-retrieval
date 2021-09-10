@@ -13,6 +13,8 @@ import os
 import fire
 from pathlib import Path
 import pandas as pd
+import urllib
+import io
 import numpy as np
 
 import h5py
@@ -32,6 +34,18 @@ class IndicesList(Resource):
     def get(self):
         return list(self.indices.keys())
 
+def download_image(url):
+    request = urllib.request.Request(
+        url,
+        data=None,
+        headers={
+            "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0"
+        },
+    )
+    with urllib.request.urlopen(request, timeout=10) as r:
+        img_stream = io.BytesIO(r.read())
+    return img_stream
+
 class KnnService(Resource):
     def __init__(self, **kwargs):
         super().__init__()
@@ -45,6 +59,7 @@ class KnnService(Resource):
         json_data = request.get_json(force=True)
         text_input = json_data["text"] if "text" in json_data else None
         image_input = json_data["image"] if "image" in json_data else None
+        image_url_input = json_data["image_url"] if "image_url" in json_data else None
         modality = json_data["modality"]
         num_images = json_data["num_images"]
         indice_name = json_data["indice_name"]
@@ -57,9 +72,12 @@ class KnnService(Resource):
             text_features = self.model.encode_text(text)
             text_features /= text_features.norm(dim=-1, keepdim=True)
             query = text_features.cpu().detach().numpy().astype("float32")
-        if image_input is not None:
-            binary_data = base64.b64decode(image_input)
-            img_data = BytesIO(binary_data)
+        if image_input is not None or image_url_input is not None:
+            if image_input is not None:
+                binary_data = base64.b64decode(image_input)
+                img_data = BytesIO(binary_data)
+            elif image_url_input is not None:
+                img_data = download_image(image_url_input)
             img = Image.open(img_data)
             prepro = self.preprocess(img).unsqueeze(0).to(self.device)
             image_features = self.model.encode_image(prepro)
