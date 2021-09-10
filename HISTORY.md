@@ -1,3 +1,7 @@
+## 2.6.0
+
+* implement image url search in clip back
+
 ## 2.5.0
 
 * add memory mapping option in clip back : 0 memory usage to load an index!
