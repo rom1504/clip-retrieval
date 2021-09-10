@@ -1,3 +1,7 @@
+## 2.7.0
+
+* package front in npm
+
 ## 2.6.0
 
 * implement image url search in clip back
