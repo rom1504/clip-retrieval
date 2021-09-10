@@ -1,0 +1,34 @@
+name: npm-publish
+on:
+  push:
+    branches:
+      - main # Change this to your default branch
+jobs:
+  npm-publish:
+    name: npm-publish
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@master
+    - name: Set up Node.js
+      uses: actions/setup-node@master
+      with:
+        node-version: 14.0.0
+    - run: npm install
+    - id: publish
+      uses: JS-DevTools/npm-publish@v1
+      with:
+        token: ${{ secrets.NPM_AUTH_TOKEN }}
+        package: front/package.json
+    - name: Create Release
+      if: steps.publish.outputs.type != 'none'
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.publish.outputs.version }}
+        release_name: Release ${{ steps.publish.outputs.version }}
+        body: ${{ steps.publish.outputs.version }}
+        draft: false
+        prerelease: false

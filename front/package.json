@@ -1,9 +1,16 @@
 {
-  "name": "clip-front",
+  "name": "clip-retrieval-front",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "compression": "^1.7.4",
+    "express": "^4.17.1"
+  },
+  "bin": {
+    "clip-retrieval-front": "./server.js"
+  },
+  "devDependencies": {
     "@vaadin/vaadin-button": "^2.4.0",
     "@vaadin/vaadin-combo-box": "^6.0.1",
     "@vaadin/vaadin-select": "^3.0.0",
@@ -12,9 +19,7 @@
     "dateformat": "^3.0.3",
     "json-bigint": "^1.0.0",
     "lit-element": "^2.0.1",
-    "lit-html": "^1.0.0"
-  },
-  "devDependencies": {
+    "lit-html": "^1.0.0",
     "clean-webpack-plugin": "^0.1.19",
     "copy-webpack-plugin": "^4.5.2",
     "css-loader": "^2.1.0",
@@ -34,10 +39,10 @@
     "build": "webpack --env production",
     "lint": "standard",
     "fix": "standard --fix",
-    "prod-start": "npm run build && http-server build/",
+    "prod-start": "npm run build && node server.js 3005",
     "start": "webpack-dev-server --env development",
     "test": "npm run lint"
   },
-  "author": "",
-  "license": "ISC"
+  "author": "Romain Beaumont",
+  "license": "MIT"
 }

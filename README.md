@@ -147,8 +147,17 @@ This achieve low latency status (10ms). Throughput is about 100 query/s. For hig
 ## clip-front
 
 Clip front is a simple UI that connects to clip back and display the results.
-To run it, go to [front](front) and run `npm install` then `npm start`.
-You can also directly use it at [clip-retrieval ui](https://rom1504.github.io/clip-retrieval/)
+You use it at [clip-retrieval ui](https://rom1504.github.io/clip-retrieval/)
+
+Or you can run it yourself with:
+```
+npm install -g clip-retrieval-front
+clip-retrieval-front 3005
+```
+
+### Development
+
+For development it, go to [front](front) and run `npm install` then `npm start`.
 
 ## For development
 
