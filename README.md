@@ -146,6 +146,8 @@ and returns:
 
 This achieve low latency status (10ms). Throughput is about 100 query/s. For high throughput, using a grpc server is required.
 
+This backends also exposes a prometheus `/metrics` endpoint as well as an human readable summary at `/metrics-summary`
+
 ## clip-front
 
 Clip front is a simple UI that connects to clip back and display the results.

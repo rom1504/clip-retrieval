@@ -42,7 +42,8 @@ if __name__ == "__main__":
             'autofaiss',
             'pyyaml',
             'webdataset',
-            'h5py'
+            'h5py',
+            'prometheus-client'
         ],
         classifiers=[
             'Development Status :: 4 - Beta',
