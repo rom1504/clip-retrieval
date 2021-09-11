@@ -1,3 +1,7 @@
+## 2.8.0
+
+* add nb cores option in clip index
+
 ## 2.7.1
 
 * add folder name option and catch errors in clip index
