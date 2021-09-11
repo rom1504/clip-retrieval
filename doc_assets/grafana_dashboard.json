@@ -1,0 +1,328 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "8.0.6"
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "full_knn_request_time_sum / full_knn_request_time_count",
+          "interval": "",
+          "legendFormat": "full",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "metadata_get_time_sum / metadata_get_time_count",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "metadata",
+          "refId": "B"
+        },
+        {
+          "exemplar": true,
+          "expr": "image_clip_inference_time_sum / image_clip_inference_time_count",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "image clip inference",
+          "refId": "C"
+        },
+        {
+          "exemplar": true,
+          "expr": "text_clip_inference_time_sum / text_clip_inference_time_count",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "text clip inference",
+          "refId": "D"
+        },
+        {
+          "exemplar": true,
+          "expr": "download_time_sum / download_time_count",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "download time",
+          "refId": "E"
+        },
+        {
+          "exemplar": true,
+          "expr": "knn_index_time_sum / knn_index_time_count",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "knn index time",
+          "refId": "F"
+        },
+        {
+          "exemplar": true,
+          "expr": "image_prepro_time_sum / image_prepro_time_count",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "image prepro",
+          "refId": "G"
+        },
+        {
+          "exemplar": true,
+          "expr": "text_prepro_time_sum / text_prepro_time_count",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "text prepro",
+          "refId": "H"
+        }
+      ],
+      "title": "Average latencies",
+      "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "increase(full_knn_request_time_count[$__range])\n",
+          "interval": "",
+          "legendFormat": "full",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "increase(metadata_get_time_count[$__range])\n",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "metadata",
+          "refId": "B"
+        },
+        {
+          "exemplar": true,
+          "expr": "increase(image_clip_inference_time_count[$__range])",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "image clip inference",
+          "refId": "C"
+        },
+        {
+          "exemplar": true,
+          "expr": "increase(text_clip_inference_time_count[$__range])",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "text clip inference",
+          "refId": "D"
+        },
+        {
+          "exemplar": true,
+          "expr": "increase(download_time_count[$__range])",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "download time",
+          "refId": "E"
+        },
+        {
+          "exemplar": true,
+          "expr": "increase(knn_index_time_count[$__range])",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "knn index time",
+          "refId": "F"
+        },
+        {
+          "exemplar": true,
+          "expr": "increase(image_prepro_time_count[$__range])",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "image prepro",
+          "refId": "G"
+        },
+        {
+          "exemplar": true,
+          "expr": "increase(text_prepro_time_count[$__range])",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "text prepro",
+          "refId": "H"
+        }
+      ],
+      "title": "Request count",
+      "type": "timeseries"
+    }
+  ],
+  "schemaVersion": 30,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Clip",
+  "uid": "zF8DzpI7z",
+  "version": 2
+}

@@ -15,7 +15,7 @@ Easily compute clip embeddings and build a clip retrieval system with them. 100M
 End to end this make it possible to build a simple semantic search system.
 Interested to learn about semantic search in general ? You can read my [medium post](https://rom1504.medium.com/semantic-search-with-embeddings-index-anything-8fb18556443c) on the topic.
 
-[<img src="./clip-front-pic.png" alt="viewer" width="500">](https://rom1504.github.io/clip-retrieval/)
+[<img src="https://github.com/rom1504/clip-retrieval/raw/main/doc_assets/clip-front-pic.png" alt="clip front" width="500">](https://rom1504.github.io/clip-retrieval/)
 
 ## Who is using clip retrieval ?
 
@@ -125,11 +125,13 @@ At this point you have a simple flask server running on port 1234 and that can a
 {
     "text": "a text query",
     "image": "a base64 image",
+    "image_url": "http://some-url.com/a.jpg",
     "modality": "image", // image or text index to use
     "num_images": 4, // number of output images
     "indice_name": "example_index"
 }
 ```
+text, image and image_url are mutually exclusive
 and returns:
 ```js
 [
@@ -143,10 +145,31 @@ and returns:
     }
 ]
 ```
+Each object may also contain an url field if the metadata provides it.
 
-This achieve low latency status (10ms). Throughput is about 100 query/s. For high throughput, using a grpc server is required.
+### Clip back: Benchmark and monitoring
 
-This backends also exposes a prometheus `/metrics` endpoint as well as an human readable summary at `/metrics-summary`
+This backends has a 50ms latency if using memory mapped indices and metadata. Throughput is about 20 query/s. For high throughput, using a grpc server is required as well as a GPU for fast clip inference, turning off memory mapping options can also speed up requests, at the cost of high ram usage.
+
+This backends also exposes a prometheus `/metrics` endpoint as well as an human readable summary at `/metrics-summary`.
+This can (optionally) be used to setup a [grafana dashboard](doc_assets/grafana_dashboard.json) for monitoring:
+
+[<img src="https://github.com/rom1504/clip-retrieval/raw/main/doc_assets/clip-back-grafana.png" alt="grafana" width="1200">](https://github.com/rom1504/clip-retrieval/raw/main/doc_assets/clip-back-grafana.png)
+
+It can be seen on this dashboard that the slowest part of any call is fetching the image by its url in case of image url search, taking up to 300ms.
+For text queries or image queries, the latency is about 50ms.
+Here is an example of output in the metrics summary:
+```
+Among 20.0 calls to the knn end point with an average latency of 0.1889s per request, the step costs are (in order): 
+                        name                               description  calls  average proportion
+0              download_time             Time spent downloading an url      6  0.3215s     170.2%
+1          metadata_get_time            Time spent retrieving metadata     20  0.0415s      21.9%
+2             knn_index_time       Time spent doing a knn on the index     20  0.0267s      14.1%
+3  image_clip_inference_time   Time spent doing a image clip inference      6  0.0206s      10.9%
+4   text_clip_inference_time    Time spent doing a text clip inference     14  0.0186s       9.8%
+5          image_prepro_time  Time spent doing the image preprocessing      6  0.0097s       5.2%
+6           text_prepro_time   Time spent doing the text preprocessing     14  0.0020s       1.0%
+```
 
 ## clip-front
 
