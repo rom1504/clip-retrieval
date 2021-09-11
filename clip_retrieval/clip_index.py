@@ -19,7 +19,7 @@ def quantize(emb_folder, index_folder, subfolder_name, index_name, max_index_mem
             shutil.move(index_file, index_folder+"/"+index_name)
             os.rmdir(tmp_output_folder)
     except Exception as e:
-        logging.error(traceback.format_exc())
+        logging.error(traceback.format_exc(e))
 
 def clip_index(embeddings_folder, index_folder, max_index_memory_usage="4G", current_memory_available="16G", 
             copy_metadata=True, image_subfolder="img_emb", text_subfolder="text_emb", nb_cores=None):
