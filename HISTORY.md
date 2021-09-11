@@ -1,3 +1,7 @@
+## 2.8.1
+
+* properly display errors in clip index
+
 ## 2.8.0
 
 * add nb cores option in clip index
