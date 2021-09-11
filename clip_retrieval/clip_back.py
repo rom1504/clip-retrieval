@@ -42,12 +42,13 @@ TEXT_PREPRO_TIME = Histogram('text_prepro_time', 'Time spent doing the text prep
 def metric_to_average(metric):
     metric_data = metric.collect()[0]
     metric_name = metric_data.name
+    metric_description = metric_data.documentation
     samples = metric_data.samples
     metric_sum = [sample.value for sample in samples if sample.name == metric_name+"_sum"][0]
     metric_count = [sample.value for sample in samples if sample.name == metric_name+"_count"][0]
     if metric_count == 0:
-        return metric_name, 0, 0.0
-    return metric_name, metric_count, 1.0*metric_sum/metric_count
+        return metric_name, metric_description, 0, 0.0
+    return metric_name, metric_description, metric_count, 1.0*metric_sum/metric_count
 
 class Health(Resource):
     def get(self):
@@ -58,12 +59,13 @@ class MetricsSummary(Resource):
         super().__init__()
 
     def get(self):
-        full_knn_name, full_knn_count, full_knn_avg = metric_to_average(FULL_KNN_REQUEST_TIME)
+        full_knn_name, full_description, full_knn_count, full_knn_avg = metric_to_average(FULL_KNN_REQUEST_TIME)
         if full_knn_count == 0:
             s = "No request yet, go do some"
         else:
-            sub_metrics = sorted([(name, metric_count, avg, avg/full_knn_avg)
-            for (name, metric_count, avg) in [metric_to_average(metric) for metric in [
+            sub_metrics = sorted([(name, description, metric_count, avg, avg/full_knn_avg)
+            for (name, description, metric_count, avg) in [metric_to_average(metric) for metric in [
+                DOWNLOAD_TIME,
                 TEXT_CLIP_INFERENCE_TIME,
                 IMAGE_CLIP_INFERENCE_TIME,
                 METADATA_GET_TIME,
@@ -72,13 +74,13 @@ class MetricsSummary(Resource):
                 TEXT_PREPRO_TIME,
             ]]], key=lambda e:-e[2])
 
-            sub_metrics_strings = [(name, int(metric_count), f"{avg:0.4f}s", f"{proportion*100:0.1f}%") \
-                for name, metric_count, avg, proportion in sub_metrics]
+            sub_metrics_strings = [(name, description, int(metric_count), f"{avg:0.4f}s", f"{proportion*100:0.1f}%") \
+                for name, description, metric_count, avg, proportion in sub_metrics]
             
             s=""
             s+=f"Among {full_knn_count} calls to the knn end point with an average latency of {full_knn_avg:0.4f}s "+\
             "per request, the step costs are (in order): \n\n"
-            df = pd.DataFrame(data=sub_metrics_strings, columns=("name", "calls", "average", "proportion"))
+            df = pd.DataFrame(data=sub_metrics_strings, columns=("name", "description", "calls", "average", "proportion"))
             s+=df.to_string()
 
         response = make_response(s, 200)
