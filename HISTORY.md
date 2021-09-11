@@ -1,3 +1,7 @@
+## 2.9.2
+
+* fix metrics sorting in metrics summary
+
 ## 2.9.1
 
 * add download url time and descriptions in metrics summary endpoint
