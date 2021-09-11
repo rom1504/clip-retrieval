@@ -72,7 +72,7 @@ class MetricsSummary(Resource):
                 KNN_INDEX_TIME,
                 IMAGE_PREPRO_TIME,
                 TEXT_PREPRO_TIME,
-            ]]], key=lambda e:-e[2])
+            ]]], key=lambda e:-e[3])
 
             sub_metrics_strings = [(name, description, int(metric_count), f"{avg:0.4f}s", f"{proportion*100:0.1f}%") \
                 for name, description, metric_count, avg, proportion in sub_metrics]
