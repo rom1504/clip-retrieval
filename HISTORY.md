@@ -1,3 +1,7 @@
+## 2.9.0
+
+* add prometheus endpoint in clip back
+
 ## 2.8.1
 
 * properly display errors in clip index
