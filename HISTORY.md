@@ -1,3 +1,7 @@
+## 2.9.1
+
+* add download url time and descriptions in metrics summary endpoint
+
 ## 2.9.0
 
 * add prometheus endpoint in clip back
