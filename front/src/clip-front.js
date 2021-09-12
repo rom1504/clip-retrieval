@@ -296,7 +296,7 @@ class ClipFront extends LitElement {
       <img width="150" src="${src}" alt="${image['caption']}"" title="${image['caption']}"
       @error=${() => { this.blacklist = { ...this.blacklist, ...{ [src]: true } } }} />
       
-      ${this.displayCaptions ? html`<figcaption style="font-size:13px;width:150px;">
+      ${this.displayCaptions ? html`<figcaption style="font-size:16px;width:150px;">
       ${image['caption'].length > 50 && !this.displayFullCaptions ? image['caption'].substr(0, 50) + '...' : image['caption']}</figcaption>` : ''}
     
     
