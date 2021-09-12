@@ -331,6 +331,7 @@ class ClipFront extends LitElement {
       <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>
   html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select>
         <p>This UI may contain results with nudity and is best used by adults. The images are under their own copyright.</p>
+        <p>Are you seeing near duplicates ? KNN search are good at spotting those, especially so in large datasets.</p>
      </div>
 
     <div id="products">
