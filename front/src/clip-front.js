@@ -9,6 +9,7 @@ class ClipFront extends LitElement {
     const back = urlParams.get('back')
     const index = urlParams.get('index')
     const query = urlParams.get('query')
+    const imageUrl = urlParams.get('imageUrl')
     if (index != null) {
       this.currentIndex = index
     } else {
@@ -35,6 +36,7 @@ class ClipFront extends LitElement {
     this.displaySimilarities = false
     this.displayFullCaptions = false
     this.firstLoad = true
+    this.imageUrl = imageUrl === null ? undefined : imageUrl
     this.initIndices()
   }
 
@@ -76,15 +78,21 @@ class ClipFront extends LitElement {
       this.service.backend = this.backendHost
       this.initIndices(!this.firstLoad)
       this.firstLoad = false
+      this.setUrlParams()
+    }
+    if (_changedProperties.has('currentIndex')) {
+      this.setUrlParams()
     }
     if (_changedProperties.has('image')) {
       if (this.image !== undefined) {
         this.imageSearch()
+        return
       }
     }
     if (_changedProperties.has('imageUrl')) {
       if (this.imageUrl !== undefined) {
         this.imageUrlSearch()
+        return
       }
     }
     if (_changedProperties.has('modality')) {
@@ -104,6 +112,23 @@ class ClipFront extends LitElement {
     }
   }
 
+  setUrlParams() {
+    const urlParams = new URLSearchParams(window.location.search)
+    if (this.text !== '') {
+      urlParams.set('query', this.text)
+    } else {
+      urlParams.delete('query')
+    }
+    if (this.imageUrl !== undefined) {
+      urlParams.set('imageUrl', this.imageUrl)
+    } else {
+      urlParams.delete('imageUrl')
+    }
+    urlParams.set('back', this.backendHost)
+    urlParams.set('index', this.currentIndex)
+    window.history.pushState({}, '', '?' + urlParams.toString())
+  }
+
   async textSearch () {
     this.image = undefined
     this.imageUrl = undefined
@@ -111,6 +136,7 @@ class ClipFront extends LitElement {
     console.log(results)
     this.images = results
     this.lastSearch = 'text'
+    this.setUrlParams()
   }
 
   async imageSearch () {
@@ -120,6 +146,7 @@ class ClipFront extends LitElement {
     console.log(results)
     this.images = results
     this.lastSearch = 'image'
+    this.setUrlParams()
   }
 
   async imageUrlSearch () {
@@ -129,6 +156,7 @@ class ClipFront extends LitElement {
     console.log(results)
     this.images = results
     this.lastSearch = 'imageUrl'
+    this.setUrlParams()
   }
   static get styles () {
     return css`
