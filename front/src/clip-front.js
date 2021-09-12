@@ -31,6 +31,9 @@ class ClipFront extends LitElement {
     this.modality = 'image'
     this.blacklist = {}
     this.lastSearch = 'text'
+    this.displayCaptions = true
+    this.displaySimilarities = false
+    this.displayFullCaptions = false
     this.initModels()
   }
 
@@ -57,7 +60,8 @@ class ClipFront extends LitElement {
       backendHost: { type: String },
       blacklist: { type: Object },
       displaySimilarities: { type: Boolean },
-      displayCaptions: { type: Boolean }
+      displayCaptions: { type: Boolean },
+      displayFullCaptions: { type: Boolean }
     }
   }
 
@@ -292,7 +296,8 @@ class ClipFront extends LitElement {
       <img width="150" src="${src}" alt="${image['caption']}"" title="${image['caption']}"
       @error=${() => { this.blacklist = { ...this.blacklist, ...{ [src]: true } } }} />
       
-      ${this.displayCaptions ? html`<figcaption>${image['caption']}</figcaption>` : ''}
+      ${this.displayCaptions ? html`<figcaption style="font-size:13px;width:150px;">
+      ${image['caption'].length > 50 && !this.displayFullCaptions ? image['caption'].substr(0, 50) + '...' : image['caption']}</figcaption>` : ''}
     
     
     </figure>
@@ -320,8 +325,9 @@ class ClipFront extends LitElement {
       ${this.imageUrl !== undefined ? html`<img width="100px" src="${this.imageUrl}"" /><br />` : ``}
       <a href="https://github.com/rom1504/clip-retrieval">Clip retrieval</a> works by converting the text query to a CLIP embedding
       , then using that embedding to query a knn index of clip image embedddings<br /><br />
-      <label>Display captions<input type="checkbox" @click=${() => { this.displayCaptions = !this.displayCaptions }} /></label><br />
-      <label>Display similarities<input type="checkbox" @click=${() => { this.displaySimilarities = !this.displaySimilarities }} /></label><br />
+      <label>Display captions<input type="checkbox" ?checked="${this.displayCaptions}" @click=${() => { this.displayCaptions = !this.displayCaptions }} /></label><br />
+      <label>Display full captions<input type="checkbox" ?checked="${this.displayFullCaptions}" @click=${() => { this.displayFullCaptions = !this.displayFullCaptions }} /></label><br />
+      <label>Display similarities<input type="checkbox" ?checked="${this.displaySimilarities}" @click=${() => { this.displaySimilarities = !this.displaySimilarities }} /></label><br />
       <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>
   html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select>
         <p>This UI may contain results with nudity and is best used by adults. The images are under their own copyright.</p>
