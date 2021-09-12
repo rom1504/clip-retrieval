@@ -150,7 +150,7 @@ class ClipFront extends LitElement {
       border-color: #ddd;
       background-color:white;
       border-width:1px;
-      width:60%;
+      width:90%;
       padding:15px;
       outline: none;
       border-style: solid;
@@ -208,11 +208,11 @@ class ClipFront extends LitElement {
     }
     #products {
       margin-top:50px;
-      width:87%;
+      width:85%;
       float:right;
       display: inline-grid;
     }
-    @media (min-width: 400px) {
+    @media (min-width: 500px) {
       #products {
         grid-template-columns: repeat(2, 1fr);
       }
@@ -242,13 +242,50 @@ class ClipFront extends LitElement {
       }
     }
     #filter {
-      margin-top:50px;
-      width:13%;
+      position:absolute;
+      top:20px;
+      width:12%;
       float:left;
     }
     #searchLine {
-        
-      margin-left:13%;
+      margin-left:15%;
+    }
+
+    figcaption {
+      font-size:16px;
+    }
+
+    figure,img.pic,figcaption {
+      width:150px;
+    }
+
+    @media (max-width: 500px) {
+
+      #searchBar, #searchBar:hover, #searchBar:focus, #searchBar:valid {
+        width:60%;
+      }
+      #filter {
+        font-size:14px;
+        width:100px;
+      }
+
+      #products {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      figure,img.pic,figcaption {
+      width:70px;
+      }
+      #searchLine {
+        margin-left:100px;
+      }
+
+      figcaption {
+        font-size:12px;
+      }
+
+    #products {
+      width:60%;
+    }
     }
 
     `
@@ -281,7 +318,7 @@ class ClipFront extends LitElement {
     src = (disp ? "" : "sss") +src
     */
     return html`
-    <figure style="margin:5px;width:150px;display:table" 
+    <figure style="margin:5px;display:table" 
     style=${'margin:1px; ' + (this.blacklist[src] !== undefined ? 'display:none' : 'display:inline')}>
      ${this.displaySimilarities ? html`<p>${(image['similarity']).toFixed(4)}</p>` : ``}
 
@@ -293,10 +330,10 @@ class ClipFront extends LitElement {
       this.imageUrl = image['url']
     }
   }} />
-      <img width="150" src="${src}" alt="${image['caption']}"" title="${image['caption']}"
+      <img class="pic" src="${src}" alt="${image['caption']}"" title="${image['caption']}"
       @error=${() => { this.blacklist = { ...this.blacklist, ...{ [src]: true } } }} />
       
-      ${this.displayCaptions ? html`<figcaption style="font-size:16px;width:150px;">
+      ${this.displayCaptions ? html`<figcaption>
       ${image['caption'].length > 50 && !this.displayFullCaptions ? image['caption'].substr(0, 50) + '...' : image['caption']}</figcaption>` : ''}
     
     
@@ -314,13 +351,13 @@ class ClipFront extends LitElement {
         <img src="assets/image-search.png" id="imageSearch" @click=${() => { this.shadowRoot.getElementById('filechooser').click() }} />
         <input type="file" id="filechooser" style="position:absolute;top:-100px" @change=${() =>
     this.updateImage(this.shadowRoot.getElementById('filechooser').files[0])}>
-        Backend url: <input type="text" value=${this.backendHost} @input=${e => { this.backendHost = e.target.value }}/>
-        Index: <select @input=${e => { this.currentIndex = e.target.value }}>${this.models.map(model =>
-  html`<option value=${model} ?selected=${model === this.currentIndex}>${model}</option>`)}</select>
       </span>
      
     </div>
     <div id="filter">
+    Backend url: <br /><input type="text" style="width:80px" value=${this.backendHost} @input=${e => { this.backendHost = e.target.value }}/><br />
+    Index: <br /><select style="margin-bottom:50px;" @input=${e => { this.currentIndex = e.target.value }}>${this.models.map(model =>
+  html`<option value=${model} ?selected=${model === this.currentIndex}>${model}</option>`)}</select><br />
       ${this.image !== undefined ? html`<img width="100px" src="data:image/png;base64, ${this.image}"" /><br />` : ``}
       ${this.imageUrl !== undefined ? html`<img width="100px" src="${this.imageUrl}"" /><br />` : ``}
       <a href="https://github.com/rom1504/clip-retrieval">Clip retrieval</a> works by converting the text query to a CLIP embedding
