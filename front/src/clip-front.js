@@ -95,7 +95,7 @@ class ClipFront extends LitElement {
         return
       }
     }
-    if (_changedProperties.has('modality')) {
+    if (_changedProperties.has('modality') || _changedProperties.has('currentIndex')) {
       if (this.image !== undefined || this.text !== '' || this.imageUrl !== undefined) {
         this.redoSearch()
       }
@@ -112,7 +112,7 @@ class ClipFront extends LitElement {
     }
   }
 
-  setUrlParams() {
+  setUrlParams () {
     const urlParams = new URLSearchParams(window.location.search)
     if (this.text !== '') {
       urlParams.set('query', this.text)
