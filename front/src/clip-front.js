@@ -7,10 +7,10 @@ class ClipFront extends LitElement {
     super()
     const urlParams = new URLSearchParams(window.location.search)
     const back = urlParams.get('back')
-    const model = urlParams.get('model')
+    const index = urlParams.get('index')
     const query = urlParams.get('query')
-    if (model != null) {
-      this.currentIndex = model
+    if (index != null) {
+      this.currentIndex = index
     } else {
       this.currentIndex = ''
     }
@@ -26,7 +26,7 @@ class ClipFront extends LitElement {
     }
     this.service = new ClipService(this.backendHost)
     this.numImages = 20
-    this.models = []
+    this.indices = []
     this.images = []
     this.modality = 'image'
     this.blacklist = {}
@@ -34,14 +34,15 @@ class ClipFront extends LitElement {
     this.displayCaptions = true
     this.displaySimilarities = false
     this.displayFullCaptions = false
-    this.initModels()
+    this.firstLoad = true
+    this.initIndices()
   }
 
-  initModels (forceChange) {
+  initIndices (forceChange) {
     this.service.getIndices().then(l => {
-      this.models = l
+      this.indices = l
       if (forceChange || this.currentIndex === '') {
-        this.currentIndex = this.models[0]
+        this.currentIndex = this.indices[0]
       }
     })
   }
@@ -55,7 +56,7 @@ class ClipFront extends LitElement {
       text: { type: String },
       numImages: { type: Number },
       modality: { type: String },
-      models: { type: Array },
+      indices: { type: Array },
       currentIndex: { type: String },
       backendHost: { type: String },
       blacklist: { type: Object },
@@ -73,7 +74,8 @@ class ClipFront extends LitElement {
   updated (_changedProperties) {
     if (_changedProperties.has('backendHost')) {
       this.service.backend = this.backendHost
-      this.initModels(true)
+      this.initIndices(!this.firstLoad)
+      this.firstLoad = false
     }
     if (_changedProperties.has('image')) {
       if (this.image !== undefined) {
@@ -356,8 +358,8 @@ class ClipFront extends LitElement {
     </div>
     <div id="filter">
     Backend url: <br /><input type="text" style="width:80px" value=${this.backendHost} @input=${e => { this.backendHost = e.target.value }}/><br />
-    Index: <br /><select style="margin-bottom:50px;" @input=${e => { this.currentIndex = e.target.value }}>${this.models.map(model =>
-  html`<option value=${model} ?selected=${model === this.currentIndex}>${model}</option>`)}</select><br />
+    Index: <br /><select style="margin-bottom:50px;" @input=${e => { this.currentIndex = e.target.value }}>${this.indices.map(index =>
+  html`<option value=${index} ?selected=${index === this.currentIndex}>${index}</option>`)}</select><br />
       ${this.image !== undefined ? html`<img width="100px" src="data:image/png;base64, ${this.image}"" /><br />` : ``}
       ${this.imageUrl !== undefined ? html`<img width="100px" src="${this.imageUrl}"" /><br />` : ``}
       <a href="https://github.com/rom1504/clip-retrieval">Clip retrieval</a> works by converting the text query to a CLIP embedding
