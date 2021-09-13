@@ -7,10 +7,11 @@ class ClipFront extends LitElement {
     super()
     const urlParams = new URLSearchParams(window.location.search)
     const back = urlParams.get('back')
-    const model = urlParams.get('model')
+    const index = urlParams.get('index')
     const query = urlParams.get('query')
-    if (model != null) {
-      this.currentIndex = model
+    const imageUrl = urlParams.get('imageUrl')
+    if (index != null) {
+      this.currentIndex = index
     } else {
       this.currentIndex = ''
     }
@@ -26,7 +27,7 @@ class ClipFront extends LitElement {
     }
     this.service = new ClipService(this.backendHost)
     this.numImages = 20
-    this.models = []
+    this.indices = []
     this.images = []
     this.modality = 'image'
     this.blacklist = {}
@@ -34,14 +35,16 @@ class ClipFront extends LitElement {
     this.displayCaptions = true
     this.displaySimilarities = false
     this.displayFullCaptions = false
-    this.initModels()
+    this.firstLoad = true
+    this.imageUrl = imageUrl === null ? undefined : imageUrl
+    this.initIndices()
   }
 
-  initModels (forceChange) {
+  initIndices (forceChange) {
     this.service.getIndices().then(l => {
-      this.models = l
+      this.indices = l
       if (forceChange || this.currentIndex === '') {
-        this.currentIndex = this.models[0]
+        this.currentIndex = this.indices[0]
       }
     })
   }
@@ -55,7 +58,7 @@ class ClipFront extends LitElement {
       text: { type: String },
       numImages: { type: Number },
       modality: { type: String },
-      models: { type: Array },
+      indices: { type: Array },
       currentIndex: { type: String },
       backendHost: { type: String },
       blacklist: { type: Object },
@@ -73,19 +76,26 @@ class ClipFront extends LitElement {
   updated (_changedProperties) {
     if (_changedProperties.has('backendHost')) {
       this.service.backend = this.backendHost
-      this.initModels(true)
+      this.initIndices(!this.firstLoad)
+      this.firstLoad = false
+      this.setUrlParams()
+    }
+    if (_changedProperties.has('currentIndex')) {
+      this.setUrlParams()
     }
     if (_changedProperties.has('image')) {
       if (this.image !== undefined) {
         this.imageSearch()
+        return
       }
     }
     if (_changedProperties.has('imageUrl')) {
       if (this.imageUrl !== undefined) {
         this.imageUrlSearch()
+        return
       }
     }
-    if (_changedProperties.has('modality')) {
+    if (_changedProperties.has('modality') || _changedProperties.has('currentIndex')) {
       if (this.image !== undefined || this.text !== '' || this.imageUrl !== undefined) {
         this.redoSearch()
       }
@@ -102,13 +112,34 @@ class ClipFront extends LitElement {
     }
   }
 
+  setUrlParams () {
+    const urlParams = new URLSearchParams(window.location.search)
+    if (this.text !== '') {
+      urlParams.set('query', this.text)
+    } else {
+      urlParams.delete('query')
+    }
+    if (this.imageUrl !== undefined) {
+      urlParams.set('imageUrl', this.imageUrl)
+    } else {
+      urlParams.delete('imageUrl')
+    }
+    urlParams.set('back', this.backendHost)
+    urlParams.set('index', this.currentIndex)
+    window.history.pushState({}, '', '?' + urlParams.toString())
+  }
+
   async textSearch () {
+    if (this.text === '') {
+      return
+    }
     this.image = undefined
     this.imageUrl = undefined
     const results = await this.service.callClipService(this.text, null, null, this.modality, this.numImages, this.currentIndex)
     console.log(results)
     this.images = results
     this.lastSearch = 'text'
+    this.setUrlParams()
   }
 
   async imageSearch () {
@@ -118,6 +149,7 @@ class ClipFront extends LitElement {
     console.log(results)
     this.images = results
     this.lastSearch = 'image'
+    this.setUrlParams()
   }
 
   async imageUrlSearch () {
@@ -127,6 +159,7 @@ class ClipFront extends LitElement {
     console.log(results)
     this.images = results
     this.lastSearch = 'imageUrl'
+    this.setUrlParams()
   }
   static get styles () {
     return css`
@@ -138,12 +171,8 @@ class ClipFront extends LitElement {
         -webkit-transition-delay: 9999s;
     }
 
-    #all {
-      font-family: 'Fira Sans Extra Condensed', sans-serif;
-    }
-
     figcaption {
-      overflow: hidden;
+      display: table-caption;
       caption-side: bottom;
       background: #fff;
       padding: 0 0px 0px;
@@ -154,12 +183,13 @@ class ClipFront extends LitElement {
       border-color: #ddd;
       background-color:white;
       border-width:1px;
-      width:70%;
+      width:85%;
       padding:15px;
       outline: none;
       border-style: solid;
+      font-size:16px;
+      font-family:arial, sans-serif;
     }
-
     #searchBar:hover, #searchBar:focus {
       box-shadow: 0px 0px 7px  #ccc;
     }
@@ -167,7 +197,6 @@ class ClipFront extends LitElement {
       margin-left:2%;
       margin-right:2%;
       margin-top:2%;
-      overflow:hidden;
     }
     #inputSearchBar:hover > #searchBar {
       box-shadow: 0px 0px 7px  #ccc !important;
@@ -212,87 +241,86 @@ class ClipFront extends LitElement {
     }
     #products {
       margin-top:50px;
-      width:100%;
-    }
-
-    figure,img.pic,figcaption {
-      width:95%;
-      padding:2.5%;
-    }
-
-    #holder {
-      margin 0 auto;
+      width:85%;
+      float:right;
       display: inline-grid;
     }
-
-    figure p {
-      font-weight:bold;
-    }
-
-    @media (min-width: 600px) {
-      #holder {
+    @media (min-width: 500px) {
+      #products {
         grid-template-columns: repeat(2, 1fr);
       }
     }
-
-    @media (min-width: 768px) {
-      #holder{
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
     
-    @media (min-width: 910px) {
-      #holder{
+    @media (min-width: 700px) {
+      #products{
         grid-template-columns: repeat(4, 1fr);
       }
     }
     
-    @media (min-width: 1100px) {
-      #holder {
+    @media (min-width: 1000px) {
+      #products {
         grid-template-columns: repeat(5, 1fr);
       }
     }
-
-    @media (min-width: 1280px) {
-      #holder {
-        grid-template-columns: repeat(6, 1fr);
-      }
-    }
     
-    @media (min-width: 1430px) {
-      #holder {
+    @media (min-width: 1300px) {
+      #products {
         grid-template-columns: repeat(7, 1fr);
       }
     }
     
     @media (min-width: 1600px) {
-      #holder{
+      #products{
         grid-template-columns: repeat(8, 1fr);
       }
     }
     #filter {
-      width:170px;
-      margin-right:20px;
-      padding: 10px;
+      position:absolute;
+      top:20px;
+      width:12%;
       float:left;
     }
-    #main {
-      padding:10px;
-      overflow:hidden;
-      max-width:1350px;
-      margin:0 auto;
+    #searchLine {
+      margin-left:15%;
     }
 
-    @media screen and (max-width: 600px) {
-      #filter { 
-       float: none;
-       margin-right:0;
-       width:auto;
-     }
-   }
-   .section {
-     margin-top:20px;
-   }
+    figcaption {
+      font-size:16px;
+    }
+
+    figure,img.pic,figcaption {
+      width:150px;
+    }
+
+    @media (max-width: 500px) {
+
+      #searchBar, #searchBar:hover, #searchBar:focus, #searchBar:valid {
+        width:60%;
+      }
+      #filter {
+        font-size:14px;
+        width:100px;
+      }
+
+      #products {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      figure,img.pic,figcaption {
+      width:70px;
+      }
+      #searchLine {
+        margin-left:100px;
+      }
+
+      figcaption {
+        font-size:12px;
+      }
+
+    #products {
+      width:60%;
+    }
+    }
+
     `
   }
 
@@ -348,47 +376,37 @@ class ClipFront extends LitElement {
 
   render () {
     return html`
-    <div id="all" class="section group">
-      <div id="filter" class="col span_1_of_7">
-        <div class="section">
-        <h4>Backend controls</h4>
-        Insert URL: <br /><input type="text" value=${this.backendHost} @input=${e => { this.backendHost = e.target.value }}/><br />
-        Select Index: <br /><select @input=${e => { this.currentIndex = e.target.value }}>${this.models.map(model =>
-      html`<option value=${model} ?selected=${model === this.currentIndex}>${model}</option>`)}</select><br />
-          ${this.image !== undefined ? html`<img width="100px" src="data:image/png;base64, ${this.image}"" /><br />` : ``}
-          ${this.imageUrl !== undefined ? html`<img width="100px" src="${this.imageUrl}"" /><br />` : ``}
-        </div><div class="section"> 
-          <h4>Display controls</h4>
-          <label>Display captions<input type="checkbox" ?checked="${this.displayCaptions}" @click=${() => { this.displayCaptions = !this.displayCaptions }} /></label><br />
-          <label>Display full captions<input type="checkbox" ?checked="${this.displayFullCaptions}" @click=${() => { this.displayFullCaptions = !this.displayFullCaptions }} /></label><br />
-          <label>Display similarities<input type="checkbox" ?checked="${this.displaySimilarities}" @click=${() => { this.displaySimilarities = !this.displaySimilarities }} /></label><br />
-          <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>
-      html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select>
-        </div><div class="section">
-          <h4>Info</h4>
-          <a href="https://github.com/rom1504/clip-retrieval">Clip retrieval</a> works by converting the text query to a CLIP embedding
-          , then using that embedding to query a knn index of clip image embedddings<br /><br />
-          
-            <p>This UI may contain results with nudity and is best used by adults. The images are under their own copyright.</p>
-            <p>Are you seeing near duplicates ? KNN search are good at spotting those, especially so in large datasets.</p>
-      </div></div>
-      <div id= "main"class="col span_6_of_7">
-        <div id="searchLine">
-          <span id="inputSearchBar">
-            <input id="searchBar" type="text" .value=${this.text} @input=${e => { this.text = e.target.value }}/>
-            <img src="assets/search.png" id="textSearch" @click=${() => { this.textSearch() }} />
-            <img src="assets/image-search.png" id="imageSearch" @click=${() => { this.shadowRoot.getElementById('filechooser').click() }} />
-            <input type="file" id="filechooser" style="position:absolute;top:-100px" @change=${() =>
-        this.updateImage(this.shadowRoot.getElementById('filechooser').files[0])}>
-          </span>
-        
-        </div>
-        <div id="products">
-          <div id="holder">
-            ${this.images.map(image => this.renderImage(image))}
-          </div>
-        </div>
-      </div>
+    <div id="all">
+    <div id="searchLine">
+      <span id="inputSearchBar">
+        <input id="searchBar" type="text" .value=${this.text} @input=${e => { this.text = e.target.value }}/>
+        <img src="assets/search.png" id="textSearch" @click=${() => { this.textSearch() }} />
+        <img src="assets/image-search.png" id="imageSearch" @click=${() => { this.shadowRoot.getElementById('filechooser').click() }} />
+        <input type="file" id="filechooser" style="position:absolute;top:-100px" @change=${() =>
+    this.updateImage(this.shadowRoot.getElementById('filechooser').files[0])}>
+      </span>
+     
+    </div>
+    <div id="filter">
+    Backend url: <br /><input type="text" style="width:80px" value=${this.backendHost} @input=${e => { this.backendHost = e.target.value }}/><br />
+    Index: <br /><select style="margin-bottom:50px;" @input=${e => { this.currentIndex = e.target.value }}>${this.indices.map(index =>
+  html`<option value=${index} ?selected=${index === this.currentIndex}>${index}</option>`)}</select><br />
+      ${this.image !== undefined ? html`<img width="100px" src="data:image/png;base64, ${this.image}"" /><br />` : ``}
+      ${this.imageUrl !== undefined ? html`<img width="100px" src="${this.imageUrl}"" /><br />` : ``}
+      <a href="https://github.com/rom1504/clip-retrieval">Clip retrieval</a> works by converting the text query to a CLIP embedding
+      , then using that embedding to query a knn index of clip image embedddings<br /><br />
+      <label>Display captions<input type="checkbox" ?checked="${this.displayCaptions}" @click=${() => { this.displayCaptions = !this.displayCaptions }} /></label><br />
+      <label>Display full captions<input type="checkbox" ?checked="${this.displayFullCaptions}" @click=${() => { this.displayFullCaptions = !this.displayFullCaptions }} /></label><br />
+      <label>Display similarities<input type="checkbox" ?checked="${this.displaySimilarities}" @click=${() => { this.displaySimilarities = !this.displaySimilarities }} /></label><br />
+      <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>
+  html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select>
+        <p>This UI may contain results with nudity and is best used by adults. The images are under their own copyright.</p>
+        <p>Are you seeing near duplicates ? KNN search are good at spotting those, especially so in large datasets.</p>
+     </div>
+
+    <div id="products">
+    ${this.images.map(image => this.renderImage(image))}
+    </div>
     </div>
     `
   }
