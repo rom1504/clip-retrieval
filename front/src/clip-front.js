@@ -389,7 +389,7 @@ class ClipFront extends LitElement {
           <h4>Backend controls</h4>
           Insert URL: <br /><input type="text" style="width:80px" value=${this.backendHost} @input=${e => { this.backendHost = e.target.value }}/><br />
           Select Index: <br /><select style="margin-bottom:50px;" @input=${e => { this.currentIndex = e.target.value }}>${this.indices.map(index =>
-          html`<option value=${index} ?selected=${index === this.currentIndex}>${index}</option>`)}</select><br />
+  html`<option value=${index} ?selected=${index === this.currentIndex}>${index}</option>`)}</select><br />
         </div>
         <div class="section"> 
           <h4>Display controls</h4>
@@ -397,7 +397,7 @@ class ClipFront extends LitElement {
           <label>Display full captions<input type="checkbox" ?checked="${this.displayFullCaptions}" @click=${() => { this.displayFullCaptions = !this.displayFullCaptions }} /></label><br />
           <label>Display similarities<input type="checkbox" ?checked="${this.displaySimilarities}" @click=${() => { this.displaySimilarities = !this.displaySimilarities }} /></label><br />
           <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>
-          html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select>
+  html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select>
         </div>
         <div class="section">
           <h4>Info</h4>
@@ -415,7 +415,7 @@ class ClipFront extends LitElement {
             <img src="assets/search.png" id="textSearch" @click=${() => { this.textSearch() }} />
             <img src="assets/image-search.png" id="imageSearch" @click=${() => { this.shadowRoot.getElementById('filechooser').click() }} />
             <input type="file" id="filechooser" style="position:absolute;top:-100px" @change=${() =>
-        this.updateImage(this.shadowRoot.getElementById('filechooser').files[0])}>
+    this.updateImage(this.shadowRoot.getElementById('filechooser').files[0])}>
           </span>     
     
         <div id="products">
