@@ -147,6 +147,8 @@ class ClipFront extends LitElement {
       caption-side: bottom;
       background: #fff;
       padding: 0 0px 0px;
+      max-width: 170px;
+      word-wrap: break-word;
     }
 
     #searchBar, #searchBar:hover, #searchBar:focus, #searchBar:valid {
