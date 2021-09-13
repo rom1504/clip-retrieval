@@ -130,6 +130,9 @@ class ClipFront extends LitElement {
   }
 
   async textSearch () {
+    if (this.text === '') {
+      return
+    }
     this.image = undefined
     this.imageUrl = undefined
     const results = await this.service.callClipService(this.text, null, null, this.modality, this.numImages, this.currentIndex)
@@ -180,7 +183,7 @@ class ClipFront extends LitElement {
       border-color: #ddd;
       background-color:white;
       border-width:1px;
-      width:90%;
+      width:85%;
       padding:15px;
       outline: none;
       border-style: solid;
