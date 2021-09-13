@@ -171,11 +171,17 @@ class ClipFront extends LitElement {
         -webkit-transition-delay: 9999s;
     }
 
+    #all {
+      font-family: 'Fira Sans Extra Condensed', sans-serif;
+    }
+
     figcaption {
-      display: table-caption;
+      overflow: hidden;
       caption-side: bottom;
       background: #fff;
       padding: 0 0px 0px;
+      max-width: 170px;
+      word-wrap: break-word;
     }
 
     #searchBar, #searchBar:hover, #searchBar:focus, #searchBar:valid {
@@ -183,13 +189,12 @@ class ClipFront extends LitElement {
       border-color: #ddd;
       background-color:white;
       border-width:1px;
-      width:85%;
+      width:70%;
       padding:15px;
       outline: none;
       border-style: solid;
-      font-size:16px;
-      font-family:arial, sans-serif;
     }
+
     #searchBar:hover, #searchBar:focus {
       box-shadow: 0px 0px 7px  #ccc;
     }
@@ -197,6 +202,7 @@ class ClipFront extends LitElement {
       margin-left:2%;
       margin-right:2%;
       margin-top:2%;
+      overflow:hidden;
     }
     #inputSearchBar:hover > #searchBar {
       box-shadow: 0px 0px 7px  #ccc !important;
@@ -241,86 +247,87 @@ class ClipFront extends LitElement {
     }
     #products {
       margin-top:50px;
-      width:85%;
-      float:right;
+      width:100%;
+    }
+
+    figure,img.pic,figcaption {
+      width:95%;
+      padding:2.5%;
+    }
+
+    #holder {
+      margin 0 auto;
       display: inline-grid;
     }
-    @media (min-width: 500px) {
-      #products {
+
+    figure p {
+      font-weight:bold;
+    }
+
+    @media (min-width: 600px) {
+      #holder {
         grid-template-columns: repeat(2, 1fr);
       }
     }
+
+    @media (min-width: 768px) {
+      #holder{
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
     
-    @media (min-width: 700px) {
-      #products{
+    @media (min-width: 910px) {
+      #holder{
         grid-template-columns: repeat(4, 1fr);
       }
     }
     
-    @media (min-width: 1000px) {
-      #products {
+    @media (min-width: 1100px) {
+      #holder {
         grid-template-columns: repeat(5, 1fr);
       }
     }
+
+    @media (min-width: 1280px) {
+      #holder {
+        grid-template-columns: repeat(6, 1fr);
+      }
+    }
     
-    @media (min-width: 1300px) {
-      #products {
+    @media (min-width: 1430px) {
+      #holder {
         grid-template-columns: repeat(7, 1fr);
       }
     }
     
     @media (min-width: 1600px) {
-      #products{
+      #holder{
         grid-template-columns: repeat(8, 1fr);
       }
     }
     #filter {
-      position:absolute;
-      top:20px;
-      width:12%;
+      width:170px;
+      margin-right:20px;
+      padding: 10px;
       float:left;
     }
-    #searchLine {
-      margin-left:15%;
+    #main {
+      padding:10px;
+      overflow:hidden;
+      max-width:1350px;
+      margin:0 auto;
     }
 
-    figcaption {
-      font-size:16px;
-    }
-
-    figure,img.pic,figcaption {
-      width:150px;
-    }
-
-    @media (max-width: 500px) {
-
-      #searchBar, #searchBar:hover, #searchBar:focus, #searchBar:valid {
-        width:60%;
-      }
-      #filter {
-        font-size:14px;
-        width:100px;
-      }
-
-      #products {
-        grid-template-columns: repeat(3, 1fr);
-      }
-      figure,img.pic,figcaption {
-      width:70px;
-      }
-      #searchLine {
-        margin-left:100px;
-      }
-
-      figcaption {
-        font-size:12px;
-      }
-
-    #products {
-      width:60%;
-    }
-    }
-
+    @media screen and (max-width: 600px) {
+      #filter { 
+       float: none;
+       margin-right:0;
+       width:auto;
+     }
+   }
+   .section {
+     margin-top:20px;
+   }
     `
   }
 
@@ -376,37 +383,47 @@ class ClipFront extends LitElement {
 
   render () {
     return html`
-    <div id="all">
-    <div id="searchLine">
-      <span id="inputSearchBar">
-        <input id="searchBar" type="text" .value=${this.text} @input=${e => { this.text = e.target.value }}/>
-        <img src="assets/search.png" id="textSearch" @click=${() => { this.textSearch() }} />
-        <img src="assets/image-search.png" id="imageSearch" @click=${() => { this.shadowRoot.getElementById('filechooser').click() }} />
-        <input type="file" id="filechooser" style="position:absolute;top:-100px" @change=${() =>
-    this.updateImage(this.shadowRoot.getElementById('filechooser').files[0])}>
-      </span>
-     
-    </div>
-    <div id="filter">
-    Backend url: <br /><input type="text" style="width:80px" value=${this.backendHost} @input=${e => { this.backendHost = e.target.value }}/><br />
-    Index: <br /><select style="margin-bottom:50px;" @input=${e => { this.currentIndex = e.target.value }}>${this.indices.map(index =>
-  html`<option value=${index} ?selected=${index === this.currentIndex}>${index}</option>`)}</select><br />
-      ${this.image !== undefined ? html`<img width="100px" src="data:image/png;base64, ${this.image}"" /><br />` : ``}
-      ${this.imageUrl !== undefined ? html`<img width="100px" src="${this.imageUrl}"" /><br />` : ``}
-      <a href="https://github.com/rom1504/clip-retrieval">Clip retrieval</a> works by converting the text query to a CLIP embedding
-      , then using that embedding to query a knn index of clip image embedddings<br /><br />
-      <label>Display captions<input type="checkbox" ?checked="${this.displayCaptions}" @click=${() => { this.displayCaptions = !this.displayCaptions }} /></label><br />
-      <label>Display full captions<input type="checkbox" ?checked="${this.displayFullCaptions}" @click=${() => { this.displayFullCaptions = !this.displayFullCaptions }} /></label><br />
-      <label>Display similarities<input type="checkbox" ?checked="${this.displaySimilarities}" @click=${() => { this.displaySimilarities = !this.displaySimilarities }} /></label><br />
-      <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>
-  html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select>
-        <p>This UI may contain results with nudity and is best used by adults. The images are under their own copyright.</p>
-        <p>Are you seeing near duplicates ? KNN search are good at spotting those, especially so in large datasets.</p>
-     </div>
-
-    <div id="products">
-    ${this.images.map(image => this.renderImage(image))}
-    </div>
+    <div id="all" class="section group">
+      <div id="filter" class="col span_1_of_7">
+        <div class="section">
+          <h4>Backend controls</h4>
+          Insert URL: <br /><input type="text" style="width:80px" value=${this.backendHost} @input=${e => { this.backendHost = e.target.value }}/><br />
+          Select Index: <br /><select style="margin-bottom:50px;" @input=${e => { this.currentIndex = e.target.value }}>${this.indices.map(index =>
+          html`<option value=${index} ?selected=${index === this.currentIndex}>${index}</option>`)}</select><br />
+        </div>
+        <div class="section"> 
+          <h4>Display controls</h4>
+          <label>Display captions<input type="checkbox" ?checked="${this.displayCaptions}" @click=${() => { this.displayCaptions = !this.displayCaptions }} /></label><br />
+          <label>Display full captions<input type="checkbox" ?checked="${this.displayFullCaptions}" @click=${() => { this.displayFullCaptions = !this.displayFullCaptions }} /></label><br />
+          <label>Display similarities<input type="checkbox" ?checked="${this.displaySimilarities}" @click=${() => { this.displaySimilarities = !this.displaySimilarities }} /></label><br />
+          <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>
+          html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select>
+        </div>
+        <div class="section">
+          <h4>Info</h4>
+          <a href="https://github.com/rom1504/clip-retrieval">Clip retrieval</a> works by converting the text query to a CLIP embedding
+          , then using that embedding to query a knn index of clip image embedddings<br /><br />
+          
+          <p>This UI may contain results with nudity and is best used by adults. The images are under their own copyright.</p>
+          <p>Are you seeing near duplicates ? KNN search are good at spotting those, especially so in large datasets.</p>
+        </div>
+      </div>
+      <div id= "main"class="col span_6_of_7">
+        <div id="searchLine">
+          <span id="inputSearchBar">
+            <input id="searchBar" type="text" .value=${this.text} @input=${e => { this.text = e.target.value }}/>
+            <img src="assets/search.png" id="textSearch" @click=${() => { this.textSearch() }} />
+            <img src="assets/image-search.png" id="imageSearch" @click=${() => { this.shadowRoot.getElementById('filechooser').click() }} />
+            <input type="file" id="filechooser" style="position:absolute;top:-100px" @change=${() =>
+        this.updateImage(this.shadowRoot.getElementById('filechooser').files[0])}>
+          </span>     
+    
+        <div id="products">
+          <div id="holder">
+            ${this.images.map(image => this.renderImage(image))}
+          </div>
+        </div>
+      </div>
     </div>
     `
   }
