@@ -185,10 +185,11 @@ class ClipFront extends LitElement {
       border-color: #ddd;
       background-color:white;
       border-width:1px;
-      width:70%;
       padding:15px;
       outline: none;
       border-style: solid;
+      margin-left:0.5%;
+      width: 85%;
     }
 
     #searchBar:hover, #searchBar:focus {
@@ -206,7 +207,7 @@ class ClipFront extends LitElement {
     }
     #imageSearch {
       width: 22px;
-      margin-left:0.5%;
+      margin-left:5%;
       vertical-align:middle;
       cursor:pointer;
     }
@@ -327,6 +328,23 @@ class ClipFront extends LitElement {
       min-width:400px;
     }
 
+    .queryimg, .querytxt {
+      min-width:160px;
+      float:left;
+      display: flex;
+      align-items: center;
+    }
+
+    .querytxt {
+      width: 85%;
+    }
+
+    #searchLine {
+      display: flex;
+      align-items: center;
+      clear: both;
+    }
+
     @media screen and (max-width: 600px) {
       #filter { 
        float: none;
@@ -390,15 +408,19 @@ class ClipFront extends LitElement {
   render () {
     return html`
     <div id="all">
-        <div id= "main">
+      <div id= "main">
         <div id="searchLine">
-          <span id="inputSearchBar">
-            <input id="searchBar" type="text" .value=${this.text} @input=${e => { this.text = e.target.value }}/>
+          <div id="inputSearchBar" class="querytxt">
+            text <input id="searchBar" type="text" .value=${this.text} @input=${e => { this.text = e.target.value }}/>
             <img src="assets/search.png" id="textSearch" @click=${() => { this.textSearch() }} />
+          </div><div class="queryimg">image 
+            ${this.image !== undefined ? html`<img width="100px" src="data:image/png;base64, ${this.image}"" />` : ``}
+            ${this.imageUrl !== undefined ? html`<img width="100px" src="${this.imageUrl}"" />` : ``}
             <img src="assets/image-search.png" id="imageSearch" @click=${() => { this.shadowRoot.getElementById('filechooser').click() }} />
             <input type="file" id="filechooser" style="position:absolute;top:-100px" @change=${() =>
-    this.updateImage(this.shadowRoot.getElementById('filechooser').files[0])}>
-          </span>
+              this.updateImage(this.shadowRoot.getElementById('filechooser').files[0])}>
+          </div>
+        </div>
         <div id="products">
           <div id="holder">
             ${this.images.map(image => this.renderImage(image))}
