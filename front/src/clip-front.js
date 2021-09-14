@@ -13,12 +13,12 @@ class ClipFront extends LitElement {
     if (index != null) {
       this.currentIndex = index
     } else {
-      this.currentIndex = ''
+      this.currentIndex = 'laion_400m_64G'
     }
     if (back != null) {
       this.backendHost = back
     } else {
-      this.backendHost = 'https://clip.rom1504.fr' // put something here
+      this.backendHost = 'https://splunk.vra.ro' // put something here
     }
     if (query != null) {
       this.text = query
