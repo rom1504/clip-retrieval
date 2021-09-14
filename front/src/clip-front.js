@@ -171,10 +171,6 @@ class ClipFront extends LitElement {
         -webkit-transition-delay: 9999s;
     }
 
-    #all {
-      font-family: 'Fira Sans Extra Condensed', sans-serif;
-    }
-
     figcaption {
       overflow: hidden;
       caption-side: bottom;
@@ -198,11 +194,12 @@ class ClipFront extends LitElement {
     #searchBar:hover, #searchBar:focus {
       box-shadow: 0px 0px 7px  #ccc;
     }
+    
     #all {
       margin-left:2%;
       margin-right:2%;
       margin-top:2%;
-      overflow:hidden;
+      font-family: 'Palanquin', sans-serif;
     }
     #inputSearchBar:hover > #searchBar {
       box-shadow: 0px 0px 7px  #ccc !important;
@@ -306,16 +303,28 @@ class ClipFront extends LitElement {
       }
     }
     #filter {
-      width:170px;
-      margin-right:20px;
       padding: 10px;
-      float:left;
+      width: auto;
     }
     #main {
       padding:10px;
-      overflow:hidden;
       max-width:1350px;
       margin:0 auto;
+    }
+
+    .section {
+      margin-top:20px;
+      float:left;
+    }
+
+    .one_of_four {
+      width: 25%;
+      min-width:200px;
+    }
+
+    .two_of_four {
+      width: 50%;
+      min-width:400px;
     }
 
     @media screen and (max-width: 600px) {
@@ -324,9 +333,6 @@ class ClipFront extends LitElement {
        margin-right:0;
        width:auto;
      }
-   }
-   .section {
-     margin-top:20px;
    }
     `
   }
@@ -383,32 +389,8 @@ class ClipFront extends LitElement {
 
   render () {
     return html`
-    <div id="all" class="section group">
-      <div id="filter" class="col span_1_of_7">
-        <div class="section">
-          <h4>Backend controls</h4>
-          Insert URL: <br /><input type="text" style="width:80px" value=${this.backendHost} @input=${e => { this.backendHost = e.target.value }}/><br />
-          Select Index: <br /><select style="margin-bottom:50px;" @input=${e => { this.currentIndex = e.target.value }}>${this.indices.map(index =>
-  html`<option value=${index} ?selected=${index === this.currentIndex}>${index}</option>`)}</select><br />
-        </div>
-        <div class="section"> 
-          <h4>Display controls</h4>
-          <label>Display captions<input type="checkbox" ?checked="${this.displayCaptions}" @click=${() => { this.displayCaptions = !this.displayCaptions }} /></label><br />
-          <label>Display full captions<input type="checkbox" ?checked="${this.displayFullCaptions}" @click=${() => { this.displayFullCaptions = !this.displayFullCaptions }} /></label><br />
-          <label>Display similarities<input type="checkbox" ?checked="${this.displaySimilarities}" @click=${() => { this.displaySimilarities = !this.displaySimilarities }} /></label><br />
-          <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>
-  html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select>
-        </div>
-        <div class="section">
-          <h4>Info</h4>
-          <a href="https://github.com/rom1504/clip-retrieval">Clip retrieval</a> works by converting the text query to a CLIP embedding
-          , then using that embedding to query a knn index of clip image embedddings<br /><br />
-          
-          <p>This UI may contain results with nudity and is best used by adults. The images are under their own copyright.</p>
-          <p>Are you seeing near duplicates ? KNN search are good at spotting those, especially so in large datasets.</p>
-        </div>
-      </div>
-      <div id= "main"class="col span_6_of_7">
+    <div id="all">
+        <div id= "main">
         <div id="searchLine">
           <span id="inputSearchBar">
             <input id="searchBar" type="text" .value=${this.text} @input=${e => { this.text = e.target.value }}/>
@@ -416,12 +398,34 @@ class ClipFront extends LitElement {
             <img src="assets/image-search.png" id="imageSearch" @click=${() => { this.shadowRoot.getElementById('filechooser').click() }} />
             <input type="file" id="filechooser" style="position:absolute;top:-100px" @change=${() =>
     this.updateImage(this.shadowRoot.getElementById('filechooser').files[0])}>
-          </span>     
-    
+          </span>
         <div id="products">
           <div id="holder">
             ${this.images.map(image => this.renderImage(image))}
           </div>
+        </div>
+      </div>
+      <div id="filter">
+        <div class="section one_of_four">
+          <h4>Backend controls</h4>
+          Insert URL: <br /><input type="text" value=${this.backendHost} @input=${e => { this.backendHost = e.target.value }}/><br />
+          Select Index: <br /><select @input=${e => { this.currentIndex = e.target.value }}>${this.indices.map(index =>
+  html`<option value=${index} ?selected=${index === this.currentIndex}>${index}</option>`)}</select><br />
+        </div>
+        <div class="section one_of_four"> 
+          <h4>Display controls</h4>
+          <label>Display captions<input type="checkbox" ?checked="${this.displayCaptions}" @click=${() => { this.displayCaptions = !this.displayCaptions }} /></label><br />
+          <label>Display full captions<input type="checkbox" ?checked="${this.displayFullCaptions}" @click=${() => { this.displayFullCaptions = !this.displayFullCaptions }} /></label><br />
+          <label>Display similarities<input type="checkbox" ?checked="${this.displaySimilarities}" @click=${() => { this.displaySimilarities = !this.displaySimilarities }} /></label><br />
+          <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>
+  html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select>
+        </div>
+        <div class="section two_of_four">
+          <h4>Info</h4>
+          <p><a href="https://github.com/rom1504/clip-retrieval">Clip retrieval</a> works by converting the text query to a CLIP embedding
+          , then using that embedding to query a knn index of clip image embedddings</p>
+          <p>This UI may contain results with nudity and is best used by adults. The images are under their own copyright.</p>
+          <p>Are you seeing near duplicates ? KNN search are good at spotting those, especially so in large datasets.</p>
         </div>
       </div>
     </div>
