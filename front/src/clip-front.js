@@ -418,7 +418,7 @@ class ClipFront extends LitElement {
             ${this.imageUrl !== undefined ? html`<img width="100px" src="${this.imageUrl}"" />` : ``}
             <img src="assets/image-search.png" id="imageSearch" @click=${() => { this.shadowRoot.getElementById('filechooser').click() }} />
             <input type="file" id="filechooser" style="position:absolute;top:-100px" @change=${() =>
-              this.updateImage(this.shadowRoot.getElementById('filechooser').files[0])}>
+    this.updateImage(this.shadowRoot.getElementById('filechooser').files[0])}>
           </div>
         </div>
         <div id="products">
