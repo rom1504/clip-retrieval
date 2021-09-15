@@ -1,3 +1,7 @@
+## 2.11.0
+
+* add compression by default when creating the hdf5 cache file
+
 ## 2.10.0
 
 * add columns_to_return in clip back
