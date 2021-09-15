@@ -13,12 +13,12 @@ class ClipFront extends LitElement {
     if (index != null) {
       this.currentIndex = index
     } else {
-      this.currentIndex = 'laion_400m_64G'
+      this.currentIndex = ''
     }
     if (back != null) {
       this.backendHost = back
     } else {
-      this.backendHost = 'https://splunk.vra.ro' // put something here
+      this.backendHost = 'https://clip-big.rom1504.fr' // put something here
     }
     if (query != null) {
       this.text = query
@@ -35,6 +35,7 @@ class ClipFront extends LitElement {
     this.displayCaptions = true
     this.displaySimilarities = false
     this.displayFullCaptions = false
+    this.safeMode = true
     this.firstLoad = true
     this.imageUrl = imageUrl === null ? undefined : imageUrl
     this.initIndices()
@@ -64,7 +65,8 @@ class ClipFront extends LitElement {
       blacklist: { type: Object },
       displaySimilarities: { type: Boolean },
       displayCaptions: { type: Boolean },
-      displayFullCaptions: { type: Boolean }
+      displayFullCaptions: { type: Boolean },
+      safeMode: { type: Boolean }
     }
   }
 
@@ -324,6 +326,19 @@ class ClipFront extends LitElement {
     `
   }
 
+  isSafe (image) {
+    if ((image['NSFW'] === 'UNSURE' || image['NSFW'] === 'NSFW')) {
+      return false
+    }
+    const badWords = ['boob', 'sexy', 'ass', 'hot', 'mature', 'nude', 'naked', 'porn', 'xvideo',
+      'ghetto', 'tube', 'hump', 'fuck', 'dick', 'whore', 'masturbate', 'video', 'puss', 'erotic']
+    if (badWords.some(word => (image['url'] !== undefined && image['url'].toLowerCase().includes(word)) ||
+    (image['caption'] !== undefined && image['caption'].toLowerCase().includes(word)))) {
+      return false
+    }
+    return true
+  }
+
   updateImage (file) {
     var reader = new FileReader()
     reader.readAsDataURL(file)
@@ -375,6 +390,8 @@ class ClipFront extends LitElement {
   }
 
   render () {
+    const filteredImages = this.images.filter(image => !this.safeMode || this.isSafe(image))
+
     return html`
     <div id="all">
     <div id="searchLine">
@@ -398,6 +415,7 @@ class ClipFront extends LitElement {
       <label>Display captions<input type="checkbox" ?checked="${this.displayCaptions}" @click=${() => { this.displayCaptions = !this.displayCaptions }} /></label><br />
       <label>Display full captions<input type="checkbox" ?checked="${this.displayFullCaptions}" @click=${() => { this.displayFullCaptions = !this.displayFullCaptions }} /></label><br />
       <label>Display similarities<input type="checkbox" ?checked="${this.displaySimilarities}" @click=${() => { this.displaySimilarities = !this.displaySimilarities }} /></label><br />
+      <label>Safe mode<input type="checkbox" ?checked="${this.safeMode}" @click=${() => { this.safeMode = !this.safeMode }} /></label><br />
       <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>
   html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select>
         <p>This UI may contain results with nudity and is best used by adults. The images are under their own copyright.</p>
@@ -405,7 +423,8 @@ class ClipFront extends LitElement {
      </div>
 
     <div id="products">
-    ${this.images.map(image => this.renderImage(image))}
+    ${filteredImages.map(image => this.renderImage(image))}
+    ${filteredImages.length === 0 ? 'No image found, this is probably due to the safe mode, displaying once nice pictures.' : ''}
     </div>
     </div>
     `
