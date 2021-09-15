@@ -157,7 +157,7 @@ class KnnService(Resource):
             D, I = index.search(query, num_images)
         results = []
         with METADATA_GET_TIME.time():
-            metas = metadata_provider.get(I[0], ["url", "image_path", "caption"])
+            metas = metadata_provider.get(I[0], ["url", "image_path", "caption", "NSFW"])
         for key, (d, i) in enumerate(zip(D[0], I[0])):
             output = {}
             meta = metas[key]
