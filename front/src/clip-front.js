@@ -424,7 +424,7 @@ class ClipFront extends LitElement {
 
     <div id="products">
     ${filteredImages.map(image => this.renderImage(image))}
-    ${filteredImages.length === 0 ? 'No image found, this is probably due to the safe mode, displaying once nice pictures.' : ''}
+    ${this.safeMode && this.images.length !== 0 && filteredImages.length === 0 ? 'Displaying only nice pictures in safe mode!' : ''}
     </div>
     </div>
     `
