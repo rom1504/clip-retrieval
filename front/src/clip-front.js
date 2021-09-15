@@ -266,11 +266,17 @@ class ClipFront extends LitElement {
       #holder {
         grid-template-columns: repeat(2, 1fr);
       }
+      #main {
+        width: 60%;
+      }
     }
 
     @media (min-width: 768px) {
       #holder{
         grid-template-columns: repeat(3, 1fr);
+      }
+      #main {
+        width: 67%;
       }
     }
     
@@ -278,11 +284,17 @@ class ClipFront extends LitElement {
       #holder{
         grid-template-columns: repeat(4, 1fr);
       }
+      #main {
+        width: 73%;
+      }
     }
     
     @media (min-width: 1100px) {
       #holder {
         grid-template-columns: repeat(5, 1fr);
+      }
+      #main {
+        width: 80%;
       }
     }
 
@@ -305,12 +317,15 @@ class ClipFront extends LitElement {
     }
     #filter {
       padding: 10px;
-      width: auto;
+      width: 15%;
+      min-width: 170px;
+      float: right;
     }
     #main {
       padding:10px;
       max-width:1350px;
       margin:0 auto;
+      float:right;
     }
 
     .section {
@@ -325,7 +340,7 @@ class ClipFront extends LitElement {
 
     .two_of_four {
       width: 50%;
-      min-width:400px;
+      min-width:200px;
     }
 
     .queryimg, .querytxt {
@@ -345,11 +360,25 @@ class ClipFront extends LitElement {
       clear: both;
     }
 
+    h4 {
+      margin-top: 0;
+    }
+
     @media screen and (max-width: 600px) {
       #filter { 
        float: none;
-       margin-right:0;
-       width:auto;
+       margin:0 auto;
+       width:400px;
+     }
+     .one_of_four {
+      width: 50%;
+    }
+
+    .two_of_four {
+      width: 100%;
+    }
+      #main {
+        float:none;
      }
    }
     `
