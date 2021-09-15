@@ -215,7 +215,7 @@ def parquet_to_hdf5(parquet_folder, output_hdf5_file, columns_to_return):
                 col=col.fillna('')
             z = col.to_numpy()
             if k not in ds:
-                ds.create_dataset(k, data=z, maxshape=(None,))
+                ds.create_dataset(k, data=z, maxshape=(None,), compression="gzip")
             else:
                 prevlen = len(ds[k])
                 ds[k].resize((prevlen+len(z),))
