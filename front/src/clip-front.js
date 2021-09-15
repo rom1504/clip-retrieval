@@ -199,8 +199,8 @@ class ClipFront extends LitElement {
     }
     
     #all {
-      margin-left:2%;
-      margin-right:2%;
+      max-width: 1920px;
+      margin: 2% auto;
       margin-top:2%;
       font-family: 'Palanquin', sans-serif;
     }
@@ -264,59 +264,6 @@ class ClipFront extends LitElement {
       font-weight:bold;
     }
 
-    @media (min-width: 600px) {
-      #holder {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      #main {
-        width: 60%;
-      }
-    }
-
-    @media (min-width: 768px) {
-      #holder{
-        grid-template-columns: repeat(3, 1fr);
-      }
-      #main {
-        width: 67%;
-      }
-    }
-    
-    @media (min-width: 910px) {
-      #holder{
-        grid-template-columns: repeat(4, 1fr);
-      }
-      #main {
-        width: 73%;
-      }
-    }
-    
-    @media (min-width: 1100px) {
-      #holder {
-        grid-template-columns: repeat(5, 1fr);
-      }
-      #main {
-        width: 80%;
-      }
-    }
-
-    @media (min-width: 1280px) {
-      #holder {
-        grid-template-columns: repeat(6, 1fr);
-      }
-    }
-    
-    @media (min-width: 1430px) {
-      #holder {
-        grid-template-columns: repeat(7, 1fr);
-      }
-    }
-    
-    @media (min-width: 1600px) {
-      #holder{
-        grid-template-columns: repeat(8, 1fr);
-      }
-    }
     #filter {
       padding: 10px;
       width: 15%;
@@ -366,6 +313,71 @@ class ClipFront extends LitElement {
       margin-top: 0;
     }
 
+    @media (min-width: 600px) {
+      #holder {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      #main {
+        width: 60%;
+      }
+    }
+
+    @media (min-width: 768px) {
+      #holder{
+        grid-template-columns: repeat(3, 1fr);
+      }
+      #main {
+        width: 67%;
+      }
+    }
+    
+    @media (min-width: 910px) {
+      #holder{
+        grid-template-columns: repeat(4, 1fr);
+      }
+      #main {
+        width: 73%;
+      }
+    }
+    
+    @media (min-width: 1100px) {
+      #holder {
+        grid-template-columns: repeat(5, 1fr);
+      }
+      #main {
+        width: 80%;
+      }
+    }
+
+    @media (min-width: 1280px) {
+      #holder {
+        grid-template-columns: repeat(6, 1fr);
+      }
+    }
+    
+    @media (min-width: 1430px) {
+      #holder {
+        grid-template-columns: repeat(7, 1fr);
+      }
+    }
+    
+    @media (min-width: 1780px) {
+      #holder{
+        grid-template-columns: repeat(8, 1fr);
+      }
+      #filter {
+        width:21%;
+        max-width:400px;
+      }
+      .one_of_four {
+        width: 50%;
+      }
+    
+      .two_of_four {
+        width: 100%;
+      }
+    }
+    
     @media screen and (max-width: 600px) {
       #filter { 
        float: none;
@@ -383,6 +395,7 @@ class ClipFront extends LitElement {
         float:none;
      }
    }
+ }
     `
   }
 
