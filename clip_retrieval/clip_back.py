@@ -116,6 +116,7 @@ class KnnService(Resource):
         self.device = kwargs['device']
         self.model = kwargs['model']
         self.preprocess = kwargs['preprocess']
+        self.columns_to_return = kwargs['columns_to_return']
 
     @FULL_KNN_REQUEST_TIME.time()
     def post(self):
@@ -157,7 +158,7 @@ class KnnService(Resource):
             D, I = index.search(query, num_images)
         results = []
         with METADATA_GET_TIME.time():
-            metas = metadata_provider.get(I[0], ["url", "image_path", "caption", "NSFW"])
+            metas = metadata_provider.get(I[0], self.columns_to_return)
         for key, (d, i) in enumerate(zip(D[0], I[0])):
             output = {}
             meta = metas[key]
@@ -196,16 +197,14 @@ class ParquetMetadataProvider:
         return [self.metadata_df[i:(i+1)][cols].to_dict(orient='records')[0] for i in ids]
 
 
-def parquet_to_hdf5(parquet_folder, output_hdf5_file):
+def parquet_to_hdf5(parquet_folder, output_hdf5_file, columns_to_return):
     f = h5py.File(output_hdf5_file, 'w')
     data_dir = Path(parquet_folder)
     ds = f.create_group('dataset') 
     for parquet_files in tqdm(sorted(data_dir.glob('*.parquet'))):
         df = pd.read_parquet(parquet_files)
         for k in df.keys():
-            if False and not (k == "url"):
-                continue
-            if False and not (k == "url" or k == 'caption'):
+            if k not in columns_to_return:
                 continue
             col = df[k]
             if col.dtype == 'float64' or col.dtype=='float32':
@@ -246,7 +245,9 @@ class Hdf5MetadataProvider:
                 items[i][k] = e
         return items
 
-def clip_back(indices_paths="indices_paths.json", port=1234, enable_hdf5=False, enable_faiss_memory_mapping=False):
+def clip_back(indices_paths="indices_paths.json", port=1234, enable_hdf5=False, enable_faiss_memory_mapping=False, columns_to_return=None):
+    if columns_to_return is None:
+        columns_to_return = ["url", "image_path", "caption", "NSFW"]
     print('loading clip...')
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
@@ -263,7 +264,7 @@ def clip_back(indices_paths="indices_paths.json", port=1234, enable_hdf5=False, 
         print('loading metadata...')
         if enable_hdf5:
             if not os.path.exists(hdf5_path):
-                parquet_to_hdf5(parquet_folder, hdf5_path)
+                parquet_to_hdf5(parquet_folder, hdf5_path, columns_to_return)
             metadata_provider = Hdf5MetadataProvider(hdf5_path)
         else:
             metadata_provider = ParquetMetadataProvider(parquet_folder)
@@ -297,7 +298,7 @@ def clip_back(indices_paths="indices_paths.json", port=1234, enable_hdf5=False, 
     api.add_resource(MetricsSummary, '/metrics-summary')
     api.add_resource(IndicesList, '/indices-list', resource_class_kwargs={'indices': indices})
     api.add_resource(KnnService, '/knn-service', resource_class_kwargs={'indices_loaded': indices_loaded, 'device': device, \
-    'model': model, 'preprocess': preprocess})
+    'model': model, 'preprocess': preprocess, 'columns_to_return': columns_to_return})
     api.add_resource(Health, '/')
     CORS(app)
     app.run(host="0.0.0.0", port=port, debug=False)

@@ -1,3 +1,8 @@
+## 2.10.0
+
+* add columns_to_return in clip back
+* safe mode in front
+
 ## 2.9.2
 
 * fix metrics sorting in metrics summary

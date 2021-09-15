@@ -107,7 +107,9 @@ echo '{"example_index": "output_folder"}' > indices_paths.json
 clip-retrieval back --port 1234 --indices-paths indices_paths.json
 ```
 
-A `enable_faiss_memory_mapping=True` option can be passed to use an index with memory mapping.
+`--columns_to_return='["url", "image_path", "caption", "NSFW"]` allows you to specify which columns should be fetched from the metadata and returned by the backend. It's useful to specify less in case of hdf5 caching to speed up the queries.
+
+A `--enable_faiss_memory_mapping=True` option can be passed to use an index with memory mapping.
 That decreases the memory usage to zero.
 
 A `--enable_hdf5 True` option can be passed to enable hdf5 caching for the metadata.
