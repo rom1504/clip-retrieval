@@ -199,7 +199,6 @@ class ClipFront extends LitElement {
     }
     
     #all {
-      max-width: 1920px;
       margin: 2% auto;
       margin-top:2%;
       font-family: 'Palanquin', sans-serif;
@@ -267,12 +266,13 @@ class ClipFront extends LitElement {
     #filter {
       padding: 10px;
       width: 15%;
-      min-width: 170px;
+      min-width: 200px;
+      max-width: 400px;
       float: right;
     }
     #main {
       padding:10px;
-      max-width:1350px;
+      width: 75%;
       margin:0 auto;
       float:right;
     }
@@ -293,7 +293,6 @@ class ClipFront extends LitElement {
     }
 
     .queryimg, .querytxt {
-      min-width:160px;
       float:left;
       display: flex;
       align-items: center;
@@ -345,7 +344,7 @@ class ClipFront extends LitElement {
         grid-template-columns: repeat(5, 1fr);
       }
       #main {
-        width: 80%;
+        width: 78%;
       }
     }
 
@@ -366,7 +365,7 @@ class ClipFront extends LitElement {
         grid-template-columns: repeat(8, 1fr);
       }
       #filter {
-        width:21%;
+        width:18%;
         max-width:400px;
       }
       .one_of_four {
@@ -380,9 +379,9 @@ class ClipFront extends LitElement {
     
     @media screen and (max-width: 600px) {
       #filter { 
-       float: none;
+       float: left;
+       min-width:100px;
        margin:0 auto;
-       width:400px;
      }
      .one_of_four {
       width: 50%;
@@ -392,7 +391,8 @@ class ClipFront extends LitElement {
       width: 100%;
     }
       #main {
-        float:none;
+        float:right;
+        width:45%;
      }
    }
  }
@@ -470,9 +470,9 @@ class ClipFront extends LitElement {
       <div id= "main">
         <div id="searchLine">
           <div id="inputSearchBar" class="querytxt">
-            text <input id="searchBar" type="text" .value=${this.text} @input=${e => { this.text = e.target.value }}/>
+            <input id="searchBar" type="text" .value=${this.text} @input=${e => { this.text = e.target.value }}/>
             <img src="assets/search.png" id="textSearch" @click=${() => { this.textSearch() }} />
-          </div><div class="queryimg">image 
+          </div><div class="queryimg">
             ${this.image !== undefined ? html`<img width="100px" src="data:image/png;base64, ${this.image}"" />` : ``}
             ${this.imageUrl !== undefined ? html`<img width="100px" src="${this.imageUrl}"" />` : ``}
             <img src="assets/image-search.png" id="imageSearch" @click=${() => { this.shadowRoot.getElementById('filechooser').click() }} />
