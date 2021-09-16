@@ -18,7 +18,7 @@ class ClipFront extends LitElement {
     if (back != null) {
       this.backendHost = back
     } else {
-      this.backendHost = 'https://clip-big.rom1504.fr' // put something here
+      this.backendHost = 'https://splunk.vra.ro' // put something here
     }
     if (query != null) {
       this.text = query
