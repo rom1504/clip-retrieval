@@ -13,7 +13,7 @@ class ClipFront extends LitElement {
     if (index != null) {
       this.currentIndex = index
     } else {
-      this.currentIndex = ''
+      this.currentIndex = 'laion_400m_128G'
     }
     if (back != null) {
       this.backendHost = back
