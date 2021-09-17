@@ -330,7 +330,7 @@ class ClipFront extends LitElement {
     if ((image['NSFW'] === 'UNSURE' || image['NSFW'] === 'NSFW')) {
       return false
     }
-    const badWords = ['boob', 'sexy', 'ass', 'hot', 'mature', 'nude', 'naked', 'porn', 'xvideo',
+    const badWords = ['boob', 'sexy', 'ass', 'mature', 'nude', 'naked', 'porn', 'xvideo',
       'ghetto', 'tube', 'hump', 'fuck', 'dick', 'whore', 'masturbate', 'video', 'puss', 'erotic']
     if (badWords.some(word => (image['url'] !== undefined && image['url'].toLowerCase().includes(word)) ||
     (image['caption'] !== undefined && image['caption'].toLowerCase().includes(word)))) {
