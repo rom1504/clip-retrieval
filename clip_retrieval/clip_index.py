@@ -15,11 +15,14 @@ def quantize(emb_folder, index_folder, subfolder_name, index_name, max_index_mem
             quantizer = Quantizer()
             quantizer.quantize(embeddings_path=emb_folder, output_path=tmp_output_folder, 
             max_index_memory_usage=max_index_memory_usage, current_memory_available=current_memory_available, nb_cores=nb_cores)
-            index_file = list(glob(tmp_output_folder+"/*.index"))[0]
+            indices = list(glob(tmp_output_folder+"/*.index"))
+            if len(indices) == 0:
+                raise Exception("No index generated")
+            index_file = indices[0]
             shutil.move(index_file, index_folder+"/"+index_name)
             os.rmdir(tmp_output_folder)
     except Exception as e:
-        logging.error(traceback.format_exc(e))
+        print(e)
 
 def clip_index(embeddings_folder, index_folder, max_index_memory_usage="4G", current_memory_available="16G", 
             copy_metadata=True, image_subfolder="img_emb", text_subfolder="text_emb", nb_cores=None):
