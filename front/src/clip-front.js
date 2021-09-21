@@ -371,8 +371,9 @@ class ClipFront extends LitElement {
     <figure style="margin:5px;display:table" 
     style=${'margin:1px; ' + (this.blacklist[src] !== undefined ? 'display:none' : 'display:inline')}>
      ${this.displaySimilarities ? html`<p>${(image['similarity']).toFixed(4)}</p>` : ``}
-
-     <img src="assets/search.png" class="subTextSearch" @click=${() => { this.text = image['caption']; this.textSearch() }} />
+      ${image['caption'] !== undefined
+    ? html`<img src="assets/search.png" class="subTextSearch" @click=${() => { this.text = image['caption']; this.textSearch() }} />` : ``}
+     
      <img src="assets/image-search.png" class="subImageSearch" @click=${() => {
     if (image['image'] !== undefined) {
       this.image = image['image']
@@ -380,11 +381,13 @@ class ClipFront extends LitElement {
       this.imageUrl = image['url']
     }
   }} />
-      <img class="pic" src="${src}" alt="${image['caption']}"" title="${image['caption']}"
+      <img class="pic" src="${src}" alt="${image['caption'] !== undefined ? image['caption'] : ''}"" 
+      title="${image['caption'] !== undefined ? image['caption'] : ''}"
       @error=${() => { this.blacklist = { ...this.blacklist, ...{ [src]: true } } }} />
       
       ${this.displayCaptions ? html`<figcaption>
-      ${image['caption'].length > 50 && !this.displayFullCaptions ? image['caption'].substr(0, 50) + '...' : image['caption']}</figcaption>` : ''}
+      ${image['caption'] !== undefined && image['caption'].length > 50 &&
+      !this.displayFullCaptions ? image['caption'].substr(0, 50) + '...' : image['caption']}</figcaption>` : ''}
     
     
     </figure>

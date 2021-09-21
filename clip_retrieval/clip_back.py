@@ -158,7 +158,7 @@ class KnnService(Resource):
             D, I = index.search(query, num_images)
         nb_results = np.where(I[0] == -1)[0]
         if len(nb_results) > 0:
-            nb_results = nb_results[0]+1
+            nb_results = nb_results[0]
         else:
             nb_results = len(I[0])
         result_indices = I[0][:nb_results]
