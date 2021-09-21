@@ -1,3 +1,8 @@
+## 2.11.2
+
+* fix limiting of results in clip back
+* fix absence of caption in clip front
+
 ## 2.11.1
 
 * fix an issue in clip front handling of default
