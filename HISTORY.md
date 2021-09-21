@@ -1,3 +1,8 @@
+## 2.11.1
+
+* fix an issue in clip front handling of default
+* limit the number of results to the number available in clip back
+
 ## 2.11.0
 
 * add compression by default when creating the hdf5 cache file
