@@ -156,10 +156,17 @@ class KnnService(Resource):
 
         with KNN_INDEX_TIME.time():
             D, I = index.search(query, num_images)
+        nb_results = np.where(I[0] == -1)[0]
+        if len(nb_results) > 0:
+            nb_results = nb_results[0]+1
+        else:
+            nb_results = len(I[0])
+        result_indices = I[0][:nb_results]
+        result_distances = D[0][:nb_results]
         results = []
         with METADATA_GET_TIME.time():
-            metas = metadata_provider.get(I[0], self.columns_to_return)
-        for key, (d, i) in enumerate(zip(D[0], I[0])):
+            metas = metadata_provider.get(result_indices, self.columns_to_return)
+        for key, (d, i) in enumerate(zip(result_distances, result_indices)):
             output = {}
             meta = metas[key]
             if "image_path" in meta:
