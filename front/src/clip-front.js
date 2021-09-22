@@ -15,7 +15,7 @@ class ClipFront extends LitElement {
     if (index != null) {
       this.currentIndex = index
     } else {
-      this.currentIndex = back === defaultBackend ? defaultIndex : ''
+      this.currentIndex = back === null || back === defaultBackend ? defaultIndex : ''
     }
     if (back != null) {
       this.backendHost = back
