@@ -88,6 +88,18 @@ class ClipFront extends LitElement {
     }
   }
 
+  async initialScroll () {
+    const productsElement = this.shadowRoot.getElementById('products')
+    let i = 0
+    while ((window.innerHeight + window.pageYOffset) >= productsElement.offsetHeight) {
+      await this.fetchMoreMetadata()
+      i += 1
+      if (i > 5) {
+        break
+      }
+    }
+  }
+
   updated (_changedProperties) {
     if (_changedProperties.has('backendHost')) {
       this.service.backend = this.backendHost
@@ -187,6 +199,7 @@ class ClipFront extends LitElement {
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
     this.lastSearch = 'text'
     this.setUrlParams()
+    setTimeout(() => this.initialScroll(), 0)
   }
 
   async imageSearch () {
@@ -198,6 +211,7 @@ class ClipFront extends LitElement {
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
     this.lastSearch = 'image'
     this.setUrlParams()
+    setTimeout(() => this.initialScroll(), 0)
   }
 
   async imageUrlSearch () {
@@ -209,6 +223,7 @@ class ClipFront extends LitElement {
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
     this.lastSearch = 'imageUrl'
     this.setUrlParams()
+    setTimeout(() => this.initialScroll(), 0)
   }
   static get styles () {
     return css`
