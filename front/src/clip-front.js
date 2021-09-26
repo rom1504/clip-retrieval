@@ -401,7 +401,10 @@ class ClipFront extends LitElement {
       return false
     }
     const badWords = ['boob', 'sexy', 'ass', 'mature', 'nude', 'naked', 'porn', 'xvideo',
-      'ghetto', 'tube', 'hump', 'fuck', 'dick', 'whore', 'masturbate', 'video', 'puss', 'erotic']
+      'ghetto', 'tube', 'hump', 'fuck', 'dick', 'whore', 'masturbate', 'video', 'puss',
+      'erotic', 'hotmirrorpics', 'butt', 'spank', 'cum', 'voyeur', 'lesbian', 'topless',
+      'exhibitioni', 'prostitute', 'piss', 'drug', 'sex', 'hot ', 'nudity', 'nudist',
+      'domination', 'xxx', 'slave', 'bdsm', 'fisted', 'bbw', 'x5o']
     if (badWords.some(word => (image['url'] !== undefined && image['url'].toLowerCase().includes(word)) ||
     (image['caption'] !== undefined && image['caption'].toLowerCase().includes(word)))) {
       return false
