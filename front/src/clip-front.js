@@ -10,17 +10,17 @@ class ClipFront extends LitElement {
     const index = urlParams.get('index')
     const query = urlParams.get('query')
     const imageUrl = urlParams.get('imageUrl')
-    const defaultIndex = 'laion_400m'
-    const defaultBackend = 'https://clip-big.rom1504.fr' // put something here
+    this.defaultIndex = 'laion_400m'
+    this.defaultBackend = 'https://clip-big.rom1504.fr' // put something here
     if (index != null) {
       this.currentIndex = index
     } else {
-      this.currentIndex = back === null || back === defaultBackend ? defaultIndex : ''
+      this.currentIndex = back === null || back === this.defaultBackend ? this.defaultIndex : ''
     }
     if (back != null) {
       this.backendHost = back
     } else {
-      this.backendHost = defaultBackend
+      this.backendHost = this.defaultBackend
     }
     if (query != null) {
       this.text = query
@@ -47,12 +47,20 @@ class ClipFront extends LitElement {
     this.initIndices()
   }
 
+  setBackendToDefault () {
+    this.backendHost = this.defaultBackend
+    this.initIndices(true)
+  }
+
   initIndices (forceChange) {
     this.service.getIndices().then(l => {
       this.indices = l
       if (forceChange || this.currentIndex === '') {
         this.currentIndex = this.indices[0]
       }
+    }).catch(e => {
+      console.error(e)
+      this.setBackendToDefault()
     })
   }
 
