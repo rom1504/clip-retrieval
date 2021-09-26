@@ -28,7 +28,10 @@ class ClipFront extends LitElement {
       this.text = ''
     }
     this.service = new ClipService(this.backendHost)
-    this.numImages = 20
+    this.numImages = 40
+    this.numResultIds = 2000
+    this.lastMetadataId = null
+    this.onGoingMetadataFetch = false
     this.indices = []
     this.images = []
     this.modality = 'image'
@@ -40,6 +43,7 @@ class ClipFront extends LitElement {
     this.safeMode = true
     this.firstLoad = true
     this.imageUrl = imageUrl === null ? undefined : imageUrl
+    this.hideDuplicateUrls = true
     this.initIndices()
   }
 
@@ -68,13 +72,20 @@ class ClipFront extends LitElement {
       displaySimilarities: { type: Boolean },
       displayCaptions: { type: Boolean },
       displayFullCaptions: { type: Boolean },
-      safeMode: { type: Boolean }
+      safeMode: { type: Boolean },
+      hideDuplicateUrls: { type: Boolean }
     }
   }
 
   firstUpdated () {
     const searchElem = this.shadowRoot.getElementById('searchBar')
     searchElem.addEventListener('keyup', e => { if (e.keyCode === 13) { this.textSearch() } })
+    const productsElement = this.shadowRoot.getElementById('products')
+    window.onscroll = () => {
+      if ((window.innerHeight + window.pageYOffset) >= productsElement.offsetHeight) {
+        this.fetchMoreMetadata()
+      }
+    }
   }
 
   updated (_changedProperties) {
@@ -133,15 +144,47 @@ class ClipFront extends LitElement {
     window.history.pushState({}, '', '?' + urlParams.toString())
   }
 
+  async fetchMoreMetadata (amount = 40) {
+    if (this.onGoingMetadataFetch) {
+      return
+    }
+    this.onGoingMetadataFetch = true
+    console.log('fetching more metadata starting from position', this.lastMetadataId)
+    if (this.lastMetadataId === null) {
+      this.onGoingMetadataFetch = false
+      return
+    }
+    amount = Math.min(amount, this.numResultIds - this.lastMetadataId - 1)
+    if (amount <= 0) {
+      this.onGoingMetadataFetch = false
+      return
+    }
+    const ids = this.images.slice(this.lastMetadataId + 1, this.lastMetadataId + amount + 1).map(i => i.id)
+    try {
+      const metasWithIds = Object.fromEntries((await this.service.getMetadata(ids, this.currentIndex)).map(({ id, metadata }) => [id, metadata]))
+      this.images = this.images.map(image => {
+        if (metasWithIds[image.id] !== undefined) {
+          image = { ...metasWithIds[image.id], ...image }
+        }
+        return image
+      })
+      this.lastMetadataId += amount
+    } catch (e) {
+      console.log(e)
+    }
+    this.onGoingMetadataFetch = false
+  }
+
   async textSearch () {
     if (this.text === '') {
       return
     }
     this.image = undefined
     this.imageUrl = undefined
-    const results = await this.service.callClipService(this.text, null, null, this.modality, this.numImages, this.currentIndex)
+    const results = await this.service.callClipService(this.text, null, null, this.modality, this.numImages, this.currentIndex, this.numResultIds)
     console.log(results)
     this.images = results
+    this.lastMetadataId = Math.min(this.numImages, results.length) - 1
     this.lastSearch = 'text'
     this.setUrlParams()
   }
@@ -149,9 +192,10 @@ class ClipFront extends LitElement {
   async imageSearch () {
     this.text = ''
     this.imageUrl = undefined
-    const results = await this.service.callClipService(null, this.image, null, this.modality, this.numImages, this.currentIndex)
+    const results = await this.service.callClipService(null, this.image, null, this.modality, this.numImages, this.currentIndex, this.numResultIds)
     console.log(results)
     this.images = results
+    this.lastMetadataId = Math.min(this.numImages, results.length) - 1
     this.lastSearch = 'image'
     this.setUrlParams()
   }
@@ -159,9 +203,10 @@ class ClipFront extends LitElement {
   async imageUrlSearch () {
     this.text = ''
     this.image = undefined
-    const results = await this.service.callClipService(null, null, this.imageUrl, this.modality, this.numImages, this.currentIndex)
+    const results = await this.service.callClipService(null, null, this.imageUrl, this.modality, this.numImages, this.currentIndex, this.numResultIds)
     console.log(results)
     this.images = results
+    this.lastMetadataId = Math.min(this.numImages, results.length) - 1
     this.lastSearch = 'imageUrl'
     this.setUrlParams()
   }
@@ -394,8 +439,24 @@ class ClipFront extends LitElement {
     `
   }
 
+  filterDuplicateUrls (images) {
+    const urls = {}
+    return images.filter(image => {
+      if (image['url'] !== undefined) {
+        if (urls[image['url']] === undefined) {
+          urls[image['url']] = true
+          return true
+        }
+      }
+      return false
+    })
+  }
+
   render () {
-    const filteredImages = this.images.filter(image => !this.safeMode || this.isSafe(image))
+    const preFiltered = this.images
+      .filter(image => image['caption'] !== undefined || image['url'] !== undefined || image['image'] !== undefined)
+      .filter(image => !this.safeMode || this.isSafe(image))
+    const filteredImages = this.hideDuplicateUrls ? this.filterDuplicateUrls(preFiltered) : preFiltered
 
     return html`
     <div id="all">
@@ -421,6 +482,7 @@ class ClipFront extends LitElement {
       <label>Display full captions<input type="checkbox" ?checked="${this.displayFullCaptions}" @click=${() => { this.displayFullCaptions = !this.displayFullCaptions }} /></label><br />
       <label>Display similarities<input type="checkbox" ?checked="${this.displaySimilarities}" @click=${() => { this.displaySimilarities = !this.displaySimilarities }} /></label><br />
       <label>Safe mode<input type="checkbox" ?checked="${this.safeMode}" @click=${() => { this.safeMode = !this.safeMode }} /></label><br />
+      <label>Hide duplicate urls<input type="checkbox" ?checked="${this.hideDuplicateUrls}" @click=${() => { this.hideDuplicateUrls = !this.hideDuplicateUrls }} /></label><br />
       <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>
   html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select>
         <p>This UI may contain results with nudity and is best used by adults. The images are under their own copyright.</p>

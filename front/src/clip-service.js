@@ -2,10 +2,6 @@
 
 import JsonBigint from 'json-bigint'
 
-/*
-const results = await this.clipService.callClipService(this.text, null, "image", this.numKnnImages, this.currentIndex)
-*/
-
 export default class ClipService {
   constructor (backend) {
     this.backend = backend
@@ -18,7 +14,7 @@ export default class ClipService {
     return result
   }
 
-  async callClipService (text, image, imageUrl, modality, numImages, indexName) {
+  async callClipService (text, image, imageUrl, modality, numImages, indexName, numResultIds) {
     console.log('calling', text, numImages)
     const result = JsonBigint.parse(await (await fetch(this.backend + `/knn-service`, {
       method: 'POST',
@@ -28,6 +24,19 @@ export default class ClipService {
         'image_url': imageUrl,
         modality,
         'num_images': numImages,
+        'indice_name': indexName,
+        'num_result_ids': numResultIds
+      })
+    })).text())
+
+    return result
+  }
+
+  async getMetadata (ids, indexName) {
+    const result = JsonBigint.parse(await (await fetch(this.backend + `/metadata`, {
+      method: 'POST',
+      body: JSON.stringify({
+        ids,
         'indice_name': indexName
       })
     })).text())

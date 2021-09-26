@@ -130,7 +130,8 @@ At this point you have a simple flask server running on port 1234 and that can a
     "image_url": "http://some-url.com/a.jpg",
     "modality": "image", // image or text index to use
     "num_images": 4, // number of output images
-    "indice_name": "example_index"
+    "indice_name": "example_index",
+    "num_result_ids": 4 // optional, if specified fetch this number of results in total but only num_images with metadata
 }
 ```
 text, image and image_url are mutually exclusive
@@ -139,15 +140,36 @@ and returns:
 [
     {
         "image": "base 64 of an image",
-        "text": "some result text"
+        "text": "some result text",
+        "id": 543
     },
     {
         "image": "base 64 of an image",
-        "text": "some result text"
+        "text": "some result text",
+        "id": 782
     }
 ]
 ```
 Each object may also contain an url field if the metadata provides it.
+
+The id is the position of the item in the index. It may be used to query metadata with the /metadata endpoint:
+```js
+{
+    "indice_name": "example_index",
+    "ids": [543, 782]
+}
+```
+which returns:
+```js
+{
+    "image": "base 64 of an image",
+    "text": "some result text"
+    // any other key available in the metadata and specified in columns_to_return cli option
+}
+```
+
+`num_result_ids` argument of `/knn-service` and `/metadata` can be used together to do large knn queries and then fetch the metadata only when needed. It makes sense to do that as knn search can be very efficient thanks to strong [locality of reference](https://en.wikipedia.org/wiki/Locality_of_reference) of knn IVF index making it fast to do knn with a large K, whereas the current on-disk implementation of metadata (hdf5) does not have that property and hence cannot handle retrieving a large amount of random items fast.
+In particular this can be used to implement infinite scroll in a front end.
 
 ### Clip back: Benchmark and monitoring
 

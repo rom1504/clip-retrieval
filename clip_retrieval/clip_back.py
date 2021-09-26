@@ -109,6 +109,22 @@ def download_image(url):
         img_stream = io.BytesIO(r.read())
     return img_stream
 
+class MetadataService(Resource):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.indices_loaded = kwargs['indices_loaded']
+        self.columns_to_return = kwargs['columns_to_return']
+
+    def post(self):
+        json_data = request.get_json(force=True)
+        ids = json_data['ids']
+        indice_name = json_data["indice_name"]
+        metadata_provider = self.indices_loaded[indice_name]["metadata_provider"]
+        metas = metadata_provider.get(ids, self.columns_to_return)
+        metas_with_ids = [{"id": item_id, "metadata": meta_to_dict(meta)} for item_id, meta in zip(ids, metas)]
+        return metas_with_ids
+  
+
 class KnnService(Resource):
     def __init__(self, **kwargs):
         super().__init__()
@@ -121,11 +137,12 @@ class KnnService(Resource):
     @FULL_KNN_REQUEST_TIME.time()
     def post(self):
         json_data = request.get_json(force=True)
-        text_input = json_data["text"] if "text" in json_data else None
-        image_input = json_data["image"] if "image" in json_data else None
-        image_url_input = json_data["image_url"] if "image_url" in json_data else None
+        text_input = json_data.get("text", None)
+        image_input = json_data.get("image", None)
+        image_url_input = json_data.get("image_url", None)
         modality = json_data["modality"]
         num_images = json_data["num_images"]
+        num_result_ids = json_data.get("num_result_ids", num_images)
         indice_name = json_data["indice_name"]
         image_index = self.indices_loaded[indice_name]["image_index"]
         text_index = self.indices_loaded[indice_name]["text_index"]
@@ -155,7 +172,7 @@ class KnnService(Resource):
         index = image_index if modality == "image" else text_index
 
         with KNN_INDEX_TIME.time():
-            D, I = index.search(query, num_images)
+            D, I = index.search(query, num_result_ids)
         nb_results = np.where(I[0] == -1)[0]
         if len(nb_results) > 0:
             nb_results = nb_results[0]
@@ -165,11 +182,11 @@ class KnnService(Resource):
         result_distances = D[0][:nb_results]
         results = []
         with METADATA_GET_TIME.time():
-            metas = metadata_provider.get(result_indices, self.columns_to_return)
+            metas = metadata_provider.get(result_indices[:num_images], self.columns_to_return)
         for key, (d, i) in enumerate(zip(result_distances, result_indices)):
             output = {}
-            meta = metas[key]
-            if "image_path" in meta:
+            meta = None if key+1 > len(metas) else metas[key]
+            if meta is not None and "image_path" in meta:
                 path = meta["image_path"]
                 if os.path.exists(path):
                     img = Image.open(path)
@@ -177,15 +194,23 @@ class KnnService(Resource):
                     img.save(buffered, format="JPEG")
                     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8") 
                     output["image"] = img_str
-            for k, v in meta.items():
-                if isinstance(v, bytes):
-                    v = v.decode()
-                elif type(v).__module__ == np.__name__:
-                    v = v.item()
-                output[k] = v
+            if meta is not None:
+                output.update(meta_to_dict(meta))
+            output["id"] = i.item()
             output["similarity"] = d.item()
             results.append(output)
         return results
+
+
+def meta_to_dict(meta):
+    output = {}
+    for k, v in meta.items():
+        if isinstance(v, bytes):
+            v = v.decode()
+        elif type(v).__module__ == np.__name__:
+            v = v.item()
+        output[k] = v
+    return output
 
 class ParquetMetadataProvider:
     def __init__(self, parquet_folder):
@@ -242,7 +267,6 @@ class Hdf5MetadataProvider:
         else:
             cols = list(self.ds.keys() & set(cols))
         for k in cols:
-            # broken
             sorted_ids = sorted([(k, i) for i, k in list(enumerate(ids))])
             for_hdf5 = [k for k,_ in sorted_ids]
             for_np = [i for _,i in sorted_ids]
@@ -304,6 +328,8 @@ def clip_back(indices_paths="indices_paths.json", port=1234, enable_hdf5=False, 
     api = Api(app)
     api.add_resource(MetricsSummary, '/metrics-summary')
     api.add_resource(IndicesList, '/indices-list', resource_class_kwargs={'indices': indices})
+    api.add_resource(MetadataService, '/metadata', resource_class_kwargs={'indices_loaded': indices_loaded,\
+        'columns_to_return': columns_to_return})
     api.add_resource(KnnService, '/knn-service', resource_class_kwargs={'indices_loaded': indices_loaded, 'device': device, \
     'model': model, 'preprocess': preprocess, 'columns_to_return': columns_to_return})
     api.add_resource(Health, '/')
