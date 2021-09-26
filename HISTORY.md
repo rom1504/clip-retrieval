@@ -1,3 +1,7 @@
+## 2.12.0
+
+* implement infinite scroll feature
+
 ## 2.11.2
 
 * fix limiting of results in clip back
