@@ -1,3 +1,7 @@
+## 2.13.0
+
+* add a simple filter ipynb notebook
+
 ## 2.12.0
 
 * implement infinite scroll feature
