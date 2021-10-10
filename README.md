@@ -97,6 +97,8 @@ Using the `--num_results` or `--threshold` may be helpful to refine the filter
 
 Thanks to fast knn index, this can run in real time (<10ms) for large K values (100000), and in minutes for very large K values.
 
+This scripts works for small datasets. For larger ones, please check [notebook/simple_filter.ipynb].
+
 ## Clip back
 
 Clip back is a simple knn service backend. If using both hdf5 and faiss memory mapping, it uses only the memory used by clip which is 4GB.

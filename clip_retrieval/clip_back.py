@@ -134,16 +134,12 @@ class KnnService(Resource):
         self.preprocess = kwargs['preprocess']
         self.columns_to_return = kwargs['columns_to_return']
 
-    @FULL_KNN_REQUEST_TIME.time()
-    def post(self):
-        json_data = request.get_json(force=True)
-        text_input = json_data.get("text", None)
-        image_input = json_data.get("image", None)
-        image_url_input = json_data.get("image_url", None)
-        modality = json_data["modality"]
-        num_images = json_data["num_images"]
-        num_result_ids = json_data.get("num_result_ids", num_images)
-        indice_name = json_data["indice_name"]
+
+    def query(self, text_input=None, image_input=None, image_url_input=None, modality="image", num_images=100, num_result_ids=100, indice_name=None):
+        if text_input is None and image_input is None and image_url_input is None:
+            raise ValueError("must fill one of text, image and image url input")
+        if indice_name is None:
+            indice_name = next(iter(self.indices_loaded.keys()))
         image_index = self.indices_loaded[indice_name]["image_index"]
         text_index = self.indices_loaded[indice_name]["text_index"]
         metadata_provider = self.indices_loaded[indice_name]["metadata_provider"]
@@ -200,6 +196,19 @@ class KnnService(Resource):
             output["similarity"] = d.item()
             results.append(output)
         return results
+
+    @FULL_KNN_REQUEST_TIME.time()
+    def post(self):
+        json_data = request.get_json(force=True)
+        text_input = json_data.get("text", None)
+        image_input = json_data.get("image", None)
+        image_url_input = json_data.get("image_url", None)
+        modality = json_data["modality"]
+        num_images = json_data["num_images"]
+        num_result_ids = json_data.get("num_result_ids", num_images)
+        indice_name = json_data["indice_name"]
+        return self.query(text_input, image_input, image_url_input, modality, num_images, num_result_ids, indice_name)
+        
 
 
 def meta_to_dict(meta):
@@ -276,7 +285,7 @@ class Hdf5MetadataProvider:
                 items[i][k] = e
         return items
 
-def clip_back(indices_paths="indices_paths.json", port=1234, enable_hdf5=False, enable_faiss_memory_mapping=False, columns_to_return=None):
+def load_clip_indices(indices_paths, enable_hdf5, enable_faiss_memory_mapping, columns_to_return):
     if columns_to_return is None:
         columns_to_return = ["url", "image_path", "caption", "NSFW"]
     print('loading clip...')
@@ -320,6 +329,13 @@ def clip_back(indices_paths="indices_paths.json", port=1234, enable_hdf5=False, 
             'image_index': image_index,
             'text_index': text_index
         }
+    
+    return indices_loaded, indices, device, model, preprocess
+
+
+
+def clip_back(indices_paths="indices_paths.json", port=1234, enable_hdf5=False, enable_faiss_memory_mapping=False, columns_to_return=None):
+    indices_loaded, indices, device, model, preprocess = load_clip_indices(indices_paths, enable_hdf5, enable_faiss_memory_mapping, columns_to_return)
 
     app = Flask(__name__)
     app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
