@@ -473,8 +473,9 @@ class ClipFront extends LitElement {
           urls[image['url']] = true
           return true
         }
+        return false
       }
-      return false
+      return true
     })
   }
 
