@@ -286,8 +286,6 @@ class Hdf5MetadataProvider:
         return items
 
 def load_clip_indices(indices_paths, enable_hdf5, enable_faiss_memory_mapping, columns_to_return):
-    if columns_to_return is None:
-        columns_to_return = ["url", "image_path", "caption", "NSFW"]
     print('loading clip...')
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
@@ -335,6 +333,8 @@ def load_clip_indices(indices_paths, enable_hdf5, enable_faiss_memory_mapping, c
 
 
 def clip_back(indices_paths="indices_paths.json", port=1234, enable_hdf5=False, enable_faiss_memory_mapping=False, columns_to_return=None):
+    if columns_to_return is None:
+        columns_to_return = ["url", "image_path", "caption", "NSFW"]
     indices_loaded, indices, device, model, preprocess = load_clip_indices(indices_paths, enable_hdf5, enable_faiss_memory_mapping, columns_to_return)
 
     app = Flask(__name__)
