@@ -1,3 +1,8 @@
+## 2.13.1
+
+* fix filterDuplicateUrls issue when there is no url, only images
+* fix default columns_to_return
+
 ## 2.13.0
 
 * add a simple filter ipynb notebook
