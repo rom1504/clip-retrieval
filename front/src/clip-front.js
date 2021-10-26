@@ -400,13 +400,24 @@ class ClipFront extends LitElement {
     if ((image['NSFW'] === 'UNSURE' || image['NSFW'] === 'NSFW')) {
       return false
     }
-    const badWords = ['boob', 'sexy', 'ass', 'mature', 'nude', 'naked', 'porn', 'xvideo',
-      'ghetto', 'tube', 'hump', 'fuck', 'dick', 'whore', 'masturbate', 'video', 'puss',
-      'erotic', 'hotmirrorpics', 'butt', 'spank', 'cum', 'voyeur', 'lesbian', 'topless',
-      'exhibitioni', 'prostitute', 'piss', 'drug', 'sex', 'hot ', 'nudity', 'nudist',
-      'domination', 'xxx', 'slave', 'bdsm', 'fisted', 'bbw', 'x5o']
-    if (badWords.some(word => (image['url'] !== undefined && image['url'].toLowerCase().includes(word)) ||
-    (image['caption'] !== undefined && image['caption'].toLowerCase().includes(word)))) {
+    const badWords = ['ass', 'mature', 'nude', 'porn', 'xvideo', 'cock', 'doggy', 'fetish', 'squirt', 'footjob', 'naked', 'tranny', 'breasts', 'drunk',
+      'ghetto', 'tube', 'hump', 'fuck', 'dick', 'whore', 'masturb', 'puss', 'virgin', 'nipples', 'horny', 'naughty', 'striptease', 'bondage', 'softcore',
+      'erotic', 'hotmirrorpics', 'butt', 'spank', 'cum', 'voyeur', 'lesbian', 'topless', 'amateur', 'milf', 'slut', 'sybian', 'tits', 'titty', 'nsfw',
+      'exhibitioni', 'prostitute', 'piss', 'nudity', 'nudist', 'molest', 'blow', 'deepthroat', 'domination', 'xxx', 'slave', 'studs', 'audition', 'censor',
+      'bdsm', 'fisted', 'bbw', 'x5o', 'anal', 'incest', 'chaturbate', 'hot blonde', 'escort', 'backroom casting', 'bang', 'dildo', 'sodom', 'orgy', 'orgies',
+      'hooter', 'abused', 'webcam', 'panties', 'curvy', 'facial', 'jerk', 'moan', 'strip', 'titted', 'penetrat', 'sex', 'toying', 'hookup', 'affair',
+      'cmnf', 'strap', 'interracial', 'threesome', 'pee', 'lesbo', 'lesbian', 'boob', 'lingerie', 'stepsister', 'booty', 'booties', 'latina', 'ejacul',
+      'bikini', 'thongs', 'gay', 'hardcore', 'handjob', 'dogstyle', 'mom', 'dad', 'adulterous', 'seduce', 'teen', 'rape', 'vibrator', 'call girl',
+      'upskirt', 'intercourse', 'shag', 'pounded', 'gagged', 'juvenile', 'brazzer', 'busty', 'thumbvideo', 'cleavage', 'breast', 'nubile', 'hot girl']
+    const badDomains = [...badWords, 'hot', 'tmdb', 'adult', 'empirestores', 'aebn', 'seemygf', 'brbpics', 'userapi', 'naoconto', '123rf', 'pimp',
+      'amatura', 'dailyangels', 'innocent', 'acidcdn', 'ypncdn', 'fastload', 'olimptraffic', 'imagebam', 'axthumbs', 'lazymike', 'org1es', 'nightclub',
+      'xhamster', 'relaxpics', 'girlfriend', 'roomimg', 'operatorchat', 'hwcdn', 'good-galleries', 'gogovids', 'makeraser', 'libfx', 'videobox',
+      'timbridgewater', 'juliamovies', 'hoes', 'woxcdn', 'girl', 'vscdns', 'rdtcdn', 'juicy', 'cd-img', 'babe', 'drst', 'rnopo', 'clips4sale', 'joymii',
+      'mymoviecinema', 'phncdn', 'vids', 'cd-tn', 'wapus', '2beeg', 'cometobservation', 'badjojo', 'ytimng', 'redd.it', 'redditmedia', 'hegre',
+      'acidcow', 'telephonemodels', 'rotic', 'fap', 'homo', 'xnxxn', 'tlavideo', 'blogself', 'ciaofornow', 'radvideo', 'zcdn2', 'cdn2073', 'vodconcepts',
+      'staxussales', 'hw0', 'toxamedia', 'depic', 'dvdempire', 'xnxx', 'taboo', 'salmadenora', 'wlresources', 'shesfreaky', 'movierls', 'alsscan']
+    if (badDomains.some(word => (image['url'] !== undefined && image['url'].toLowerCase().includes(word))) ||
+      badWords.some(word => (image['caption'] !== undefined && image['caption'].toLowerCase().includes(word)))) {
       return false
     }
     return true
