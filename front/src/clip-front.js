@@ -195,6 +195,27 @@ class ClipFront extends LitElement {
     this.onGoingMetadataFetch = false
   }
 
+  async download () {
+    function downloadFile (filename, text) {
+      var element = document.createElement('a')
+      element.setAttribute('href', 'data:application/json;charset=utf-8,' + encodeURIComponent(text))
+      element.setAttribute('download', filename)
+
+      element.style.display = 'none'
+      document.body.appendChild(element)
+
+      element.click()
+
+      document.body.removeChild(element)
+    }
+    const text = this.text === undefined ? null : this.text
+    const image = this.image === undefined ? null : this.image
+    const imageUrl = this.imageUrl === undefined ? null : this.imageUrl
+    const count = this.modality === 'image' && this.currentIndex === this.indices[0] ? 100 : 100
+    const results = await this.service.callClipService(text, image, imageUrl, this.modality, count, this.currentIndex, count)
+    downloadFile('clipsubset.json', JSON.stringify(results, null, 2))
+  }
+
   async textSearch () {
     if (this.text === '') {
       return
@@ -272,6 +293,12 @@ class ClipFront extends LitElement {
     }
     #inputSearchBar:hover > #searchBar {
       box-shadow: 0px 0px 7px  #ccc !important;
+    }
+    #download {
+      width: 22px;
+      margin-left:0.5%;
+      vertical-align:middle;
+      cursor:pointer;
     }
     #imageSearch {
       width: 22px;
@@ -492,6 +519,7 @@ class ClipFront extends LitElement {
         <input id="searchBar" type="text" .value=${this.text} @input=${e => { this.text = e.target.value }}/>
         <img src="assets/search.png" id="textSearch" @click=${() => { this.textSearch() }} />
         <img src="assets/image-search.png" id="imageSearch" @click=${() => { this.shadowRoot.getElementById('filechooser').click() }} />
+        <img src="assets/download.png" id="download" @click=${() => { this.download() }} />
         <input type="file" id="filechooser" style="position:absolute;top:-100px" @change=${() =>
     this.updateImage(this.shadowRoot.getElementById('filechooser').files[0])}>
       </span>
