@@ -1,3 +1,8 @@
+## 2.14.0
+
+* implement ivf re-ordering for much faster metadata fetching
+* add download button in front
+
 ## 2.13.1
 
 * fix filterDuplicateUrls issue when there is no url, only images
