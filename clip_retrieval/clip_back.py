@@ -14,6 +14,7 @@ import fire
 from pathlib import Path
 import pandas as pd
 import urllib
+import tempfile
 import io
 import numpy as np
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
@@ -26,6 +27,9 @@ import random
 import time
 from prometheus_client import Histogram
 from prometheus_client import REGISTRY
+import math
+
+from clip_retrieval.ivf_metadata_ordering import Hdf5Sink, external_sort_parquet, re_order_parquet, search_to_new_ids
 
 for coll in list(REGISTRY._collector_to_names.keys()):
     REGISTRY.unregister(coll)
@@ -133,6 +137,7 @@ class KnnService(Resource):
         self.model = kwargs['model']
         self.preprocess = kwargs['preprocess']
         self.columns_to_return = kwargs['columns_to_return']
+        self.metadata_is_ordered_by_ivf = kwargs['metadata_is_ordered_by_ivf']
 
 
     def query(self, text_input=None, image_input=None, image_url_input=None, modality="image", num_images=100, num_result_ids=100, indice_name=None):
@@ -143,6 +148,11 @@ class KnnService(Resource):
         image_index = self.indices_loaded[indice_name]["image_index"]
         text_index = self.indices_loaded[indice_name]["text_index"]
         metadata_provider = self.indices_loaded[indice_name]["metadata_provider"]
+        # the index for which metadata is ordered is the first image index
+        if self.metadata_is_ordered_by_ivf:
+            metadata_ordered_index = self.indices_loaded[next(iter(self.indices_loaded.keys()))]["image_index"]
+        else:
+            metadata_ordered_index = None
 
         if text_input is not None:
             with TEXT_PREPRO_TIME.time():
@@ -168,13 +178,24 @@ class KnnService(Resource):
         index = image_index if modality == "image" else text_index
 
         with KNN_INDEX_TIME.time():
-            D, I = index.search(query, num_result_ids)
-        nb_results = np.where(I[0] == -1)[0]
+            previous_nprobe = faiss.extract_index_ivf(index).nprobe
+            if num_result_ids >= 100000:
+                    nprobe = math.ceil(num_result_ids / 3000)
+                    params = faiss.ParameterSpace()
+                    params.set_index_parameters(index, f"nprobe={nprobe},efSearch={nprobe*2},ht={2048}")
+            if metadata_ordered_index:
+                D, results = search_to_new_ids(metadata_ordered_index, query, num_result_ids, index)
+            else:
+                D, I = index.search(query, num_result_ids)
+                results = I[0]
+            params = faiss.ParameterSpace()
+            params.set_index_parameters(index, f"nprobe={previous_nprobe},efSearch={previous_nprobe*2},ht={2048}")
+        nb_results = np.where(results == -1)[0]
         if len(nb_results) > 0:
             nb_results = nb_results[0]
         else:
-            nb_results = len(I[0])
-        result_indices = I[0][:nb_results]
+            nb_results = len(results)
+        result_indices = results[:nb_results]
         result_distances = D[0][:nb_results]
         results = []
         with METADATA_GET_TIME.time():
@@ -279,13 +300,19 @@ class Hdf5MetadataProvider:
             sorted_ids = sorted([(k, i) for i, k in list(enumerate(ids))])
             for_hdf5 = [k for k,_ in sorted_ids]
             for_np = [i for _,i in sorted_ids]
-            g = self.ds[k][for_hdf5]
+            if len(for_hdf5) <= 10000:
+                batch_size = 100
+            else:
+                batch_size = 1000
+            g = [self.ds[k][for_hdf5[i*batch_size:(i+1)*batch_size]] for i in range(math.ceil(len(for_hdf5)/batch_size))]
+            g = np.concatenate(g)
             gg = g[for_np]
             for i, e in enumerate(gg):
                 items[i][k] = e
         return items
 
-def load_clip_indices(indices_paths, enable_hdf5, enable_faiss_memory_mapping, columns_to_return):
+
+def load_clip_indices(indices_paths, enable_hdf5, enable_faiss_memory_mapping, columns_to_return, reorder_metadata_by_ivf_index):
     print('loading clip...')
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
@@ -297,15 +324,6 @@ def load_clip_indices(indices_paths, enable_hdf5, enable_faiss_memory_mapping, c
     for name, indice_folder in indices.items():
         image_present = os.path.exists(indice_folder+"/image.index")
         text_present = os.path.exists(indice_folder+"/text.index")
-        hdf5_path = indice_folder+"/metadata.hdf5"
-        parquet_folder = indice_folder+"/metadata"
-        print('loading metadata...')
-        if enable_hdf5:
-            if not os.path.exists(hdf5_path):
-                parquet_to_hdf5(parquet_folder, hdf5_path, columns_to_return)
-            metadata_provider = Hdf5MetadataProvider(hdf5_path)
-        else:
-            metadata_provider = ParquetMetadataProvider(parquet_folder)
 
         print('loading indices...')
         if image_present:
@@ -322,6 +340,26 @@ def load_clip_indices(indices_paths, enable_hdf5, enable_faiss_memory_mapping, c
                 text_index = faiss.read_index(indice_folder+"/text.index")
         else:
             text_index = None
+        
+
+        parquet_folder = indice_folder+"/metadata"
+        print('loading metadata...')
+        if enable_hdf5:
+            hdf5_path = None
+            if reorder_metadata_by_ivf_index:
+                hdf5_path = indice_folder+"/metadata_reordered.hdf5"
+                if not os.path.exists(hdf5_path):
+                    with tempfile.TemporaryDirectory() as dir:
+                        re_order_parquet(image_index, parquet_folder, str(dir), columns_to_return)
+                        external_sort_parquet(Hdf5Sink(hdf5_path, columns_to_return), str(dir))
+            else:
+                hdf5_path = indice_folder+"/metadata.hdf5"
+                if not os.path.exists(hdf5_path):
+                    parquet_to_hdf5(parquet_folder, hdf5_path, columns_to_return)
+            metadata_provider = Hdf5MetadataProvider(hdf5_path)
+        else:
+            metadata_provider = ParquetMetadataProvider(parquet_folder)
+        
         indices_loaded[name]={
             'metadata_provider': metadata_provider,
             'image_index': image_index,
@@ -330,12 +368,18 @@ def load_clip_indices(indices_paths, enable_hdf5, enable_faiss_memory_mapping, c
     
     return indices_loaded, indices, device, model, preprocess
 
+# reorder_metadata_by_ivf_index allows faster data retrieval of knn results by re-ordering the metadata by the ivf clusters
 
-
-def clip_back(indices_paths="indices_paths.json", port=1234, enable_hdf5=False, enable_faiss_memory_mapping=False, columns_to_return=None):
+def clip_back(indices_paths="indices_paths.json",
+                port=1234,
+                enable_hdf5=False,
+                enable_faiss_memory_mapping=False,
+                columns_to_return=None,
+                reorder_metadata_by_ivf_index=False):
     if columns_to_return is None:
         columns_to_return = ["url", "image_path", "caption", "NSFW"]
-    indices_loaded, indices, device, model, preprocess = load_clip_indices(indices_paths, enable_hdf5, enable_faiss_memory_mapping, columns_to_return)
+    indices_loaded, indices, device, model, preprocess = load_clip_indices(indices_paths, enable_hdf5, 
+            enable_faiss_memory_mapping, columns_to_return, reorder_metadata_by_ivf_index)
 
     app = Flask(__name__)
     app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
@@ -347,7 +391,8 @@ def clip_back(indices_paths="indices_paths.json", port=1234, enable_hdf5=False, 
     api.add_resource(MetadataService, '/metadata', resource_class_kwargs={'indices_loaded': indices_loaded,\
         'columns_to_return': columns_to_return})
     api.add_resource(KnnService, '/knn-service', resource_class_kwargs={'indices_loaded': indices_loaded, 'device': device, \
-    'model': model, 'preprocess': preprocess, 'columns_to_return': columns_to_return})
+    'model': model, 'preprocess': preprocess,
+    'columns_to_return': columns_to_return, 'metadata_is_ordered_by_ivf': reorder_metadata_by_ivf_index})
     api.add_resource(Health, '/')
     CORS(app)
     app.run(host="0.0.0.0", port=port, debug=False)
