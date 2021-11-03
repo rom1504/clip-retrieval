@@ -13,10 +13,8 @@ import faiss
 
 # this function maps the result ids to the ones ordered by the ivf clusters
 # to be used along with a re-ordered metadata
-def search_to_new_ids(index, query, k, query_index=None):
-    if query_index is None:
-        query_index = index
-    distances, I = query_index.search(query, k)
+def search_to_new_ids(index, query, k):
+    distances, I = index.search(query, k)
     opq2 = faiss.downcast_VectorTransform(index.chain.at(0))
     xq = opq2.apply(query)
     _, l = faiss.extract_index_ivf(index).quantizer.search(xq, faiss.extract_index_ivf(index).nprobe)
@@ -42,7 +40,7 @@ def search_to_new_ids(index, query, k, query_index=None):
 
 def get_old_to_new_mapping(index):
     il = faiss.extract_index_ivf(index).invlists
-    d = np.ones((index.ntotal,))
+    d = np.ones((index.ntotal,), 'int64')
     begin_list = []
     current_begin = 0
     for i in tqdm(range(il.nlist)):

@@ -29,7 +29,7 @@ from prometheus_client import Histogram
 from prometheus_client import REGISTRY
 import math
 
-from clip_retrieval.ivf_metadata_ordering import Hdf5Sink, external_sort_parquet, re_order_parquet, search_to_new_ids
+from clip_retrieval.ivf_metadata_ordering import Hdf5Sink, external_sort_parquet, get_old_to_new_mapping, re_order_parquet, search_to_new_ids
 
 for coll in list(REGISTRY._collector_to_names.keys()):
     REGISTRY.unregister(coll)
@@ -148,11 +148,8 @@ class KnnService(Resource):
         image_index = self.indices_loaded[indice_name]["image_index"]
         text_index = self.indices_loaded[indice_name]["text_index"]
         metadata_provider = self.indices_loaded[indice_name]["metadata_provider"]
-        # the index for which metadata is ordered is the first image index
         if self.metadata_is_ordered_by_ivf:
-            metadata_ordered_index = self.indices_loaded[next(iter(self.indices_loaded.keys()))]["image_index"]
-        else:
-            metadata_ordered_index = None
+            ivf_old_to_new_mapping = self.indices_loaded[indice_name]["ivf_old_to_new_mapping"]
 
         if text_input is not None:
             with TEXT_PREPRO_TIME.time():
@@ -178,18 +175,24 @@ class KnnService(Resource):
         index = image_index if modality == "image" else text_index
 
         with KNN_INDEX_TIME.time():
-            previous_nprobe = faiss.extract_index_ivf(index).nprobe
-            if num_result_ids >= 100000:
-                    nprobe = math.ceil(num_result_ids / 3000)
-                    params = faiss.ParameterSpace()
-                    params.set_index_parameters(index, f"nprobe={nprobe},efSearch={nprobe*2},ht={2048}")
-            if metadata_ordered_index:
-                D, results = search_to_new_ids(metadata_ordered_index, query, num_result_ids, index)
+            if self.metadata_is_ordered_by_ivf:
+                previous_nprobe = faiss.extract_index_ivf(index).nprobe
+                if num_result_ids >= 100000:
+                        nprobe = math.ceil(num_result_ids / 3000)
+                        params = faiss.ParameterSpace()
+                        params.set_index_parameters(index, f"nprobe={nprobe},efSearch={nprobe*2},ht={2048}")
+            if self.metadata_is_ordered_by_ivf:
+                if modality == "image":
+                    D, results = search_to_new_ids(index, query, num_result_ids)
+                else:
+                    D, I = index.search(query, num_result_ids)
+                    results = np.take(ivf_old_to_new_mapping, I[0])
             else:
                 D, I = index.search(query, num_result_ids)
                 results = I[0]
-            params = faiss.ParameterSpace()
-            params.set_index_parameters(index, f"nprobe={previous_nprobe},efSearch={previous_nprobe*2},ht={2048}")
+            if self.metadata_is_ordered_by_ivf:
+                params = faiss.ParameterSpace()
+                params.set_index_parameters(index, f"nprobe={previous_nprobe},efSearch={previous_nprobe*2},ht={2048}")
         nb_results = np.where(results == -1)[0]
         if len(nb_results) > 0:
             nb_results = nb_results[0]
@@ -348,6 +351,15 @@ def load_clip_indices(indices_paths, enable_hdf5, enable_faiss_memory_mapping, c
             hdf5_path = None
             if reorder_metadata_by_ivf_index:
                 hdf5_path = indice_folder+"/metadata_reordered.hdf5"
+                ivf_old_to_new_mapping_path = indice_folder+"/ivf_old_to_new_mapping.npy"
+                if not os.path.exists(ivf_old_to_new_mapping_path):
+                    ivf_old_to_new_mapping = get_old_to_new_mapping(image_index)
+                    ivf_old_to_new_mapping_write = np.memmap(ivf_old_to_new_mapping_path, dtype='int64', 
+                        mode='write', shape=ivf_old_to_new_mapping.shape)
+                    ivf_old_to_new_mapping_write[:] = ivf_old_to_new_mapping
+                    del ivf_old_to_new_mapping_write
+                    del ivf_old_to_new_mapping
+                ivf_old_to_new_mapping = np.memmap(ivf_old_to_new_mapping_path, dtype='int64', mode='r')
                 if not os.path.exists(hdf5_path):
                     with tempfile.TemporaryDirectory() as dir:
                         re_order_parquet(image_index, parquet_folder, str(dir), columns_to_return)
@@ -365,6 +377,8 @@ def load_clip_indices(indices_paths, enable_hdf5, enable_faiss_memory_mapping, c
             'image_index': image_index,
             'text_index': text_index
         }
+        if reorder_metadata_by_ivf_index:
+            indices_loaded[name]['ivf_old_to_new_mapping'] = ivf_old_to_new_mapping
     
     return indices_loaded, indices, device, model, preprocess
 
