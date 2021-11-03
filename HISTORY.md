@@ -1,3 +1,7 @@
+## 2.14.1
+
+* save ivf_old_to_new_mapping for the text index to use
+
 ## 2.14.0
 
 * implement ivf re-ordering for much faster metadata fetching
