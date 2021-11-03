@@ -211,7 +211,7 @@ class ClipFront extends LitElement {
     const text = this.text === undefined ? null : this.text
     const image = this.image === undefined ? null : this.image
     const imageUrl = this.imageUrl === undefined ? null : this.imageUrl
-    const count = this.modality === 'image' && this.currentIndex === this.indices[0] ? 100 : 100
+    const count = this.modality === 'image' && this.currentIndex === this.indices[0] ? 10000 : 100
     const results = await this.service.callClipService(text, image, imageUrl, this.modality, count, this.currentIndex, count)
     downloadFile('clipsubset.json', JSON.stringify(results, null, 2))
   }
