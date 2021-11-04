@@ -1,3 +1,7 @@
+## 2.14.2
+
+* use the npy mapping in all cases for ivf reordering since it's fast enough
+
 ## 2.14.1
 
 * save ivf_old_to_new_mapping for the text index to use
