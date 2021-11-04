@@ -1,3 +1,7 @@
+## 2.14.3
+
+* add indice deduplication in the output of clip back
+
 ## 2.14.2
 
 * use the npy mapping in all cases for ivf reordering since it's fast enough
