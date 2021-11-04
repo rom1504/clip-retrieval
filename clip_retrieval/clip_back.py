@@ -182,11 +182,8 @@ class KnnService(Resource):
                         params = faiss.ParameterSpace()
                         params.set_index_parameters(index, f"nprobe={nprobe},efSearch={nprobe*2},ht={2048}")
             if self.metadata_is_ordered_by_ivf:
-                if modality == "image":
-                    D, results = search_to_new_ids(index, query, num_result_ids)
-                else:
-                    D, I = index.search(query, num_result_ids)
-                    results = np.take(ivf_old_to_new_mapping, I[0])
+                D, I = index.search(query, num_result_ids)
+                results = np.take(ivf_old_to_new_mapping, I[0])
             else:
                 D, I = index.search(query, num_result_ids)
                 results = I[0]
