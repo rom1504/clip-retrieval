@@ -197,10 +197,21 @@ class KnnService(Resource):
             nb_results = len(results)
         result_indices = results[:nb_results]
         result_distances = D[0][:nb_results]
+        existing_indices = set()
+        indices = []
+        distances = []
+        for ind, distance in zip(result_indices, result_distances):
+            if ind not in existing_indices:
+                existing_indices.add(ind)
+                indices.append(ind)
+                distances.append(distance)
+        del existing_indices
+        del result_indices
+        del result_distances
         results = []
         with METADATA_GET_TIME.time():
-            metas = metadata_provider.get(result_indices[:num_images], self.columns_to_return)
-        for key, (d, i) in enumerate(zip(result_distances, result_indices)):
+            metas = metadata_provider.get(indices[:num_images], self.columns_to_return)
+        for key, (d, i) in enumerate(zip(distances, indices)):
             output = {}
             meta = None if key+1 > len(metas) else metas[key]
             if meta is not None and "image_path" in meta:
