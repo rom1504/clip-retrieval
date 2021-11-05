@@ -1,6 +1,7 @@
 #!pip install clip-anytorch fire
 import torch
 import clip
+from sentence_transformers import SentenceTransformer
 import fire
 from PIL import Image
 import json
@@ -21,6 +22,14 @@ import webdataset as wds
 import pandas as pd
 import io
 import glob
+
+import subprocess
+
+
+def normalized(a, axis=-1, order=2):
+    l2 = np.atleast_1d(np.linalg.norm(a, order, axis))
+    l2[l2==0] = 1
+    return a / np.expand_dims(l2, axis)
 
 class ImageDataset(Dataset):
     def __init__(self,
@@ -135,7 +144,7 @@ def create_webdataset(
 
         if enable_text:
             text = item[caption_key]
-            caption = text.decode("utf-8") 
+            caption = text.decode("utf-8")
             tokenized_text  = tokenizer(caption)
             output["text_tokens"] = tokenized_text
             output["text"] = caption
@@ -150,7 +159,7 @@ def create_webdataset(
     return transformed_dataset
 
 class OutputSink:
-    def __init__(self, output_folder, enable_text, enable_image, enable_metadata, write_batch_size):
+    def __init__(self, output_folder, enable_text, enable_image, enable_metadata, write_batch_size, output_hdfs_folder):
         self.enable_text = enable_text
         self.enable_image = enable_image
         self.enable_metadata = enable_metadata
@@ -158,6 +167,17 @@ class OutputSink:
         self.img_emb_folder = output_folder+"/img_emb"
         self.text_emb_folder = output_folder+"/text_emb"
         self.metadata_folder = output_folder+"/metadata"
+        self.output_hdfs_folder = output_hdfs_folder
+        
+        if self.output_hdfs_folder is not None:
+            self.output_hdfs_folder_img = self.output_hdfs_folder+"/img_emb"
+            self.output_hdfs_folder_text = self.output_hdfs_folder+"/text_emb"
+            self.output_hdfs_folder_metadata = self.output_hdfs_folder+"/metadata"
+            subprocess.call([f"hdfs dfs -mkdir -p {self.output_hdfs_folder}"], shell=True) 
+            subprocess.call([f"hdfs dfs -mkdir -p {self.output_hdfs_folder_img}"], shell=True) 
+            subprocess.call([f"hdfs dfs -mkdir -p {self.output_hdfs_folder_text}"], shell=True) 
+            subprocess.call([f"hdfs dfs -mkdir -p {self.output_hdfs_folder_metadata}"], shell=True) 
+            
         if not os.path.exists(output_folder):
             os.mkdir(output_folder)
             batch_init_num = -1
@@ -169,10 +189,13 @@ class OutputSink:
                 batch_init_num=max([int(x.split("/")[-1].split(".")[0].split("_")[1]) for x in existing_top_level_files])
         if enable_image and not os.path.exists(self.img_emb_folder):
             os.mkdir(self.img_emb_folder)
+
         if enable_text and not os.path.exists(self.text_emb_folder):
             os.mkdir(self.text_emb_folder)
+
         if not os.path.exists(self.metadata_folder):
             os.mkdir(self.metadata_folder)
+
         self.write_batch_size = write_batch_size
         self.batch_count = 0
         self.batch_num = batch_init_num
@@ -205,13 +228,26 @@ class OutputSink:
         data_columns=[]
         if self.enable_image:
             img_emb_mat = np.concatenate(self.image_embeddings)
-            np.save(self.img_emb_folder + "/img_emb_"+str(self.batch_num), img_emb_mat)
+            local_path_img = self.img_emb_folder + "/img_emb_"+str(self.batch_num)
+            hdfs_path_im = self.output_hdfs_folder_img + "/img_emb_"+str(self.batch_num)
+            np.save(local_path_img, img_emb_mat)
+            if self.output_hdfs_folder is not None:
+                subprocess.call([f"hadoop fs -copyFromLocal {local_path_img + '.npy'} {hdfs_path_im+ '.npy'}"], shell=True)
+                os.remove(local_path_img + '.npy')
+                
+           
             data_lists.append(self.image_names)
             data_columns.append("image_path")
 
         if self.enable_text:
             text_emb_mat = np.concatenate(self.text_embeddings)
+            local_path_text = self.text_emb_folder + "/text_emb_"+str(self.batch_num)
+            hdfs_path_text = self.output_hdfs_folder_text + "/text_emb_"+str(self.batch_num)
             np.save(self.text_emb_folder + "/text_emb_"+str(self.batch_num), text_emb_mat)
+            if self.output_hdfs_folder is not None:
+                subprocess.call([f"hadoop fs -copyFromLocal {local_path_text + '.npy'} {hdfs_path_text + '.npy'}"], shell=True)
+                os.remove(local_path_text + '.npy')
+                
             data_lists.append(self.captions)
             data_columns.append("caption")
         
@@ -224,7 +260,14 @@ class OutputSink:
             parsed_metadata = pd.json_normalize(df['metadata'].apply(json.loads))
             without_existing_columns = parsed_metadata.drop(columns=set(["caption", "metadata", "image_path"]) & set(parsed_metadata.keys()))
             df = df.join(without_existing_columns).drop(columns=["metadata"])
-        df.to_parquet(self.metadata_folder + "/metadata_"+str(self.batch_num)+".parquet")
+            
+        local_path_metadata = self.metadata_folder + "/metadata_"+str(self.batch_num)+".parquet"
+        hdfs_path_metadata = self.output_hdfs_folder_metadata + "/metadata_"+str(self.batch_num)+".parquet"
+        df.to_parquet(local_path_metadata)
+        if self.output_hdfs_folder is not None:
+            subprocess.call([f"hadoop fs -copyFromLocal {local_path_metadata} {hdfs_path_metadata}"], shell=True)
+            os.remove(local_path_metadata)
+            
 
     def flush(self):
         if self.batch_count == 0:
@@ -238,7 +281,7 @@ def clip_inference(
     output_folder,
     input_format="files",
     cache_path=None,
-    batch_size=256,
+    batch_size=512,
     num_prepro_workers=8,
     enable_text=True,
     enable_image=True,
@@ -247,10 +290,20 @@ def clip_inference(
     subset_size=None,
     wds_image_key="jpg",
     wds_caption_key="txt",
+    clip_model="ViT-B/32",
+    mclip_mode="sentence-transformers/clip-ViT-B-32-multilingual-v1",
+    use_mclip=False,
+    output_hdfs_folder=None
 ):
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
+    model_img = model.encode_image
+    model_txt = model.encode_text
+    if use_mclip:
+        print("\nLoading MCLIP model for text embedding\n")
+        mclip = SentenceTransformer('sentence-transformers/clip-ViT-B-32-multilingual-v1')
+        model_txt = mclip.encode
     if input_format == "files":
         dataset = ImageDataset(preprocess, input_dataset, enable_text=enable_text, enable_image=enable_image)
         enable_text = dataset.enable_text
@@ -264,7 +317,7 @@ def clip_inference(
         raise Exception(f"No such input format {input_format}")
 
     data = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_prepro_workers, pin_memory=True, prefetch_factor=2)
-    output_sink = OutputSink(output_folder, enable_text, enable_image, enable_metadata, write_batch_size)
+    output_sink = OutputSink(output_folder, enable_text, enable_image, enable_metadata, write_batch_size, output_hdfs_folder)
 
     c = 0
     bar = tqdm.tqdm()
@@ -276,14 +329,24 @@ def clip_inference(
             text = None
             metadata = None
             if enable_image:
-                image_features = model.encode_image(item["image_tensor"].to(device))
+                image_features = model_img(item["image_tensor"].to(device))
                 image_features /= image_features.norm(dim=-1, keepdim=True)
                 image_embs = image_features.cpu().numpy()
+#                print("image embedding")
+#                print("1\n\n", len(image_embs))
+#                print("2\n\n", len(image_embs[0]))
+
                 image_filename = item["image_filename"]
             if enable_text:
-                text_features = model.encode_text(item["text_tokens"].to(device))
-                text_features /= text_features.norm(dim=-1, keepdim=True)
-                text_embs = text_features.cpu().numpy()
+                if use_mclip:
+                    text_embs = normalized(model_txt(item["text"]))
+#                    print("text embedding")
+#                    print("1\n\n", len(text_embs))
+#                    print("2\n\n", len(text_embs[0]))
+                else:
+                    text_features = model_txt(item["text_tokens"].to(device))
+                    text_features /= text_features.norm(dim=-1, keepdim=True)
+                    text_embs = text_features.cpu().numpy()
                 text = item["text"]
             if enable_metadata:
                 metadata = item["metadata"]
