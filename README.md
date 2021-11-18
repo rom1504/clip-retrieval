@@ -70,6 +70,14 @@ clip_inference turn a set of text+image into clip embeddings
 * **wds_image_key** Key to use for images in webdataset. (default *jpg*)
 * **wds_caption_key** Key to use for captions in webdataset. (default *txt*)
 
+### Loading/writing files on hdfs
+
+- To load a webdataset from a hdfs folder, set --input_dataset "pipe:hdfs dfs -cat path_on_hdfs" in the request without the "hdfs://" prefix.
+- To write the output on hdfs, set --output_hdfs_folder to the path on hdfs prefixed by "hdfs://"
+
+Example of hdfs query using webdataset format:
+`clip_inference --input_dataset "pipe:hdfs dfs -cat /myfolder/webdataset/{00000..00010}.tar" --output_folder "hdfs://myfolder/embeddings" --input_format webdataset
+
 ## Clip index
 
 Clip index takes as input the output of clip inference and makes an index out of it using [autofaiss](https://github.com/criteo/autofaiss)
