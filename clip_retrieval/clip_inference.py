@@ -1,9 +1,12 @@
 #!pip install clip-anytorch fire
 import torch
 import clip
+from sentence_transformers import SentenceTransformer
 import fire
 from PIL import Image
 import json
+import fsspec
+from io import BytesIO
   
 from pathlib import Path
 
@@ -21,6 +24,11 @@ import webdataset as wds
 import pandas as pd
 import io
 import glob
+
+def normalized(a, axis=-1, order=2):
+    l2 = np.atleast_1d(np.linalg.norm(a, order, axis))
+    l2[l2==0] = 1
+    return a / np.expand_dims(l2, axis)
 
 class ImageDataset(Dataset):
     def __init__(self,
@@ -135,7 +143,7 @@ def create_webdataset(
 
         if enable_text:
             text = item[caption_key]
-            caption = text.decode("utf-8") 
+            caption = text.decode("utf-8")
             tokenized_text  = tokenizer(caption)
             output["text_tokens"] = tokenized_text
             output["text"] = caption
@@ -154,25 +162,31 @@ class OutputSink:
         self.enable_text = enable_text
         self.enable_image = enable_image
         self.enable_metadata = enable_metadata
+        self.fs, output_folder = fsspec.core.url_to_fs(output_folder)        
         self.output_folder = output_folder
         self.img_emb_folder = output_folder+"/img_emb"
         self.text_emb_folder = output_folder+"/text_emb"
         self.metadata_folder = output_folder+"/metadata"
-        if not os.path.exists(output_folder):
-            os.mkdir(output_folder)
+        
+
+        if not self.fs.exists(self.output_folder):
+            self.fs.mkdir(self.output_folder)
             batch_init_num = -1
         else:
-            existing_top_level_files = glob.glob(self.metadata_folder+"/*")
+            existing_top_level_files = self.fs.walk(self.metadata_folder).__next__()[2]
             if len(existing_top_level_files) == 0:
                 batch_init_num=-1
             else:
                 batch_init_num=max([int(x.split("/")[-1].split(".")[0].split("_")[1]) for x in existing_top_level_files])
-        if enable_image and not os.path.exists(self.img_emb_folder):
-            os.mkdir(self.img_emb_folder)
-        if enable_text and not os.path.exists(self.text_emb_folder):
-            os.mkdir(self.text_emb_folder)
-        if not os.path.exists(self.metadata_folder):
-            os.mkdir(self.metadata_folder)
+        if enable_image and not self.fs.exists(self.img_emb_folder):
+            self.fs.mkdir(self.img_emb_folder)
+
+        if enable_text and not self.fs.exists(self.text_emb_folder):
+            self.fs.mkdir(self.text_emb_folder)
+
+        if not self.fs.exists(self.metadata_folder):
+            self.fs.mkdir(self.metadata_folder)
+
         self.write_batch_size = write_batch_size
         self.batch_count = 0
         self.batch_num = batch_init_num
@@ -205,13 +219,25 @@ class OutputSink:
         data_columns=[]
         if self.enable_image:
             img_emb_mat = np.concatenate(self.image_embeddings)
-            np.save(self.img_emb_folder + "/img_emb_"+str(self.batch_num), img_emb_mat)
+            output_path_img = self.img_emb_folder + "/img_emb_"+str(self.batch_num)
+
+            with self.fs.open(output_path_img, 'wb') as f:
+                npb = BytesIO()
+                np.save(npb, img_emb_mat)
+                f.write(npb.getbuffer())
+                
             data_lists.append(self.image_names)
             data_columns.append("image_path")
 
         if self.enable_text:
             text_emb_mat = np.concatenate(self.text_embeddings)
-            np.save(self.text_emb_folder + "/text_emb_"+str(self.batch_num), text_emb_mat)
+            output_path_text = self.text_emb_folder + "/text_emb_"+str(self.batch_num)
+
+            with self.fs.open(output_path_text, "wb") as f:
+                npb = BytesIO()
+                np.save(npb, text_emb_mat)
+                f.write(npb.getbuffer())
+                
             data_lists.append(self.captions)
             data_columns.append("caption")
         
@@ -224,8 +250,11 @@ class OutputSink:
             parsed_metadata = pd.json_normalize(df['metadata'].apply(json.loads))
             without_existing_columns = parsed_metadata.drop(columns=set(["caption", "metadata", "image_path"]) & set(parsed_metadata.keys()))
             df = df.join(without_existing_columns).drop(columns=["metadata"])
-        df.to_parquet(self.metadata_folder + "/metadata_"+str(self.batch_num)+".parquet")
-
+            
+        output_path_metadata = self.metadata_folder + "/metadata_"+str(self.batch_num)+".parquet"
+        with self.fs.open(output_path_metadata, "wb") as f:        
+            df.to_parquet(f)
+        
     def flush(self):
         if self.batch_count == 0:
             return
@@ -247,10 +276,19 @@ def clip_inference(
     subset_size=None,
     wds_image_key="jpg",
     wds_caption_key="txt",
+    clip_model="ViT-B/32",
+    mclip_model="sentence-transformers/clip-ViT-B-32-multilingual-v1",
+    use_mclip=False
 ):
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
+    model, preprocess = clip.load(clip_model, device=device, jit=False)
+    model_img = model.encode_image
+    model_txt = model.encode_text
+    if use_mclip:
+        print("\nLoading MCLIP model for text embedding\n")
+        mclip = SentenceTransformer(mclip_model)
+        model_txt = mclip.encode
     if input_format == "files":
         dataset = ImageDataset(preprocess, input_dataset, enable_text=enable_text, enable_image=enable_image)
         enable_text = dataset.enable_text
@@ -276,14 +314,17 @@ def clip_inference(
             text = None
             metadata = None
             if enable_image:
-                image_features = model.encode_image(item["image_tensor"].to(device))
+                image_features = model_img(item["image_tensor"].to(device))
                 image_features /= image_features.norm(dim=-1, keepdim=True)
                 image_embs = image_features.cpu().numpy()
                 image_filename = item["image_filename"]
             if enable_text:
-                text_features = model.encode_text(item["text_tokens"].to(device))
-                text_features /= text_features.norm(dim=-1, keepdim=True)
-                text_embs = text_features.cpu().numpy()
+                if use_mclip:
+                    text_embs = normalized(model_txt(item["text"]))
+                else:
+                    text_features = model_txt(item["text_tokens"].to(device))
+                    text_features /= text_features.norm(dim=-1, keepdim=True)
+                    text_embs = text_features.cpu().numpy()
                 text = item["text"]
             if enable_metadata:
                 metadata = item["metadata"]

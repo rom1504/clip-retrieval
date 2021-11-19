@@ -43,7 +43,9 @@ if __name__ == "__main__":
             'pyyaml',
             'webdataset',
             'h5py',
-            'prometheus-client'
+            'prometheus-client',
+            'fsspec',
+            'sentence-transformers'
         ],
         classifiers=[
             'Development Status :: 4 - Beta',

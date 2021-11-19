@@ -69,6 +69,18 @@ clip_inference turn a set of text+image into clip embeddings
 * **subset_size** Only process a subset of this size (default *None*)
 * **wds_image_key** Key to use for images in webdataset. (default *jpg*)
 * **wds_caption_key** Key to use for captions in webdataset. (default *txt*)
+* **clip_model** CLIP model to load (default *ViT-B/32*)
+* **mclip_model** MCLIP model to load (default *sentence-transformers/clip-ViT-B-32-multilingual-v1*)
+* **use_mclip** If False it performs the inference using CLIP; MCLIP otherwise (default *False*)
+
+
+### Loading/writing files on hdfs
+
+- To load a webdataset from a hdfs folder, set --input_dataset "pipe:hdfs dfs -cat path_on_hdfs" in the request without the "hdfs://" prefix.
+- To write the output on hdfs, set --output_hdfs_folder to the path on hdfs prefixed by "hdfs://"
+
+Example of hdfs query using webdataset format:
+`clip_inference --input_dataset "pipe:hdfs dfs -cat /myfolder/webdataset/{00000..00010}.tar" --output_folder "hdfs://myfolder/embeddings" --input_format webdataset
 
 ## Clip index
 
