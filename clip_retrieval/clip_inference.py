@@ -25,9 +25,6 @@ import pandas as pd
 import io
 import glob
 
-import subprocess
-
-
 def normalized(a, axis=-1, order=2):
     l2 = np.atleast_1d(np.linalg.norm(a, order, axis))
     l2[l2==0] = 1
