@@ -274,23 +274,23 @@ def clip_inference(
     num_prepro_workers=8,
     enable_text=True,
     enable_image=True,
-    enable_metadata=True,
+    enable_metadata=False,
     write_batch_size=10**6,
     subset_size=None,
     wds_image_key="jpg",
     wds_caption_key="txt",
     clip_model="ViT-B/32",
-    mclip_mode="sentence-transformers/clip-ViT-B-32-multilingual-v1",
+    mclip_model="sentence-transformers/clip-ViT-B-32-multilingual-v1",
     use_mclip=False
 ):
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
+    model, preprocess = clip.load(clip_model, device=device, jit=False)
     model_img = model.encode_image
     model_txt = model.encode_text
     if use_mclip:
         print("\nLoading MCLIP model for text embedding\n")
-        mclip = SentenceTransformer('sentence-transformers/clip-ViT-B-32-multilingual-v1')
+        mclip = SentenceTransformer(mclip_model)
         model_txt = mclip.encode
     if input_format == "files":
         dataset = ImageDataset(preprocess, input_dataset, enable_text=enable_text, enable_image=enable_image)

@@ -69,6 +69,10 @@ clip_inference turn a set of text+image into clip embeddings
 * **subset_size** Only process a subset of this size (default *None*)
 * **wds_image_key** Key to use for images in webdataset. (default *jpg*)
 * **wds_caption_key** Key to use for captions in webdataset. (default *txt*)
+* **clip_model** CLIP model to load (default *ViT-B/32*)
+* **mclip_model** MCLIP model to load (default *sentence-transformers/clip-ViT-B-32-multilingual-v1*)
+* **use_mclip** If False it performs the inference using CLIP; MCLIP otherwise (default *False*)
+
 
 ### Loading/writing files on hdfs
 
