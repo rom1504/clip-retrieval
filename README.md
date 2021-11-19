@@ -228,14 +228,13 @@ For development it, go to [front](front) and run `npm install` then `npm start`.
 
 ## For development
 
-Either locally, or in [gitpod](https://gitpod.io/#https://github.com/rom1504/img2dataset) (do `export PIP_USER=false` there)
+Either locally, or in [gitpod](https://gitpod.io/#https://github.com/rom1504/clip-retrieval) (do `export PIP_USER=false` there)
 
 Setup a virtualenv:
 
 ```
 python3 -m venv .env
 source .env/bin/activate
-pip install -U pip
 pip install -e .
 ```
 
@@ -245,5 +244,8 @@ pip install -r requirements-test.txt
 ```
 then 
 ```
-python -m pytest -v tests -s
+make lint
+make test
 ```
+
+You can use `make black` to reformat the code
