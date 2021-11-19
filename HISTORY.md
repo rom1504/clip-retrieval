@@ -1,3 +1,8 @@
+## 2.15.0
+
+* mclip support
+* use fsspec to make it possible to output to any fs
+
 ## 2.14.3
 
 * add indice deduplication in the output of clip back
