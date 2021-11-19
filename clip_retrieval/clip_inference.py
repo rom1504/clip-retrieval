@@ -230,7 +230,7 @@ class OutputSink:
             img_emb_mat = np.concatenate(self.image_embeddings)
             output_path_img = self.img_emb_folder + "/img_emb_" + str(self.batch_num)
 
-            with self.fs.open(output_path_img, "wb") as f:
+            with self.fs.open(output_path_img + ".npy", "wb") as f:
                 npb = BytesIO()
                 np.save(npb, img_emb_mat)
                 f.write(npb.getbuffer())
@@ -242,7 +242,7 @@ class OutputSink:
             text_emb_mat = np.concatenate(self.text_embeddings)
             output_path_text = self.text_emb_folder + "/text_emb_" + str(self.batch_num)
 
-            with self.fs.open(output_path_text, "wb") as f:
+            with self.fs.open(output_path_text + ".npy", "wb") as f:
                 npb = BytesIO()
                 np.save(npb, text_emb_mat)
                 f.write(npb.getbuffer())
