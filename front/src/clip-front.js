@@ -11,7 +11,7 @@ class ClipFront extends LitElement {
     const query = urlParams.get('query')
     const imageUrl = urlParams.get('imageUrl')
     this.defaultIndex = 'laion_400m_128G'
-    this.defaultBackend = 'https://splunk.vra.ro' // put something here
+    this.defaultBackend = 'https://knn.laion.ai' // put something here
     if (index != null) {
       this.currentIndex = index
     } else {
