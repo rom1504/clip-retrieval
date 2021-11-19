@@ -1,6 +1,6 @@
 {
   "name": "clip-retrieval-front",
-  "version": "2.15.0",
+  "version": "2.15.1",
   "description": "Easily compute clip embeddings and build a clip retrieval system with them. 100M text+image embeddings can be processed in 20h using a 3080.",
   "main": "server.js",
   "dependencies": {

@@ -1,3 +1,7 @@
+## 2.15.1
+
+* minor bug fix about missing .npy extension in output of clip inference
+
 ## 2.15.0
 
 * mclip support
