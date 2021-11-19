@@ -1,3 +1,5 @@
+"""cli entry point"""
+
 from clip_retrieval.clip_back import clip_back
 from clip_retrieval.clip_inference import clip_inference
 from clip_retrieval.clip_filter import clip_filter
@@ -7,11 +9,4 @@ import fire
 
 def main():
     """Main entry point"""
-    fire.Fire(
-        {
-            "back": clip_back,
-            "inference": clip_inference,
-            "index": clip_index,
-            "filter": clip_filter
-        }
-    )
+    fire.Fire({"back": clip_back, "inference": clip_inference, "index": clip_index, "filter": clip_filter})
