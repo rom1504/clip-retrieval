@@ -21,6 +21,7 @@ if __name__ == "__main__":
         data_files=[(".", ["README.md"])],
         keywords=["machine learning", "computer vision", "download", "image", "dataset"],
         install_requires=[
+            "img2dataset",
             "clip-anytorch",
             "tqdm",
             "fire",
