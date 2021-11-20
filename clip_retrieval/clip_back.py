@@ -25,6 +25,7 @@ import h5py
 from tqdm import tqdm
 from prometheus_client import Histogram, REGISTRY, make_wsgi_app
 import math
+import logging
 
 from clip_retrieval.ivf_metadata_ordering import (
     Hdf5Sink,
@@ -32,6 +33,9 @@ from clip_retrieval.ivf_metadata_ordering import (
     get_old_to_new_mapping,
     re_order_parquet,
 )
+
+LOGGER = logging.getLogger(__name__)
+
 
 for coll in list(REGISTRY._collector_to_names.keys()):  # pylint: disable=protected-access
     REGISTRY.unregister(coll)
@@ -373,7 +377,7 @@ def load_clip_indices(
     indices_paths, enable_hdf5, enable_faiss_memory_mapping, columns_to_return, reorder_metadata_by_ivf_index
 ):
     """This load clips indices from disk"""
-    print("loading clip...")
+    LOGGER.info("loading clip...")
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
 
@@ -385,7 +389,7 @@ def load_clip_indices(
         image_present = os.path.exists(indice_folder + "/image.index")
         text_present = os.path.exists(indice_folder + "/text.index")
 
-        print("loading indices...")
+        LOGGER.info("loading indices...")
         if image_present:
             if enable_faiss_memory_mapping:
                 image_index = faiss.read_index(
@@ -406,7 +410,7 @@ def load_clip_indices(
             text_index = None
 
         parquet_folder = indice_folder + "/metadata"
-        print("loading metadata...")
+        LOGGER.info("loading metadata...")
         if enable_hdf5:
             hdf5_path = None
             if reorder_metadata_by_ivf_index:
@@ -456,11 +460,13 @@ def clip_back(
     reorder_metadata_by_ivf_index=False,
 ):
     """main entry point of clip back, start the endpoints"""
+    LOGGER.info("starting boot of clip back")
     if columns_to_return is None:
         columns_to_return = ["url", "image_path", "caption", "NSFW"]
     indices_loaded, indices, device, model, preprocess = load_clip_indices(
         indices_paths, enable_hdf5, enable_faiss_memory_mapping, columns_to_return, reorder_metadata_by_ivf_index
     )
+    LOGGER.info("indices loaded")
 
     app = Flask(__name__)
     app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {"/metrics": make_wsgi_app()})
@@ -486,6 +492,7 @@ def clip_back(
     )
     api.add_resource(Health, "/")
     CORS(app)
+    LOGGER.info("starting!")
     app.run(host="0.0.0.0", port=port, debug=False)
 
 

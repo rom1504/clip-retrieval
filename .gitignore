@@ -13,3 +13,4 @@ embedding_folder
 index_folder
 indices_paths.json
 .coverage
+test_folder
