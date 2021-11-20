@@ -1,9 +1,18 @@
+import os
+
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 from img2dataset import download
 from clip_retrieval import clip_inference
 from clip_retrieval import clip_index
-import os
 import pandas as pd
 import shutil
+import subprocess
+import time
+import requests
+import logging
+
+
+LOGGER = logging.getLogger(__name__)
 
 test_list = [
     ["first", "https://placekitten.com/400/600"],
@@ -69,3 +78,18 @@ def test_end2end():
     assert os.path.exists(index_folder + "/image.index")
     assert os.path.exists(index_folder + "/text.index")
 
+    indice_path = os.path.join(test_folder, "indices_paths.json")
+    with open(indice_path, "w") as f:
+        f.write('{"example_index": "' + index_folder + '"}')
+
+    p = subprocess.Popen(
+        f"clip-retrieval back --port=1234 --indices_paths='{indice_path}'", shell=True, stdout=subprocess.PIPE
+    )
+    time.sleep(10)
+    r = requests.post(
+        "http://localhost:1234/knn-service",
+        json={"text": "cat", "modality": "image", "num_images": 10, "indice_name": "example_index"},
+    )
+    _ = r.json()
+    assert r.status_code == 200
+    p.kill()
