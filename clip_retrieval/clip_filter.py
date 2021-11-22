@@ -1,17 +1,20 @@
 """clip filter is a tool to use a knn index and a image/text collection to extract interesting subsets"""
 
-import clip
-import faiss
-import torch
-import os
-import shutil
+
 import fire
-from pathlib import Path
-import pandas as pd
 
 
 def clip_filter(query, output_folder, indice_folder, num_results=100, threshold=None):
     """Entry point of clip filter"""
+
+    import faiss  # pylint: disable=import-outside-toplevel
+    import torch  # pylint: disable=import-outside-toplevel
+    import os  # pylint: disable=import-outside-toplevel
+    import shutil  # pylint: disable=import-outside-toplevel
+    from pathlib import Path  # pylint: disable=import-outside-toplevel
+    import pandas as pd  # pylint: disable=import-outside-toplevel
+    import clip  # pylint: disable=import-outside-toplevel
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, _ = clip.load("ViT-B/32", device=device, jit=False)
 

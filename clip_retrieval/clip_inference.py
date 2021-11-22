@@ -1,109 +1,109 @@
 """Clip inference is a tool to go from image/text collection to clip embeddings"""
 
 #!pip install clip-anytorch fire
-import torch
-import clip
-from sentence_transformers import SentenceTransformer
 import fire
 from PIL import Image
 import json
 import fsspec
 from io import BytesIO
-
 from pathlib import Path
-
-from torch.utils.data import Dataset
-
-from torch.utils.data import DataLoader
 import tqdm
-import numpy as np
-import webdataset as wds
-import pandas as pd
 import io
 
 
 def normalized(a, axis=-1, order=2):
+    import numpy as np  # pylint: disable=import-outside-toplevel
+
     l2 = np.atleast_1d(np.linalg.norm(a, order, axis))
     l2[l2 == 0] = 1
     return a / np.expand_dims(l2, axis)
 
 
-class ImageDataset(Dataset):
-    """ImageDataset is a pytorch Dataset exposing image and text tensors from a folder of image and text"""
+def get_image_dataset():
+    """retrieve image dataset module without importing torch at the top level"""
 
-    def __init__(self, preprocess, folder, enable_text=True, enable_image=True, enable_metadata=False):
-        super().__init__()
-        path = Path(folder)
-        self.enable_text = enable_text
-        self.enable_image = enable_image
-        self.enable_metadata = enable_metadata
+    from torch.utils.data import Dataset  # pylint: disable=import-outside-toplevel
 
-        if self.enable_text:
-            text_files = [*path.glob("**/*.txt")]
-            text_files = {text_file.stem: text_file for text_file in text_files}
-            if len(text_files) == 0:
-                self.enable_text = False
-        if self.enable_image:
-            image_files = [
-                *path.glob("**/*.png"),
-                *path.glob("**/*.jpg"),
-                *path.glob("**/*.jpeg"),
-                *path.glob("**/*.bmp"),
-            ]
-            image_files = {image_file.stem: image_file for image_file in image_files}
-            if len(image_files) == 0:
-                self.enable_image = False
-        if self.enable_metadata:
-            metadata_files = [*path.glob("**/*.json")]
-            metadata_files = {metadata_file.stem: metadata_file for metadata_file in metadata_files}
-            if len(metadata_files) == 0:
-                self.enable_metadata = False
+    class ImageDataset(Dataset):
+        """ImageDataset is a pytorch Dataset exposing image and text tensors from a folder of image and text"""
 
-        keys = None
-        join = lambda new_set: new_set & keys if keys is not None else new_set
-        if self.enable_text:
-            keys = join(text_files.keys())
-        elif self.enable_image:
-            keys = join(image_files.keys())
-        elif self.enable_metadata:
-            keys = join(metadata_files.keys())
+        def __init__(self, preprocess, folder, enable_text=True, enable_image=True, enable_metadata=False):
+            super().__init__()
+            import clip  # pylint: disable=import-outside-toplevel
 
-        self.keys = list(keys)
-        if self.enable_text:
-            self.tokenizer = lambda text: clip.tokenize([text], truncate=True)[0]
-            self.text_files = {k: v for k, v in text_files.items() if k in keys}
-        if self.enable_image:
-            self.image_files = {k: v for k, v in image_files.items() if k in keys}
-            self.image_transform = preprocess
-        if self.enable_metadata:
-            self.metadata_files = {k: v for k, v in metadata_files.items() if k in keys}
+            path = Path(folder)
+            self.enable_text = enable_text
+            self.enable_image = enable_image
+            self.enable_metadata = enable_metadata
 
-    def __len__(self):
-        return len(self.keys)
+            if self.enable_text:
+                text_files = [*path.glob("**/*.txt")]
+                text_files = {text_file.stem: text_file for text_file in text_files}
+                if len(text_files) == 0:
+                    self.enable_text = False
+            if self.enable_image:
+                image_files = [
+                    *path.glob("**/*.png"),
+                    *path.glob("**/*.jpg"),
+                    *path.glob("**/*.jpeg"),
+                    *path.glob("**/*.bmp"),
+                ]
+                image_files = {image_file.stem: image_file for image_file in image_files}
+                if len(image_files) == 0:
+                    self.enable_image = False
+            if self.enable_metadata:
+                metadata_files = [*path.glob("**/*.json")]
+                metadata_files = {metadata_file.stem: metadata_file for metadata_file in metadata_files}
+                if len(metadata_files) == 0:
+                    self.enable_metadata = False
 
-    def __getitem__(self, ind):
-        key = self.keys[ind]
-        output = {}
+            keys = None
+            join = lambda new_set: new_set & keys if keys is not None else new_set
+            if self.enable_text:
+                keys = join(text_files.keys())
+            elif self.enable_image:
+                keys = join(image_files.keys())
+            elif self.enable_metadata:
+                keys = join(metadata_files.keys())
 
-        if self.enable_image:
-            image_file = self.image_files[key]
-            image_tensor = self.image_transform(Image.open(image_file))
-            output["image_filename"] = str(image_file)
-            output["image_tensor"] = image_tensor
+            self.keys = list(keys)
+            if self.enable_text:
+                self.tokenizer = lambda text: clip.tokenize([text], truncate=True)[0]
+                self.text_files = {k: v for k, v in text_files.items() if k in keys}
+            if self.enable_image:
+                self.image_files = {k: v for k, v in image_files.items() if k in keys}
+                self.image_transform = preprocess
+            if self.enable_metadata:
+                self.metadata_files = {k: v for k, v in metadata_files.items() if k in keys}
 
-        if self.enable_text:
-            text_file = self.text_files[key]
-            caption = text_file.read_text()
-            tokenized_text = self.tokenizer(caption)
-            output["text_tokens"] = tokenized_text
-            output["text"] = caption
+        def __len__(self):
+            return len(self.keys)
 
-        if self.enable_metadata:
-            metadata_file = self.metadata_files[key]
-            metadata = metadata_file.read_text()
-            output["metadata"] = metadata
+        def __getitem__(self, ind):
+            key = self.keys[ind]
+            output = {}
 
-        return output
+            if self.enable_image:
+                image_file = self.image_files[key]
+                image_tensor = self.image_transform(Image.open(image_file))
+                output["image_filename"] = str(image_file)
+                output["image_tensor"] = image_tensor
+
+            if self.enable_text:
+                text_file = self.text_files[key]
+                caption = text_file.read_text()
+                tokenized_text = self.tokenizer(caption)
+                output["text_tokens"] = tokenized_text
+                output["text"] = caption
+
+            if self.enable_metadata:
+                metadata_file = self.metadata_files[key]
+                metadata = metadata_file.read_text()
+                output["metadata"] = metadata
+
+            return output
+
+    return ImageDataset
 
 
 def create_webdataset(
@@ -117,6 +117,9 @@ def create_webdataset(
     cache_path=None,
 ):
     """Create a WebDataset reader, it can read a webdataset of image, text and json"""
+    import clip  # pylint: disable=import-outside-toplevel
+    import webdataset as wds  # pylint: disable=import-outside-toplevel
+
     dataset = wds.WebDataset(urls, cache_dir=cache_path, cache_size=10 ** 10, handler=wds.handlers.warn_and_continue)
     tokenizer = lambda text: clip.tokenize([text], truncate=True)[0]
 
@@ -224,6 +227,9 @@ class OutputSink:
         """
         write a batch of embeddings and meta to npy and parquet
         """
+        import numpy as np  # pylint: disable=import-outside-toplevel
+        import pandas as pd  # pylint: disable=import-outside-toplevel
+
         data_lists = []
         data_columns = []
         if self.enable_image:
@@ -293,6 +299,11 @@ def clip_inference(
 ):
     """clip inference goes from a image text dataset to clip embeddings"""
 
+    import clip  # pylint: disable=import-outside-toplevel
+    from sentence_transformers import SentenceTransformer  # pylint: disable=import-outside-toplevel
+    from torch.utils.data import DataLoader  # pylint: disable=import-outside-toplevel
+    import torch  # pylint: disable=import-outside-toplevel
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = clip.load(clip_model, device=device, jit=False)
     model_img = model.encode_image
@@ -302,7 +313,7 @@ def clip_inference(
         mclip = SentenceTransformer(mclip_model)
         model_txt = mclip.encode
     if input_format == "files":
-        dataset = ImageDataset(preprocess, input_dataset, enable_text=enable_text, enable_image=enable_image)
+        dataset = get_image_dataset()(preprocess, input_dataset, enable_text=enable_text, enable_image=enable_image)
         enable_text = dataset.enable_text
         enable_image = dataset.enable_image
         enable_metadata = dataset.enable_metadata

@@ -1,0 +1,4 @@
+{
+    "defaultBackend": "https://knn.laion.ai",
+    "defaultIndex": "laion_400m_128G"
+}

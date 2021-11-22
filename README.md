@@ -11,6 +11,7 @@ Easily compute clip embeddings and build a clip retrieval system with them. 100M
 * clip filter allows you to filter out the data using the clip index
 * clip back hosts the indices with a simple flask service
 * clip front is a simple ui querying the back. Check it out at [clip-retrieval ui](https://rom1504.github.io/clip-retrieval/)
+* clip end2end runs img2dataset, inference, index then back and front to make all of this easier to begin with
 
 End to end this make it possible to build a simple semantic search system.
 Interested to learn about semantic search in general ? You can read my [medium post](https://rom1504.medium.com/semantic-search-with-embeddings-index-anything-8fb18556443c) on the topic.
@@ -27,6 +28,18 @@ Interested to learn about semantic search in general ? You can read my [medium p
 ## Install
 
 pip install clip-retrieval
+
+## clip end2end
+
+First pick a dataset of image urls and captions ([examples](https://github.com/rom1504/img2dataset/tree/main/examples)) then run:
+
+```
+wget https://github.com/rom1504/img2dataset/raw/main/tests/test_1000.parquet
+clip-retrieval end2end test_1000.parquet /tmp/my_output
+```
+
+Then go to [http://localhost:1234](http://localhost:1234) and enjoy searching among your pictures
+
 
 ## clip inference
 
@@ -222,6 +235,8 @@ npm install -g clip-retrieval-front
 clip-retrieval-front 3005
 ```
 
+You can also run it with `clip-retrieval front` or back from the python package.
+
 ### Development
 
 For development it, go to [front](front) and run `npm install` then `npm start`.
@@ -249,3 +264,12 @@ make test
 ```
 
 You can use `make black` to reformat the code
+
+If you want to use the front through the python backend or frontend, run
+```
+cd front
+npm install
+npm run build
+cd ..
+pip install -e .
+```

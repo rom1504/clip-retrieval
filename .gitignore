@@ -14,3 +14,5 @@ index_folder
 indices_paths.json
 .coverage
 test_folder
+build
+dist
