@@ -1,3 +1,7 @@
+## 2.16.1
+
+* add missing front building in python publish
+
 ## 2.16.0
 
 * clip retrieval end2end
