@@ -1,3 +1,7 @@
+## 2.16.0
+
+* clip retrieval end2end
+
 ## 2.15.1
 
 * minor bug fix about missing .npy extension in output of clip inference
