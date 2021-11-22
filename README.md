@@ -33,6 +33,8 @@ pip install clip-retrieval
 
 First pick a dataset of image urls and captions ([examples](https://github.com/rom1504/img2dataset/tree/main/examples)) then run:
 
+You may want to run `export CUDA_VISIBLE_DEVICES=` to avoid using your GPU if it doesn't have enough VRAM.
+
 ```
 wget https://github.com/rom1504/img2dataset/raw/main/tests/test_1000.parquet
 clip-retrieval end2end test_1000.parquet /tmp/my_output
