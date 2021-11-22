@@ -4,9 +4,7 @@
 from flask import Flask, request, make_response
 from flask_restful import Resource, Api
 from flask_cors import CORS
-import clip
 import faiss
-import torch
 import json
 from io import BytesIO
 from PIL import Image
@@ -179,6 +177,7 @@ class KnnService(Resource):
         indice_name=None,
     ):
         """implement the querying functionality of the knn service: from text and image to nearest neighbors"""
+        import clip  # pylint: disable=import-outside-toplevel
 
         if text_input is None and image_input is None and image_url_input is None:
             raise ValueError("must fill one of text, image and image url input")
@@ -378,6 +377,9 @@ def load_clip_indices(
 ):
     """This load clips indices from disk"""
     LOGGER.info("loading clip...")
+    import clip  # pylint: disable=import-outside-toplevel
+    import torch  # pylint: disable=import-outside-toplevel
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
 
@@ -470,6 +472,10 @@ def clip_back(
 
     app = Flask(__name__)
     app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {"/metrics": make_wsgi_app()})
+    from .clip_front import add_static_endpoints  # pylint: disable=import-outside-toplevel
+
+    add_static_endpoints(app)
+
     api = Api(app)
     api.add_resource(MetricsSummary, "/metrics-summary")
     api.add_resource(IndicesList, "/indices-list", resource_class_kwargs={"indices": indices})
@@ -490,7 +496,6 @@ def clip_back(
             "metadata_is_ordered_by_ivf": reorder_metadata_by_ivf_index,
         },
     )
-    api.add_resource(Health, "/")
     CORS(app)
     LOGGER.info("starting!")
     app.run(host="0.0.0.0", port=port, debug=False)

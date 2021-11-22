@@ -1,6 +1,5 @@
 """Clip index is a tool to index clip embeddings using autofaiss"""
 
-from autofaiss import build_index
 import fire
 import os
 from distutils.dir_util import copy_tree
@@ -12,6 +11,9 @@ LOGGER = logging.getLogger(__name__)
 
 def quantize(emb_folder, index_folder, index_name, max_index_memory_usage, current_memory_available, nb_cores):
     """calls autofaiss to build an index"""
+
+    from autofaiss import build_index  # pylint: disable=import-outside-toplevel
+
     try:
         LOGGER.debug(f"starting index {index_name}")
         if os.path.exists(emb_folder):

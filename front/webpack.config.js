@@ -18,6 +18,10 @@ const assets = [
   {
     from: resolve('./src/assets'),
     to: join('assets')
+  },
+  {
+    from: resolve('./config.json'),
+    to: join('config.json')
   }
 ]
 

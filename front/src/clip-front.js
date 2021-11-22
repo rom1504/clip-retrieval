@@ -5,13 +5,19 @@ import ClipService from './clip-service'
 class ClipFront extends LitElement {
   constructor () {
     super()
+    window.fetch('config.json').then(res => res.json()).then(config => {
+      this.defaultIndex = config.defaultIndex
+      this.defaultBackend = config.defaultBackend
+      this.init()
+    })
+  }
+
+  init () {
     const urlParams = new URLSearchParams(window.location.search)
     const back = urlParams.get('back')
     const index = urlParams.get('index')
     const query = urlParams.get('query')
     const imageUrl = urlParams.get('imageUrl')
-    this.defaultIndex = 'laion_400m_128G'
-    this.defaultBackend = 'https://knn.laion.ai' // put something here
     if (index != null) {
       this.currentIndex = index
     } else {

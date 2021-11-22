@@ -1,13 +1,26 @@
 from setuptools import setup, find_packages
 from pathlib import Path
+import os
 
 if __name__ == "__main__":
     with Path(Path(__file__).parent, "README.md").open(encoding="utf-8") as file:
         long_description = file.read()
 
+    import os
+
+    def package_files(directory):
+        paths = []
+        for (path, _, filenames) in os.walk(directory):
+            for filename in filenames:
+                paths.append(os.path.join("..", path, filename))
+        return paths
+
+    extra_files = package_files("front/build")
+
     setup(
         name="clip_retrieval",
         packages=find_packages(),
+        package_data={"": extra_files},
         include_package_data=True,
         version="2.15.1",
         license="MIT",
@@ -18,7 +31,7 @@ if __name__ == "__main__":
         author="Romain Beaumont",
         author_email="romain.rom1@gmail.com",
         url="https://github.com/rom1504/clip-retrieval",
-        data_files=[(".", ["README.md"])],
+        data_files=[(".", ["README.md"]),],
         keywords=["machine learning", "computer vision", "download", "image", "dataset"],
         install_requires=[
             "img2dataset",
