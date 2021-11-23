@@ -103,17 +103,20 @@ Clip index takes as input the output of clip inference and makes an index out of
 
 `clip-retrieval index --input_folder embeddings_folder --output_folder index_folder`
 
-* `--max_index_memory_usage "4G"` option allow configuring the amount of ram the index will consume. More ram, better knn recall.
-* `--current_memory_available 16G` allows controlling how much ram is used during the creation process.
+* `--max_index_memory_usage "16G"` option allow configuring the amount of ram the index will consume. More ram, better knn recall.
+* `--current_memory_available 24G` allows controlling how much ram is used during the creation process.
 * `--copy_metadata True` makes it possible to choose whether to copy metadata or not at the end of the process.
 * `--nb_cores 8` allows controlling the number of threads 
 
 The output is a folder containing:
-* image.index containing a brute force faiss index for images
-* text.index containing a brute force faiss index for texts
+* image.index containing a faiss index for images
+* text.index containing a faiss index for texts
 * metadata folder containing the parquet metadata
 
 Thanks to autofaiss and faiss, this scales to hundred of million of samples in a few hours.
+
+You may want to carefully pick how much memory to use for your index in order to maximize the knn recall.
+[autofaiss index selection colab](https://colab.research.google.com/github/criteo/autofaiss/blob/master/docs/notebooks/autofaiss_index_selection_demo.ipynb) can help along with `autofaiss score_index` command to check the recall of your index. In general indices using more memory get a better recall and hence are closer to a naive (slow) knn
 
 ## Clip filter
 
