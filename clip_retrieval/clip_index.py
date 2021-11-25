@@ -22,7 +22,7 @@ def quantize(emb_folder, index_folder, index_name, max_index_memory_usage, curre
                 f"using embeddings {emb_folder} ; saving in {index_folder}"
             )
             build_index(
-                embeddings_path=emb_folder,
+                embeddings=emb_folder,
                 index_path=index_folder + "/" + index_name + ".index",
                 index_infos_path=index_folder + "/" + index_name + ".json",
                 max_index_memory_usage=max_index_memory_usage,
