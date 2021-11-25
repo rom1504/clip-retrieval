@@ -1,3 +1,7 @@
+## 2.16.2
+
+* update for autofaiss
+
 ## 2.16.1
 
 * add missing front building in python publish
