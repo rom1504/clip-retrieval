@@ -3,7 +3,7 @@
 import fire
 
 
-def clip_end2end(url_list, output_folder):
+def clip_end2end(url_list, output_folder, run_back=True):
     """main entry point of clip end2end"""
 
     import os  # pylint: disable=import-outside-toplevel
@@ -51,7 +51,8 @@ def clip_end2end(url_list, output_folder):
     indice_path = os.path.join(output_folder, "indices_paths.json")
     with fsspec.open(indice_path, "w") as f:
         f.write('{"example_index": "' + index_folder + '"}')
-    clip_back(port=1234, indices_paths=indice_path)
+    if run_back:
+        clip_back(port=1234, indices_paths=indice_path)
 
 
 if __name__ == "__main__":

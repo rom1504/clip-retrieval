@@ -42,6 +42,8 @@ clip-retrieval end2end test_1000.parquet /tmp/my_output
 
 Then go to [http://localhost:1234](http://localhost:1234) and enjoy searching among your pictures
 
+Use `--run_back False` if you don't want to run the backend
+
 
 ## clip inference
 
