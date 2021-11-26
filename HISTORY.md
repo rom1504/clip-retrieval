@@ -1,3 +1,7 @@
+## 2.17.0
+
+* add option in clip end 2 end to avoid running the back
+
 ## 2.16.2
 
 * update for autofaiss
