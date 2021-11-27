@@ -460,6 +460,7 @@ def clip_back(
     enable_faiss_memory_mapping=False,
     columns_to_return=None,
     reorder_metadata_by_ivf_index=False,
+    default_backend=None,
 ):
     """main entry point of clip back, start the endpoints"""
     LOGGER.info("starting boot of clip back")
@@ -474,7 +475,7 @@ def clip_back(
     app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {"/metrics": make_wsgi_app()})
     from .clip_front import add_static_endpoints  # pylint: disable=import-outside-toplevel
 
-    add_static_endpoints(app)
+    add_static_endpoints(app, default_backend)
 
     api = Api(app)
     api.add_resource(MetricsSummary, "/metrics-summary")
