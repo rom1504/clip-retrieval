@@ -300,18 +300,47 @@ def clip_inference(
     """clip inference goes from a image text dataset to clip embeddings"""
 
     import clip  # pylint: disable=import-outside-toplevel
-    from sentence_transformers import SentenceTransformer  # pylint: disable=import-outside-toplevel
     from torch.utils.data import DataLoader  # pylint: disable=import-outside-toplevel
     import torch  # pylint: disable=import-outside-toplevel
 
+    class TextCLIP(torch.nn.Module):
+        def __init__(self, model):
+            super().__init__()
+            self.model = model
+
+        def forward(self, text):
+            return self.model.encode_text(text)
+
+    class ImageCLIP(torch.nn.Module):
+        def __init__(self, model):
+            super().__init__()
+            self.model = model
+
+        def forward(self, image):
+            return self.model.encode_image(image)
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = clip.load(clip_model, device=device, jit=False)
-    model_img = model.encode_image
-    model_txt = model.encode_text
+    model_img = ImageCLIP(model)
+    model_txt = TextCLIP(model)
     if use_mclip:
+        from sentence_transformers import SentenceTransformer  # pylint: disable=import-outside-toplevel
+
         print("\nLoading MCLIP model for text embedding\n")
         mclip = SentenceTransformer(mclip_model)
-        model_txt = mclip.encode
+
+        class TextMCLIP(torch.nn.Module):
+            def __init__(self, model):
+                super().__init__()
+                self.model = model
+
+            def forward(self, text):
+                return self.model.encode(text)
+
+        model_txt = TextMCLIP(mclip)
+    if device == "cuda":
+        model_txt = torch.nn.DataParallel(model_txt)
+        model_img = torch.nn.DataParallel(model_img)
     if input_format == "files":
         dataset = get_image_dataset()(preprocess, input_dataset, enable_text=enable_text, enable_image=enable_image)
         enable_text = dataset.enable_text
