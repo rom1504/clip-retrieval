@@ -1,3 +1,7 @@
+## 2.18.0
+
+* add default backend url in clip back
+
 ## 2.17.0
 
 * add option in clip end 2 end to avoid running the back
