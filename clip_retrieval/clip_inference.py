@@ -11,14 +11,6 @@ import tqdm
 import io
 
 
-def normalized(a, axis=-1, order=2):
-    import numpy as np  # pylint: disable=import-outside-toplevel
-
-    l2 = np.atleast_1d(np.linalg.norm(a, order, axis))
-    l2[l2 == 0] = 1
-    return a / np.expand_dims(l2, axis)
-
-
 def get_image_dataset():
     """retrieve image dataset module without importing torch at the top level"""
 
@@ -27,7 +19,7 @@ def get_image_dataset():
     class ImageDataset(Dataset):
         """ImageDataset is a pytorch Dataset exposing image and text tensors from a folder of image and text"""
 
-        def __init__(self, preprocess, folder, enable_text=True, enable_image=True, enable_metadata=False):
+        def __init__(self, preprocess, tokenizer, folder, enable_text=True, enable_image=True, enable_metadata=False):
             super().__init__()
             import clip  # pylint: disable=import-outside-toplevel
 
@@ -35,6 +27,7 @@ def get_image_dataset():
             self.enable_text = enable_text
             self.enable_image = enable_image
             self.enable_metadata = enable_metadata
+            self.tokenizer = tokenizer
 
             if self.enable_text:
                 text_files = [*path.glob("**/*.txt")]
@@ -68,7 +61,6 @@ def get_image_dataset():
 
             self.keys = list(keys)
             if self.enable_text:
-                self.tokenizer = lambda text: clip.tokenize([text], truncate=True)[0]
                 self.text_files = {k: v for k, v in text_files.items() if k in keys}
             if self.enable_image:
                 self.image_files = {k: v for k, v in image_files.items() if k in keys}
@@ -109,6 +101,7 @@ def get_image_dataset():
 def create_webdataset(
     urls,
     image_transform,
+    tokenizer,
     enable_text=True,
     enable_image=True,
     image_key="jpg",
@@ -121,7 +114,6 @@ def create_webdataset(
     import webdataset as wds  # pylint: disable=import-outside-toplevel
 
     dataset = wds.WebDataset(urls, cache_dir=cache_path, cache_size=10 ** 10, handler=wds.handlers.warn_and_continue)
-    tokenizer = lambda text: clip.tokenize([text], truncate=True)[0]
 
     def filter_dataset(item):
         if enable_text and caption_key not in item:
@@ -308,12 +300,14 @@ def clip_inference(
     model, preprocess = clip.load(clip_model, device=device, jit=False)
     model_img = model.encode_image
     model_txt = model.encode_text
+    tokenizer = lambda text: clip.tokenize([text], truncate=True)[0]
     if use_mclip:
         print("\nLoading MCLIP model for text embedding\n")
         mclip = SentenceTransformer(mclip_model)
         model_txt = mclip.encode
+        tokenizer = lambda text: clip.tokenize([text])[0]
     if input_format == "files":
-        dataset = get_image_dataset()(preprocess, input_dataset, enable_text=enable_text, enable_image=enable_image)
+        dataset = get_image_dataset()(preprocess, tokenizer, input_dataset, enable_text=enable_text, enable_image=enable_image)
         enable_text = dataset.enable_text
         enable_image = dataset.enable_image
         enable_metadata = dataset.enable_metadata
@@ -321,6 +315,7 @@ def clip_inference(
         dataset = create_webdataset(
             input_dataset,
             preprocess,
+            tokenizer,
             enable_text,
             enable_image,
             image_key=wds_image_key,
@@ -357,11 +352,12 @@ def clip_inference(
                 image_filename = item["image_filename"]
             if enable_text:
                 if use_mclip:
-                    text_embs = normalized(model_txt(item["text"]))
+                    text_tokens = {'input_ids': item["text_tokens"]['input_ids'].to(device), 'attention_mask': item["text_tokens"]['attention_mask'].to(device)}
+                    text_features = model_txt(text_tokens)['sentence_embedding'].to(device).float()
                 else:
                     text_features = model_txt(item["text_tokens"].to(device))
-                    text_features /= text_features.norm(dim=-1, keepdim=True)
-                    text_embs = text_features.cpu().numpy()
+                text_features /= text_features.norm(dim=-1, keepdim=True)
+                text_embs = text_features.cpu().numpy()
                 text = item["text"]
             if enable_metadata:
                 metadata = item["metadata"]
