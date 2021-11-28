@@ -177,6 +177,7 @@ class KnnService(Resource):
         indice_name=None,
     ):
         """implement the querying functionality of the knn service: from text and image to nearest neighbors"""
+        import torch  # pylint: disable=import-outside-toplevel
         import clip  # pylint: disable=import-outside-toplevel
 
         if text_input is None and image_input is None and image_url_input is None:
@@ -193,7 +194,8 @@ class KnnService(Resource):
             with TEXT_PREPRO_TIME.time():
                 text = clip.tokenize([text_input]).to(self.device)
             with TEXT_CLIP_INFERENCE_TIME.time():
-                text_features = self.model.encode_text(text)
+                with torch.no_grad():
+                    text_features = self.model.encode_text(text)
                 text_features /= text_features.norm(dim=-1, keepdim=True)
                 query = text_features.cpu().detach().numpy().astype("float32")
         if image_input is not None or image_url_input is not None:
@@ -206,7 +208,8 @@ class KnnService(Resource):
                 img = Image.open(img_data)
                 prepro = self.preprocess(img).unsqueeze(0).to(self.device)
             with IMAGE_CLIP_INFERENCE_TIME.time():
-                image_features = self.model.encode_image(prepro)
+                with torch.no_grad():
+                    image_features = self.model.encode_image(prepro)
                 image_features /= image_features.norm(dim=-1, keepdim=True)
                 query = image_features.cpu().detach().numpy().astype("float32")
 
