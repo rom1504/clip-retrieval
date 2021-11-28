@@ -85,7 +85,7 @@ def get_image_dataset():
                 text_file = self.text_files[key]
                 caption = text_file.read_text()
                 tokenized_text = self.tokenizer(caption)
-                output["text_tokens"] = tokenized_text
+                output.update(tokenized_text)
                 output["text"] = caption
 
             if self.enable_metadata:
@@ -139,7 +139,7 @@ def create_webdataset(
             text = item[caption_key]
             caption = text.decode("utf-8")
             tokenized_text = tokenizer(caption)
-            output["text_tokens"] = tokenized_text
+            output.update(tokenized_text)
             output["text"] = caption
 
         if enable_metadata:
@@ -300,12 +300,16 @@ def clip_inference(
     model, preprocess = clip.load(clip_model, device=device, jit=False)
     model_img = model.encode_image
     model_txt = model.encode_text
-    tokenizer = lambda text: clip.tokenize([text], truncate=True)[0]
+    tokenizer = lambda text: {'text_tokens': clip.tokenize([text], truncate=True)[0]}
     if use_mclip:
         print("\nLoading MCLIP model for text embedding\n")
         mclip = SentenceTransformer(mclip_model)
-        model_txt = mclip.encode
-        tokenizer = lambda text: clip.tokenize([text])[0]
+        mclip.to(device)
+        model_txt = mclip
+        def tok(text):
+            r = mclip.tokenizer.batch_encode_plus([text],padding='max_length')
+            return {'attention_mask': torch.IntTensor(r['attention_mask'])[0], 'input_ids': torch.IntTensor(r['input_ids'][0])}
+        tokenizer = tok
     if input_format == "files":
         dataset = get_image_dataset()(preprocess, tokenizer, input_dataset, enable_text=enable_text, enable_image=enable_image)
         enable_text = dataset.enable_text
@@ -352,8 +356,10 @@ def clip_inference(
                 image_filename = item["image_filename"]
             if enable_text:
                 if use_mclip:
-                    text_tokens = {'input_ids': item["text_tokens"]['input_ids'].to(device), 'attention_mask': item["text_tokens"]['attention_mask'].to(device)}
-                    text_features = model_txt(text_tokens)['sentence_embedding'].to(device).float()
+                    #a = mclip.tokenizer.batch_encode_plus(["dog and cat"],padding='max_length', max_length=512)
+                    tmp = {'input_ids': item['input_ids'].to(device), 'attention_mask': item['attention_mask'].to(device)}
+                    #text_tokens = {'input_ids': item['input_ids'].to(device), 'attention_mask': item['attention_mask'].to(device)}
+                    text_features = model_txt(tmp)['sentence_embedding'].to(device).float()
                 else:
                     text_features = model_txt(item["text_tokens"].to(device))
                 text_features /= text_features.norm(dim=-1, keepdim=True)
