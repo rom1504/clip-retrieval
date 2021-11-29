@@ -9,6 +9,9 @@ from io import BytesIO
 from pathlib import Path
 import tqdm
 import io
+import math
+
+from clip_retrieval.distributors import default_distributor_builder
 
 
 def normalized(a, axis=-1, order=2):
@@ -18,6 +21,34 @@ def normalized(a, axis=-1, order=2):
     l2[l2 == 0] = 1
     return a / np.expand_dims(l2, axis)
 
+def folder_to_keys(folder, enable_text=True, enable_image=True, enable_metadata=False):
+    """returns a list of keys from a folder of images and text"""
+    path = Path(folder)
+    if enable_text:
+        text_files = [*path.glob("**/*.txt")]
+        text_files = {text_file.stem: text_file for text_file in text_files}
+    if enable_image:
+        image_files = [
+            *path.glob("**/*.png"),
+            *path.glob("**/*.jpg"),
+            *path.glob("**/*.jpeg"),
+            *path.glob("**/*.bmp"),
+        ]
+        image_files = {image_file.stem: image_file for image_file in image_files}
+    if enable_metadata:
+        metadata_files = [*path.glob("**/*.json")]
+        metadata_files = {metadata_file.stem: metadata_file for metadata_file in metadata_files}
+
+    keys = None
+    join = lambda new_set: new_set & keys if keys is not None else new_set
+    if enable_text:
+        keys = join(text_files.keys())
+    elif enable_image:
+        keys = join(image_files.keys())
+    elif enable_metadata:
+        keys = join(metadata_files.keys())
+
+    return list(keys),  text_files, image_files, metadata_files
 
 def get_image_dataset():
     """retrieve image dataset module without importing torch at the top level"""
@@ -27,54 +58,23 @@ def get_image_dataset():
     class ImageDataset(Dataset):
         """ImageDataset is a pytorch Dataset exposing image and text tensors from a folder of image and text"""
 
-        def __init__(self, preprocess, folder, enable_text=True, enable_image=True, enable_metadata=False):
+        def __init__(self, preprocess, folder, enable_text=True, enable_image=True, enable_metadata=False, input_sampler=lambda a:a):
             super().__init__()
             import clip  # pylint: disable=import-outside-toplevel
 
-            path = Path(folder)
-            self.enable_text = enable_text
-            self.enable_image = enable_image
-            self.enable_metadata = enable_metadata
-
-            if self.enable_text:
-                text_files = [*path.glob("**/*.txt")]
-                text_files = {text_file.stem: text_file for text_file in text_files}
-                if len(text_files) == 0:
-                    self.enable_text = False
-            if self.enable_image:
-                image_files = [
-                    *path.glob("**/*.png"),
-                    *path.glob("**/*.jpg"),
-                    *path.glob("**/*.jpeg"),
-                    *path.glob("**/*.bmp"),
-                ]
-                image_files = {image_file.stem: image_file for image_file in image_files}
-                if len(image_files) == 0:
-                    self.enable_image = False
-            if self.enable_metadata:
-                metadata_files = [*path.glob("**/*.json")]
-                metadata_files = {metadata_file.stem: metadata_file for metadata_file in metadata_files}
-                if len(metadata_files) == 0:
-                    self.enable_metadata = False
-
-            keys = None
-            join = lambda new_set: new_set & keys if keys is not None else new_set
-            if self.enable_text:
-                keys = join(text_files.keys())
-            elif self.enable_image:
-                keys = join(image_files.keys())
-            elif self.enable_metadata:
-                keys = join(metadata_files.keys())
-
-            self.keys = list(keys)
+            self.keys, text_files, image_files, metadata_files  = folder_to_keys(folder, enable_text, enable_image, enable_metadata)
+            self.keys = input_sampler(self.keys)
+            text_files = input_sampler(text_files)
+            image_files = input_sampler(image_files)
+            metadata_files = input_sampler(metadata_files)
             if self.enable_text:
                 self.tokenizer = lambda text: clip.tokenize([text], truncate=True)[0]
-                self.text_files = {k: v for k, v in text_files.items() if k in keys}
+                self.text_files = {k: v for k, v in text_files.items() if k in self.keys}
             if self.enable_image:
-                self.image_files = {k: v for k, v in image_files.items() if k in keys}
+                self.image_files = {k: v for k, v in image_files.items() if k in self.keys}
                 self.image_transform = preprocess
             if self.enable_metadata:
-                self.metadata_files = {k: v for k, v in metadata_files.items() if k in keys}
+                self.metadata_files = {k: v for k, v in metadata_files.items() if k in self.keys}
 
         def __len__(self):
             return len(self.keys)
@@ -115,10 +115,13 @@ def create_webdataset(
     caption_key="txt",
     enable_metadata=False,
     cache_path=None,
+    input_sampler=lambda a:a,
 ):
     """Create a WebDataset reader, it can read a webdataset of image, text and json"""
     import clip  # pylint: disable=import-outside-toplevel
     import webdataset as wds  # pylint: disable=import-outside-toplevel
+
+    urls = input_sampler(urls)
 
     dataset = wds.WebDataset(urls, cache_dir=cache_path, cache_size=10 ** 10, handler=wds.handlers.warn_and_continue)
     tokenizer = lambda text: clip.tokenize([text], truncate=True)[0]
@@ -296,6 +299,66 @@ def clip_inference(
     clip_model="ViT-B/32",
     mclip_model="sentence-transformers/clip-ViT-B-32-multilingual-v1",
     use_mclip=False,
+    distributor="sequential",
+    output_partitions=None
+):
+    """clip inference goes from a image text dataset to clip embeddings"""
+
+    if input_format == "files":
+        keys, _,_ ,_ = folder_to_keys(input_dataset, enable_text=enable_text, enable_image=enable_image, enable_metadata=enable_metadata)
+        total_samples = len(keys)
+    
+    elif input_format == "webdataset":
+        total_samples = len(input_dataset)
+
+    if output_partitions is None:
+        output_partitions = math.ceil(total_samples/100000)
+
+    if isinstance(distributor, str):
+        distributor = default_distributor_builder(distributor)
+    
+    distributor(
+        output_partitions,
+        lambda input_sampler: clip_inference_single_executor(
+            input_dataset,
+            output_folder,
+            input_format,
+            cache_path,
+            batch_size,
+            num_prepro_workers,
+            enable_text,
+            enable_image,
+            enable_metadata,
+            write_batch_size,
+            subset_size,
+            wds_image_key,
+            wds_caption_key,
+            clip_model,
+            mclip_model,
+            use_mclip,
+            input_sampler
+        ),
+    )
+
+
+def clip_inference_single_executor(
+    input_dataset,
+    output_folder,
+    input_format="files",
+    cache_path=None,
+    batch_size=256,
+    num_prepro_workers=8,
+    enable_text=True,
+    enable_image=True,
+    enable_metadata=False,
+    write_batch_size=10 ** 6,
+    subset_size=None,
+    wds_image_key="jpg",
+    wds_caption_key="txt",
+    clip_model="ViT-B/32",
+    mclip_model="sentence-transformers/clip-ViT-B-32-multilingual-v1",
+    use_mclip=False,
+    input_sampler=lambda a:a,
 ):
     """clip inference goes from a image text dataset to clip embeddings"""
 
@@ -313,7 +376,7 @@ def clip_inference(
         mclip = SentenceTransformer(mclip_model)
         model_txt = mclip.encode
     if input_format == "files":
-        dataset = get_image_dataset()(preprocess, input_dataset, enable_text=enable_text, enable_image=enable_image)
+        dataset = get_image_dataset()(preprocess, input_dataset, enable_text=enable_text, enable_image=enable_image, input_sampler=input_sampler)
         enable_text = dataset.enable_text
         enable_image = dataset.enable_image
         enable_metadata = dataset.enable_metadata
@@ -327,6 +390,7 @@ def clip_inference(
             caption_key=wds_caption_key,
             enable_metadata=enable_metadata,
             cache_path=cache_path,
+            input_sampler=input_sampler,
         )
     else:
         raise Exception(f"No such input format {input_format}")
@@ -339,6 +403,7 @@ def clip_inference(
         pin_memory=True,
         prefetch_factor=2,
     )
+    # transmit id from sampler somehow
     output_sink = OutputSink(output_folder, enable_text, enable_image, enable_metadata, write_batch_size)
 
     c = 0
