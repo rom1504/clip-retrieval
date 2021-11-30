@@ -5,7 +5,7 @@ import json
 import fire
 
 
-def add_static_endpoints(app, default_backend=None, default_index=None):
+def add_static_endpoints(app, default_backend=None, default_index=None, url_column="url"):
     """add static endpoints to the flask app"""
     import pkg_resources  # pylint: disable=import-outside-toplevel
 
@@ -19,7 +19,7 @@ def add_static_endpoints(app, default_backend=None, default_index=None):
     def config_json():
         back = default_backend if default_backend is not None else request.host_url
         index = default_index if default_index is not None else ""
-        config = {"defaultBackend": back, "defaultIndex": index}
+        config = {"defaultBackend": back, "defaultIndex": index, "urlColumn": url_column}
         return json.dumps(config)
 
     app.route("/config.json")(config_json)
@@ -30,9 +30,9 @@ def add_static_endpoints(app, default_backend=None, default_index=None):
     app.route("/<path:path>")(static_dir)
 
 
-def clip_front(default_backend=None, default_index=None):
+def clip_front(default_backend=None, default_index=None, url_column="url"):
     app = Flask(__name__)
-    add_static_endpoints(app, default_backend, default_index)
+    add_static_endpoints(app, default_backend, default_index, url_column)
     app.run(host="0.0.0.0", port=1235, debug=False)
 
 

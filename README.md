@@ -207,7 +207,7 @@ which returns:
 `num_result_ids` argument of `/knn-service` and `/metadata` can be used together to do large knn queries and then fetch the metadata only when needed. It makes sense to do that as knn search can be very efficient thanks to strong [locality of reference](https://en.wikipedia.org/wiki/Locality_of_reference) of knn IVF index making it fast to do knn with a large K, whereas the current on-disk implementation of metadata (hdf5) does not have that property and hence cannot handle retrieving a large amount of random items fast.
 In particular this can be used to implement infinite scroll in a front end.
 
-By default the backend will also expose a front end. That front end will by default hit this backend, however you may need to specify whether this is happening over http or https, in this case use the option `--default_backend` to specify the backend url.
+By default the backend will also expose a front end. That front end will by default hit this backend, however you may need to specify whether this is happening over http or https, in this case use the option `--default_backend` to specify the backend url. `--url_column` allows specifying the name of the column url for the front
 
 ### Clip back: Benchmark and monitoring
 
