@@ -1,3 +1,8 @@
+## 2.19.0
+
+* add url column option
+* use torch no grad to fix a memleak in clip back
+
 ## 2.18.0
 
 * add default backend url in clip back
