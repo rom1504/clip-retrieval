@@ -479,7 +479,7 @@ def clip_back(
     app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {"/metrics": make_wsgi_app()})
     from .clip_front import add_static_endpoints  # pylint: disable=import-outside-toplevel
 
-    add_static_endpoints(app, default_backend, url_column)
+    add_static_endpoints(app, default_backend, None, url_column)
 
     api = Api(app)
     api.add_resource(MetricsSummary, "/metrics-summary")
