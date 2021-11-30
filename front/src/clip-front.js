@@ -8,6 +8,7 @@ class ClipFront extends LitElement {
     window.fetch('config.json').then(res => res.json()).then(config => {
       this.defaultIndex = config.defaultIndex
       this.defaultBackend = config.defaultBackend
+      this.urlColumn = config.urlColumn || 'url'
       this.init()
     })
   }
@@ -438,7 +439,7 @@ class ClipFront extends LitElement {
       'erotic', 'hotmirrorpics', 'butt', 'spank', 'cum', 'voyeur', 'lesbian', 'topless',
       'exhibitioni', 'prostitute', 'piss', 'drug', 'sex', 'hot ', 'nudity', 'nudist',
       'domination', 'xxx', 'slave', 'bdsm', 'fisted', 'bbw', 'x5o']
-    if (badWords.some(word => (image['url'] !== undefined && image['url'].toLowerCase().includes(word)) ||
+    if (badWords.some(word => (image[this.urlColumn] !== undefined && image[this.urlColumn].toLowerCase().includes(word)) ||
     (image['caption'] !== undefined && image['caption'].toLowerCase().includes(word)))) {
       return false
     }
@@ -461,8 +462,8 @@ class ClipFront extends LitElement {
     if (image['image'] !== undefined) {
       src = `data:image/png;base64, ${image['image']}`
     }
-    if (image['url'] !== undefined) {
-      src = image['url']
+    if (image[this.urlColumn] !== undefined) {
+      src = image[this.urlColumn]
     }
     /*
     // useful for testing broken images
@@ -481,8 +482,8 @@ class ClipFront extends LitElement {
      <img src="assets/image-search.png" class="subImageSearch" @click=${() => {
     if (image['image'] !== undefined) {
       this.image = image['image']
-    } else if (image['url'] !== undefined) {
-      this.imageUrl = image['url']
+    } else if (image[this.urlColumn] !== undefined) {
+      this.imageUrl = image[this.urlColumn]
     }
   }} />
       <img class="pic" src="${src}" alt="${image['caption'] !== undefined ? image['caption'] : ''}"" 
@@ -501,9 +502,9 @@ class ClipFront extends LitElement {
   filterDuplicateUrls (images) {
     const urls = {}
     return images.filter(image => {
-      if (image['url'] !== undefined) {
-        if (urls[image['url']] === undefined) {
-          urls[image['url']] = true
+      if (image[this.urlColumn] !== undefined) {
+        if (urls[image[this.urlColumn]] === undefined) {
+          urls[image[this.urlColumn]] = true
           return true
         }
         return false
@@ -514,7 +515,7 @@ class ClipFront extends LitElement {
 
   render () {
     const preFiltered = this.images
-      .filter(image => image['caption'] !== undefined || image['url'] !== undefined || image['image'] !== undefined)
+      .filter(image => image['caption'] !== undefined || image[this.urlColumn] !== undefined || image['image'] !== undefined)
       .filter(image => !this.safeMode || this.isSafe(image))
     const filteredImages = this.hideDuplicateUrls ? this.filterDuplicateUrls(preFiltered) : preFiltered
 
