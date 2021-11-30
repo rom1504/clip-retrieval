@@ -1,3 +1,7 @@
+## 2.19.1
+
+* fix url column option bug
+
 ## 2.19.0
 
 * add url column option
