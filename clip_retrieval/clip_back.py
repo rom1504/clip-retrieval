@@ -330,6 +330,7 @@ def parquet_to_hdf5(parquet_folder, output_hdf5_file, columns_to_return):
                 col = col.fillna(0)
             if col.dtype == "object":
                 col = col.fillna("")
+                col = col.str.replace("\x00", "", regex=False)
             z = col.to_numpy()
             if k not in ds:
                 ds.create_dataset(k, data=z, maxshape=(None,), compression="gzip")
