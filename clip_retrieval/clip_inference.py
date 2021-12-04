@@ -337,7 +337,6 @@ def clip_inference(
         raise Exception(f"No such input format {input_format}")
 
     def collate_fn(batch):
-        """collate_fn is a pytorch collate_fn that returns a dictionary of tensors"""
         batch = list(filter(lambda x: x is not None, batch))
         return default_collate(batch)
 
