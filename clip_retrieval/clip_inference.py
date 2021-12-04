@@ -2,7 +2,7 @@
 
 #!pip install clip-anytorch fire
 import fire
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 import json
 import fsspec
 from io import BytesIO
@@ -87,7 +87,7 @@ def get_image_dataset():
                 try:
                     image_file = self.image_files[key]
                     image_tensor = self.image_transform(Image.open(image_file))
-                except:
+                except (UnidentifiedImageError, OSError):
                     print(f"Failed to load image {image_file}. Skipping.")
                     return None # return None to be filtered in the batch collate_fn
 
@@ -281,7 +281,6 @@ class OutputSink:
             return
         self.__write_batch()
         self.__init_batch()
-
 
 def clip_inference(
     input_dataset,
