@@ -89,7 +89,7 @@ def get_image_dataset():
                     image_tensor = self.image_transform(Image.open(image_file))
                 except (UnidentifiedImageError, OSError):
                     print(f"Failed to load image {image_file}. Skipping.")
-                    return None # return None to be filtered in the batch collate_fn
+                    return None  # return None to be filtered in the batch collate_fn
 
                 output["image_filename"] = str(image_file)
                 output["image_tensor"] = image_tensor
@@ -107,6 +107,7 @@ def get_image_dataset():
                 output["metadata"] = metadata
 
             return output
+
     return ImageDataset
 
 
@@ -282,6 +283,7 @@ class OutputSink:
         self.__write_batch()
         self.__init_batch()
 
+
 def clip_inference(
     input_dataset,
     output_folder,
@@ -305,7 +307,7 @@ def clip_inference(
     import clip  # pylint: disable=import-outside-toplevel
     from sentence_transformers import SentenceTransformer  # pylint: disable=import-outside-toplevel
     from torch.utils.data import DataLoader  # pylint: disable=import-outside-toplevel
-    from torch.utils.data.dataloader import default_collate # pylint: disable=import-outside-toplevel
+    from torch.utils.data.dataloader import default_collate  # pylint: disable=import-outside-toplevel
     import torch  # pylint: disable=import-outside-toplevel
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
