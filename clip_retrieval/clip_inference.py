@@ -311,7 +311,7 @@ def clip_inference(
     import torch  # pylint: disable=import-outside-toplevel
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, preprocess = clip.load(clip_model, device=device, jit=False)
+    model, preprocess = clip.load(clip_model, device=device, jit=True)
     model_img = model.encode_image
     model_txt = model.encode_text
     if use_mclip:
