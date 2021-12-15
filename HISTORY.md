@@ -1,3 +1,9 @@
+## 2.20.0
+
+* replace null bytes while transforming parquet to hdf5
+* Use collate_fn to skip corrupt images without using recursion (thanks @afiaka87)
+* truncate text inputs in clip back
+
 ## 2.19.1
 
 * fix url column option bug
