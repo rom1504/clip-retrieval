@@ -192,7 +192,7 @@ class KnnService(Resource):
 
         if text_input is not None:
             with TEXT_PREPRO_TIME.time():
-                text = clip.tokenize([text_input]).to(self.device)
+                text = clip.tokenize([text_input], truncate=True).to(self.device)
             with TEXT_CLIP_INFERENCE_TIME.time():
                 with torch.no_grad():
                     text_features = self.model.encode_text(text)
