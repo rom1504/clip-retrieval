@@ -1,3 +1,7 @@
+## 2.21.0
+
+* mclip support in clip back and front
+
 ## 2.20.0
 
 * replace null bytes while transforming parquet to hdf5
