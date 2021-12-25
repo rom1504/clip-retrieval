@@ -85,7 +85,7 @@ def test_end2end():
     p = subprocess.Popen(
         f"clip-retrieval back --port=1234 --indices_paths='{indice_path}'", shell=True, stdout=subprocess.PIPE
     )
-    time.sleep(10)
+    time.sleep(40)
     r = requests.post(
         "http://localhost:1234/knn-service",
         json={"text": "cat", "modality": "image", "num_images": 10, "indice_name": "example_index"},

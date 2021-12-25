@@ -154,6 +154,12 @@ class MetadataService(Resource):
         return metas_with_ids
 
 
+def normalized(a, axis=-1, order=2):
+    l2 = np.atleast_1d(np.linalg.norm(a, order, axis))
+    l2[l2 == 0] = 1
+    return a / np.expand_dims(l2, axis)
+
+
 class KnnService(Resource):
     """the knn service provides nearest neighbors given text or image"""
 
@@ -165,6 +171,7 @@ class KnnService(Resource):
         self.preprocess = kwargs["preprocess"]
         self.columns_to_return = kwargs["columns_to_return"]
         self.metadata_is_ordered_by_ivf = kwargs["metadata_is_ordered_by_ivf"]
+        self.mclip_model = kwargs["mclip_model"]
 
     def query(
         self,
@@ -175,10 +182,14 @@ class KnnService(Resource):
         num_images=100,
         num_result_ids=100,
         indice_name=None,
+        use_mclip=False,
     ):
         """implement the querying functionality of the knn service: from text and image to nearest neighbors"""
         import torch  # pylint: disable=import-outside-toplevel
         import clip  # pylint: disable=import-outside-toplevel
+
+        if not self.mclip_model:
+            use_mclip = False
 
         if text_input is None and image_input is None and image_url_input is None:
             raise ValueError("must fill one of text, image and image url input")
@@ -191,13 +202,17 @@ class KnnService(Resource):
             ivf_old_to_new_mapping = self.indices_loaded[indice_name]["ivf_old_to_new_mapping"]
 
         if text_input is not None:
-            with TEXT_PREPRO_TIME.time():
-                text = clip.tokenize([text_input], truncate=True).to(self.device)
-            with TEXT_CLIP_INFERENCE_TIME.time():
-                with torch.no_grad():
-                    text_features = self.model.encode_text(text)
-                text_features /= text_features.norm(dim=-1, keepdim=True)
-                query = text_features.cpu().detach().numpy().astype("float32")
+            if use_mclip:
+                with TEXT_CLIP_INFERENCE_TIME.time():
+                    query = normalized(self.mclip_model(text_input))
+            else:
+                with TEXT_PREPRO_TIME.time():
+                    text = clip.tokenize([text_input], truncate=True).to(self.device)
+                with TEXT_CLIP_INFERENCE_TIME.time():
+                    with torch.no_grad():
+                        text_features = self.model.encode_text(text)
+                    text_features /= text_features.norm(dim=-1, keepdim=True)
+                    query = text_features.cpu().detach().numpy().astype("float32")
         if image_input is not None or image_url_input is not None:
             if image_input is not None:
                 binary_data = base64.b64decode(image_input)
@@ -281,7 +296,10 @@ class KnnService(Resource):
         num_images = json_data["num_images"]
         num_result_ids = json_data.get("num_result_ids", num_images)
         indice_name = json_data["indice_name"]
-        return self.query(text_input, image_input, image_url_input, modality, num_images, num_result_ids, indice_name)
+        use_mclip = json_data.get("use_mclip", False)
+        return self.query(
+            text_input, image_input, image_url_input, modality, num_images, num_result_ids, indice_name, use_mclip
+        )
 
 
 def meta_to_dict(meta):
@@ -377,15 +395,28 @@ class Hdf5MetadataProvider:
 
 
 def load_clip_indices(
-    indices_paths, enable_hdf5, enable_faiss_memory_mapping, columns_to_return, reorder_metadata_by_ivf_index
+    indices_paths,
+    enable_hdf5,
+    enable_faiss_memory_mapping,
+    columns_to_return,
+    reorder_metadata_by_ivf_index,
+    enable_mclip_option=True,
 ):
     """This load clips indices from disk"""
     LOGGER.info("loading clip...")
     import clip  # pylint: disable=import-outside-toplevel
     import torch  # pylint: disable=import-outside-toplevel
+    from sentence_transformers import SentenceTransformer  # pylint: disable=import-outside-toplevel
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
+
+    if enable_mclip_option:
+        mclip_model = "sentence-transformers/clip-ViT-B-32-multilingual-v1"
+        mclip = SentenceTransformer(mclip_model)
+        model_txt_mclip = mclip.encode
+    else:
+        model_txt_mclip = None
 
     indices = json.load(open(indices_paths))
 
@@ -451,7 +482,7 @@ def load_clip_indices(
         if reorder_metadata_by_ivf_index:
             indices_loaded[name]["ivf_old_to_new_mapping"] = ivf_old_to_new_mapping
 
-    return indices_loaded, indices, device, model, preprocess
+    return indices_loaded, indices, device, model, preprocess, model_txt_mclip
 
 
 # reorder_metadata_by_ivf_index allows faster data retrieval of knn results by re-ordering the metadata by the ivf clusters
@@ -466,13 +497,19 @@ def clip_back(
     reorder_metadata_by_ivf_index=False,
     default_backend=None,
     url_column="url",
+    enable_mclip_option=True,
 ):
     """main entry point of clip back, start the endpoints"""
     LOGGER.info("starting boot of clip back")
     if columns_to_return is None:
         columns_to_return = ["url", "image_path", "caption", "NSFW"]
-    indices_loaded, indices, device, model, preprocess = load_clip_indices(
-        indices_paths, enable_hdf5, enable_faiss_memory_mapping, columns_to_return, reorder_metadata_by_ivf_index
+    indices_loaded, indices, device, model, preprocess, mclip_model = load_clip_indices(
+        indices_paths,
+        enable_hdf5,
+        enable_faiss_memory_mapping,
+        columns_to_return,
+        reorder_metadata_by_ivf_index,
+        enable_mclip_option,
     )
     LOGGER.info("indices loaded")
 
@@ -500,6 +537,7 @@ def clip_back(
             "preprocess": preprocess,
             "columns_to_return": columns_to_return,
             "metadata_is_ordered_by_ivf": reorder_metadata_by_ivf_index,
+            "mclip_model": mclip_model,
         },
     )
     CORS(app)
