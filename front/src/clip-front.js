@@ -18,6 +18,7 @@ class ClipFront extends LitElement {
     const back = urlParams.get('back')
     const index = urlParams.get('index')
     const query = urlParams.get('query')
+    const useMclip = urlParams.get('useMclip')
     const imageUrl = urlParams.get('imageUrl')
     if (index != null) {
       this.currentIndex = index
@@ -33,6 +34,11 @@ class ClipFront extends LitElement {
       this.text = query
     } else {
       this.text = ''
+    }
+    if (useMclip != null) {
+      this.useMclip = useMclip === 'true'
+    } else {
+      this.useMclip = false
     }
     this.service = new ClipService(this.backendHost)
     this.numImages = 40
@@ -88,7 +94,8 @@ class ClipFront extends LitElement {
       displayCaptions: { type: Boolean },
       displayFullCaptions: { type: Boolean },
       safeMode: { type: Boolean },
-      hideDuplicateUrls: { type: Boolean }
+      hideDuplicateUrls: { type: Boolean },
+      useMclip: { type: Boolean }
     }
   }
 
@@ -137,7 +144,7 @@ class ClipFront extends LitElement {
         return
       }
     }
-    if (_changedProperties.has('modality') || _changedProperties.has('currentIndex')) {
+    if (_changedProperties.has('useMclip') || _changedProperties.has('modality') || _changedProperties.has('currentIndex')) {
       if (this.image !== undefined || this.text !== '' || this.imageUrl !== undefined) {
         this.redoSearch()
       }
@@ -168,6 +175,7 @@ class ClipFront extends LitElement {
     }
     urlParams.set('back', this.backendHost)
     urlParams.set('index', this.currentIndex)
+    urlParams.set('useMclip', this.useMclip)
     window.history.pushState({}, '', '?' + urlParams.toString())
   }
 
@@ -219,7 +227,7 @@ class ClipFront extends LitElement {
     const image = this.image === undefined ? null : this.image
     const imageUrl = this.imageUrl === undefined ? null : this.imageUrl
     const count = this.modality === 'image' && this.currentIndex === this.indices[0] ? 10000 : 100
-    const results = await this.service.callClipService(text, image, imageUrl, this.modality, count, this.currentIndex, count)
+    const results = await this.service.callClipService(text, image, imageUrl, this.modality, count, this.currentIndex, count, this.useMclip)
     downloadFile('clipsubset.json', JSON.stringify(results, null, 2))
   }
 
@@ -229,7 +237,7 @@ class ClipFront extends LitElement {
     }
     this.image = undefined
     this.imageUrl = undefined
-    const results = await this.service.callClipService(this.text, null, null, this.modality, this.numImages, this.currentIndex, this.numResultIds)
+    const results = await this.service.callClipService(this.text, null, null, this.modality, this.numImages, this.currentIndex, this.numResultIds, this.useMclip)
     console.log(results)
     this.images = results
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
@@ -241,7 +249,7 @@ class ClipFront extends LitElement {
   async imageSearch () {
     this.text = ''
     this.imageUrl = undefined
-    const results = await this.service.callClipService(null, this.image, null, this.modality, this.numImages, this.currentIndex, this.numResultIds)
+    const results = await this.service.callClipService(null, this.image, null, this.modality, this.numImages, this.currentIndex, this.numResultIds, this.useMclip)
     console.log(results)
     this.images = results
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
@@ -253,7 +261,7 @@ class ClipFront extends LitElement {
   async imageUrlSearch () {
     this.text = ''
     this.image = undefined
-    const results = await this.service.callClipService(null, null, this.imageUrl, this.modality, this.numImages, this.currentIndex, this.numResultIds)
+    const results = await this.service.callClipService(null, null, this.imageUrl, this.modality, this.numImages, this.currentIndex, this.numResultIds, this.useMclip)
     console.log(results)
     this.images = results
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
@@ -546,7 +554,8 @@ class ClipFront extends LitElement {
       <label>Safe mode<input type="checkbox" ?checked="${this.safeMode}" @click=${() => { this.safeMode = !this.safeMode }} /></label><br />
       <label>Hide duplicate urls<input type="checkbox" ?checked="${this.hideDuplicateUrls}" @click=${() => { this.hideDuplicateUrls = !this.hideDuplicateUrls }} /></label><br />
       <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>
-  html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select>
+  html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select><br />
+      <label>Search with multilingual clip <input type="checkbox" ?checked="${this.useMclip}" @click=${() => { this.useMclip = !this.useMclip }} /></label><br />
         <p>This UI may contain results with nudity and is best used by adults. The images are under their own copyright.</p>
         <p>Are you seeing near duplicates ? KNN search are good at spotting those, especially so in large datasets.</p>
      </div>
