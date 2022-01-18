@@ -119,6 +119,7 @@ def create_webdataset(
     image_key="jpg",
     caption_key="txt",
     enable_metadata=False,
+    caption_in_metadata=False,
     cache_path=None,
 ):
     """Create a WebDataset reader, it can read a webdataset of image, text and json"""
@@ -129,11 +130,11 @@ def create_webdataset(
     tokenizer = lambda text: clip.tokenize([text], truncate=True)[0]
 
     def filter_dataset(item):
-        if enable_text and caption_key not in item:
+        if enable_text and caption_key not in item and not caption_in_metadata:
             return False
         if enable_image and image_key not in item:
             return False
-        if enable_metadata and "json" not in item:
+        if (enable_metadata or caption_in_metadata) and "json" not in item:
             return False
         return True
 
@@ -148,17 +149,24 @@ def create_webdataset(
             output["image_filename"] = item["__key__"]
             output["image_tensor"] = image_tensor
 
-        if enable_text:
+        if enable_text and not caption_in_metadata:
             text = item[caption_key]
             caption = text.decode("utf-8")
             tokenized_text = tokenizer(caption)
             output["text_tokens"] = tokenized_text
             output["text"] = caption
-
-        if enable_metadata:
+        
+        if enable_metadata or caption_in_metadata:
             metadata_file = item["json"]
             metadata = metadata_file.decode("utf-8")
-            output["metadata"] = metadata
+            if enable_metadata:
+                output["metadata"] = metadata
+            if caption_in_metadata:
+                caption = json.loads(metadata)[caption_key]
+                tokenized_text = tokenizer(caption)
+                output["text_tokens"] = tokenized_text
+                output["text"] = caption
+        
         return output
 
     transformed_dataset = filtered_dataset.map(preprocess_dataset, handler=wds.handlers.warn_and_continue)
@@ -298,6 +306,7 @@ def clip_inference(
     subset_size=None,
     wds_image_key="jpg",
     wds_caption_key="txt",
+    wds_caption_in_metadata=False,
     clip_model="ViT-B/32",
     mclip_model="sentence-transformers/clip-ViT-B-32-multilingual-v1",
     use_mclip=False,
@@ -332,6 +341,7 @@ def clip_inference(
             image_key=wds_image_key,
             caption_key=wds_caption_key,
             enable_metadata=enable_metadata,
+            caption_in_metadata=wds_caption_in_metadata,
             cache_path=cache_path,
         )
     else:
