@@ -301,6 +301,7 @@ def clip_inference(
     clip_model="ViT-B/32",
     mclip_model="sentence-transformers/clip-ViT-B-32-multilingual-v1",
     use_mclip=False,
+    use_jit=True,
 ):
     """clip inference goes from a image text dataset to clip embeddings"""
 
@@ -311,7 +312,7 @@ def clip_inference(
     import torch  # pylint: disable=import-outside-toplevel
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, preprocess = clip.load(clip_model, device=device, jit=False)
+    model, preprocess = clip.load(clip_model, device=device, jit=use_jit)
     model_img = model.encode_image
     model_txt = model.encode_text
     if use_mclip:

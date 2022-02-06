@@ -401,6 +401,8 @@ def load_clip_indices(
     columns_to_return,
     reorder_metadata_by_ivf_index,
     enable_mclip_option=True,
+    clip_model="ViT-B/32",
+    use_jit=True,
 ):
     """This load clips indices from disk"""
     LOGGER.info("loading clip...")
@@ -409,7 +411,7 @@ def load_clip_indices(
     from sentence_transformers import SentenceTransformer  # pylint: disable=import-outside-toplevel
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
+    model, preprocess = clip.load(clip_model, device=device, jit=use_jit)
 
     if enable_mclip_option:
         mclip_model = "sentence-transformers/clip-ViT-B-32-multilingual-v1"
@@ -498,6 +500,8 @@ def clip_back(
     default_backend=None,
     url_column="url",
     enable_mclip_option=True,
+    clip_model="ViT-B/32",
+    use_jit=True,
 ):
     """main entry point of clip back, start the endpoints"""
     LOGGER.info("starting boot of clip back")
@@ -510,6 +514,8 @@ def clip_back(
         columns_to_return,
         reorder_metadata_by_ivf_index,
         enable_mclip_option,
+        clip_model,
+        use_jit,
     )
     LOGGER.info("indices loaded")
 
