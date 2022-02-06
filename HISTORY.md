@@ -1,3 +1,7 @@
+## 2.22.0
+
+* add use_jit option to back and inference, now True by default, add clip_model option to back
+
 ## 2.21.0
 
 * mclip support in clip back and front
