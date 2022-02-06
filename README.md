@@ -89,6 +89,7 @@ clip_inference turn a set of text+image into clip embeddings
 * **clip_model** CLIP model to load (default *ViT-B/32*)
 * **mclip_model** MCLIP model to load (default *sentence-transformers/clip-ViT-B-32-multilingual-v1*)
 * **use_mclip** If False it performs the inference using CLIP; MCLIP otherwise (default *False*)
+* **use_jit** uses jit for the clip model (default *True*)
 
 
 ### Loading/writing files on hdfs
@@ -140,6 +141,10 @@ Run (output_folder is the output of clip index)
 echo '{"example_index": "output_folder"}' > indices_paths.json
 clip-retrieval back --port 1234 --indices-paths indices_paths.json
 ```
+
+`--use_jit True` uses jit for the clip model
+
+`--clip_model "ViT-B/32"` allows choosing the clip model to use
 
 `--enable_mclip_option True` loads the mclip model, making it possible to search in any language.
 
