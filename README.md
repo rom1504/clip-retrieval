@@ -83,13 +83,15 @@ clip_inference turn a set of text+image into clip embeddings
 * **enable_image** Enable image processing (default *True*)
 * **enable_metadata** Enable metadata processing (default *False*)
 * **write_batch_size** Write batch size (default *10**6*)
-* **subset_size** Only process a subset of this size (default *None*)
 * **wds_image_key** Key to use for images in webdataset. (default *jpg*)
 * **wds_caption_key** Key to use for captions in webdataset. (default *txt*)
 * **clip_model** CLIP model to load (default *ViT-B/32*)
 * **mclip_model** MCLIP model to load (default *sentence-transformers/clip-ViT-B-32-multilingual-v1*)
 * **use_mclip** If False it performs the inference using CLIP; MCLIP otherwise (default *False*)
 * **use_jit** uses jit for the clip model (default *True*)
+* **distribution_strategy** choose how to distribute the job (default *sequential*)
+* **wds_number_file_per_input_file** estimation of the number of sample per tar if using wds and not specifying output_partition_count (default *10000*)
+* **output_partition_count** number of output partitions (default *None*)
 
 
 ### Loading/writing files on hdfs
@@ -280,6 +282,8 @@ make test
 ```
 
 You can use `make black` to reformat the code
+
+`python -m pytest -x -s -v tests -k "dummy"` to run a specific test
 
 If you want to use the front through the python backend or frontend, run
 ```
