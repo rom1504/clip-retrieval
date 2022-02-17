@@ -4,6 +4,7 @@ from pathlib import Path
 from braceexpand import braceexpand
 import fire
 from clip_retrieval.clip_inference.load_clip import load_clip
+from clip_retrieval.clip_inference.logger import LoggerReader, LoggerWriter
 
 from clip_retrieval.clip_inference.mapper import ClipMapper
 from clip_retrieval.clip_inference.reader import FilesReader, WebdatasetReader
@@ -32,6 +33,8 @@ def main(
     distribution_strategy="sequential",
     wds_number_file_per_input_file=10000,
     output_partition_count=None,
+    wandb_project="clip_retrieval",
+    enable_wandb=False,
 ):
     if input_format == "webdataset":
         input_dataset = list(braceexpand(input_dataset))
@@ -100,18 +103,29 @@ def main(
             enable_metadata=enable_metadata,
         )
 
+    def logger_builder(i):
+        return LoggerWriter(partition_id=i, stats_folder=output_folder + "/stats",)
+
     runner = Runner(
         reader_builder=reader_builder,
         mapper_builder=mapper_builder,
         writer_builder=writer_builder,
+        logger_builder=logger_builder,
         output_partition_count=output_partition_count,
     )
+
+    logger_reader = LoggerReader(
+        stats_folder=output_folder + "/stats", wandb_project=wandb_project, enable_wandb=enable_wandb
+    )
+    logger_reader.start()
 
     if distribution_strategy == "sequential":
         distributor = SequentialDistributor(runner, output_partition_count)
     elif distribution_strategy == "pyspark":
         distributor = PysparkDistributor(runner, output_partition_count)
     distributor()
+
+    logger_reader.end()
 
 
 if __name__ == "__main__":

@@ -16,3 +16,4 @@ indices_paths.json
 test_folder
 build
 dist
+wandb

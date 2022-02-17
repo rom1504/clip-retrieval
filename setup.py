@@ -54,6 +54,7 @@ if __name__ == "__main__":
             "prometheus-client",
             "fsspec",
             "sentence-transformers",
+            "wandb",
         ],
         classifiers=[
             "Development Status :: 4 - Beta",

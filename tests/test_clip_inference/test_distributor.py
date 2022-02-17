@@ -1,3 +1,4 @@
+from clip_retrieval.clip_inference.logger import LoggerWriter
 from clip_retrieval.clip_inference.runner import Runner
 from clip_retrieval.clip_inference.reader import FilesReader
 from clip_retrieval.clip_inference.mapper import ClipMapper
@@ -46,6 +47,9 @@ def test_distributor(distributor_kind):
                 mclip_model="",
             )
 
+        def logger_builder(i):
+            return LoggerWriter(partition_id=i, stats_folder=tmpdir + "/stats",)
+
         def writer_builder(i):
             return NumpyWriter(
                 partition_id=i, output_folder=tmpdir, enable_text=False, enable_image=True, enable_metadata=False,
@@ -55,6 +59,7 @@ def test_distributor(distributor_kind):
             reader_builder=reader_builder,
             mapper_builder=mapper_builder,
             writer_builder=writer_builder,
+            logger_builder=logger_builder,
             output_partition_count=output_partition_count,
         )
 

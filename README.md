@@ -89,9 +89,11 @@ clip_inference turn a set of text+image into clip embeddings
 * **mclip_model** MCLIP model to load (default *sentence-transformers/clip-ViT-B-32-multilingual-v1*)
 * **use_mclip** If False it performs the inference using CLIP; MCLIP otherwise (default *False*)
 * **use_jit** uses jit for the clip model (default *True*)
-* **distribution_strategy** choose how to distribute the job (default *sequential*)
+* **distribution_strategy** choose how to distribute the job, see distribution section for details (default *sequential*)
 * **wds_number_file_per_input_file** estimation of the number of sample per tar if using wds and not specifying output_partition_count (default *10000*)
 * **output_partition_count** number of output partitions (default *None*)
+* **wandb_project** wandb project to use (default *clip_retrieval*)
+* **enable_wandb** whether to use wandb (default *False*)
 
 
 ### Loading/writing files on hdfs
@@ -283,7 +285,7 @@ make test
 
 You can use `make black` to reformat the code
 
-`python -m pytest -x -s -v tests -k "dummy"` to run a specific test
+`python -m pytest -x -s -v tests -k "test_runner"` to run a specific test
 
 If you want to use the front through the python backend or frontend, run
 ```

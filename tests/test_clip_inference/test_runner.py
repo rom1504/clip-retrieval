@@ -1,5 +1,6 @@
-from clip_retrieval.clip_inference.runner import Runner, Sampler
-from clip_retrieval.clip_inference.reader import FilesReader, WebdatasetReader
+from clip_retrieval.clip_inference.logger import LoggerWriter
+from clip_retrieval.clip_inference.runner import Runner
+from clip_retrieval.clip_inference.reader import FilesReader
 from clip_retrieval.clip_inference.mapper import ClipMapper
 from clip_retrieval.clip_inference.writer import NumpyWriter
 from clip_retrieval.clip_inference.load_clip import load_clip
@@ -43,19 +44,19 @@ def test_runner():
                 mclip_model="",
             )
 
+        def logger_builder(i):
+            return LoggerWriter(partition_id=i, stats_folder=tmpdir + "/stats",)
+
         def writer_builder(i):
             return NumpyWriter(
-                partition_id=i,
-                output_folder=tmpdir,
-                enable_text=False,
-                enable_image=True,
-                enable_metadata=False,
+                partition_id=i, output_folder=tmpdir, enable_text=False, enable_image=True, enable_metadata=False,
             )
 
         runner = Runner(
             reader_builder=reader_builder,
             mapper_builder=mapper_builder,
             writer_builder=writer_builder,
+            logger_builder=logger_builder,
             output_partition_count=output_partition_count,
         )
 
