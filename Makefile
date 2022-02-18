@@ -13,12 +13,20 @@ lint: ## [Local development] Run mypy, pylint and black
 black: ## [Local development] Auto-format python code using black
 	python -m black -l 120 .
 
+build-pex:
+	python3 -m venv .pexing
+	. .pexing/bin/activate && python -m pip install -U pip && python -m pip install pex
+	. .pexing/bin/activate && python -m pex --layout packed  -f https://download.pytorch.org/whl/cu113/torch_stable.html setuptools s3fs==2021.11.0 pyspark==3.2.0 torch==1.10.2+cu113 torchvision==0.11.3+cu113 . -o clip_retrieval.pex -v
+	rm -rf .pexing
+	tar czf clip_retrieval_torch.tgz clip_retrieval.pex/.deps/torch-1.10.2+cu113-cp38-cp38-linux_x86_64.whl
+	tar czf clip_retrieval.tgz --exclude clip_retrieval.pex/.deps/torch-1.10.2+cu113-cp38-cp38-linux_x86_64.whl clip_retrieval.pex
+
 venv-lint-test: ## [Continuous integration]
 	python3 -m venv .env && . .env/bin/activate && make install install-dev lint test && rm -rf .env
 
 test: ## [Local development] Run unit tests
 	rm -rf tests/test_folder/
-	python -m pytest -v --cov=clip_retrieval --cov-report term-missing --cov-fail-under 0.0 tests
+	python -m pytest -x -s -v tests
 
 .PHONY: help
 

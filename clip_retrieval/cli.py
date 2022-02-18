@@ -21,3 +21,7 @@ def main():
             "front": clip_front,
         }
     )
+
+
+if __name__ == "__main__":
+    main()
