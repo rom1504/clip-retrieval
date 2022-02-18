@@ -26,7 +26,7 @@ venv-lint-test: ## [Continuous integration]
 
 test: ## [Local development] Run unit tests
 	rm -rf tests/test_folder/
-	python -m pytest -v --cov=clip_retrieval --cov-report term-missing --cov-fail-under 0.0 tests
+	python -m pytest -x -s -v tests
 
 .PHONY: help
 
