@@ -110,15 +110,15 @@ class LoggerReader:
                 if filename[:4] == "wip_" or filename not in stats:
                     if filename[:4] == "wip_":
                         filename = filename[4:]
-                        for i in range(5):  # pylint: disable=unused-variable
-                            try:
-                                fs.invalidate_cache()
-                                with fs.open(k, "r") as f:
-                                    stats[filename] = json.loads(f.read())
-                                break
-                            except Exception as e:  # pylint: disable=broad-except
-                                print(e)
-                                time.sleep(1)
+                    for i in range(5):  # pylint: disable=unused-variable
+                        try:
+                            fs.invalidate_cache()
+                            with fs.open(k, "r") as f:
+                                stats[filename] = json.loads(f.read())
+                            break
+                        except Exception as e:  # pylint: disable=broad-except
+                            print(e)
+                            time.sleep(1)
 
             stats_aggregated = defaultdict(lambda: 0)
             for k in stats:
