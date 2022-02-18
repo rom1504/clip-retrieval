@@ -1,3 +1,7 @@
+## 2.23.0
+
+* Refactor clip inference, make it support distributed inference
+
 ## 2.22.0
 
 * add use_jit option to back and inference, now True by default, add clip_model option to back
