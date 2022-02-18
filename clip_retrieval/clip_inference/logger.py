@@ -51,9 +51,8 @@ class LoggerWriter:
         return stats
 
     def write_stats(self, stats, fs, relative_path, wip):
-        if not fs.exists(relative_path):
-            fs.mkdir(relative_path)
-        if not wip:
+        fs.makedirs(relative_path, exist_ok=True)
+        if not wip and fs.exists(relative_path + f"/wip_{self.partition_id}.json"):
             fs.rm(relative_path + f"/wip_{self.partition_id}.json")
         prefix = "wip_" if wip else ""
         with fs.open(relative_path + f"/{prefix}{self.partition_id}.json", "w") as f:
@@ -89,8 +88,7 @@ class LoggerReader:
         stats = {}
         fs, relative_path = fsspec.core.url_to_fs(self.stats_folder)
 
-        if not fs.exists(relative_path):
-            fs.mkdir(relative_path)
+        fs.makedirs(relative_path, exist_ok=True)
 
         while True:  # pylint: disable=too-many-nested-blocks
             time.sleep(0.1)
