@@ -19,14 +19,13 @@ class OutputSink:
         self.metadata_folder = output_folder + "/metadata"
         self.batch_num = partition_id
 
-        if enable_image and not self.fs.exists(self.img_emb_folder):
-            self.fs.mkdir(self.img_emb_folder)
+        if enable_image:
+            self.fs.makedirs(self.img_emb_folder, exist_ok=True)
 
-        if enable_text and not self.fs.exists(self.text_emb_folder):
-            self.fs.mkdir(self.text_emb_folder)
+        if enable_text:
+            self.fs.makedirs(self.text_emb_folder, exist_ok=True)
 
-        if not self.fs.exists(self.metadata_folder):
-            self.fs.mkdir(self.metadata_folder)
+        self.fs.makedirs(self.metadata_folder, exist_ok=True)
 
         self.batch_count = 0
         self.__init_batch()
