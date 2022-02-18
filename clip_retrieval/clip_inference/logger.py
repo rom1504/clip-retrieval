@@ -52,7 +52,7 @@ class LoggerWriter:
 
     def write_stats(self, stats, fs, relative_path, wip):
         fs.makedirs(relative_path, exist_ok=True)
-        if not wip:
+        if not wip and fs.exists(relative_path + f"/wip_{self.partition_id}.json"):
             fs.rm(relative_path + f"/wip_{self.partition_id}.json")
         prefix = "wip_" if wip else ""
         with fs.open(relative_path + f"/{prefix}{self.partition_id}.json", "w") as f:
