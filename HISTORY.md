@@ -1,3 +1,7 @@
+## 2.23.1
+
+* Fix race condition when using mkdir in writer
+
 ## 2.23.0
 
 * Refactor clip inference, make it support distributed inference
