@@ -17,3 +17,6 @@ test_folder
 build
 dist
 wandb
+.pexing
+*.tgz
+*.pex

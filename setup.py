@@ -52,7 +52,7 @@ if __name__ == "__main__":
             "webdataset",
             "h5py",
             "prometheus-client",
-            "fsspec",
+            "fsspec==2021.11.0",
             "sentence-transformers",
             "wandb",
         ],
