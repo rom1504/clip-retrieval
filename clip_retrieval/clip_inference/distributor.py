@@ -1,5 +1,7 @@
 """distributors provide way to compute using several gpus and several machines"""
 
+import os
+
 
 class SequentialDistributor:
     def __init__(self, runner, output_partition_count):
@@ -20,6 +22,7 @@ class PysparkDistributor:
 
     def __call__(self):
         from pyspark.sql import SparkSession  # pylint: disable=import-outside-toplevel
+        import pyspark  # pylint: disable=import-outside-toplevel
 
         spark = SparkSession.getActiveSession()
 
@@ -34,4 +37,12 @@ class PysparkDistributor:
 
         df = list(range(self.output_partition_count))
         rdd = spark.sparkContext.parallelize(df, len(df))
-        rdd.foreach(self.runner)
+
+        def run(i):
+            context = pyspark.TaskContext.get()
+            if "gpu" in context.resources():
+                gpu = context.resources()["gpu"].addresses[0]
+                os.environ["CUDA_VISIBLE_DEVICES"] = gpu
+            self.runner(i)
+
+        rdd.foreach(run)
