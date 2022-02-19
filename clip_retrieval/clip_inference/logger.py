@@ -106,13 +106,13 @@ class LoggerReader:
             for k in stats_files:
                 filename = k.split("/")[-1]
                 if filename[:4] == "wip_" or filename not in stats:
-                    if filename[:4] == "wip_":
-                        filename = filename[4:]
                     for i in range(5):  # pylint: disable=unused-variable
                         try:
                             fs.invalidate_cache()
                             with fs.open(k, "r") as f:
                                 stats[filename] = json.loads(f.read())
+                            if filename[:4] != "wip_" and "wip_" + filename in stats:
+                                del stats["wip_" + filename]
                             break
                         except Exception as e:  # pylint: disable=broad-except
                             print(e)
