@@ -1,3 +1,7 @@
+## 2.23.3
+
+* fix another small issue with logger reporting
+
 ## 2.23.2
 
 * small fix in logger computation
