@@ -86,7 +86,7 @@ class LoggerReader:
 
         last_check = 0
         stats = {}
-        fs, relative_path = fsspec.core.url_to_fs(self.stats_folder)
+        fs, relative_path = fsspec.core.url_to_fs(self.stats_folder, use_listings_cache=False)
 
         fs.makedirs(relative_path, exist_ok=True)
 
