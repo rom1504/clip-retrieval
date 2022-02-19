@@ -1,3 +1,7 @@
+## 2.23.2
+
+* small fix in logger computation
+
 ## 2.23.1
 
 * Fix race condition when using mkdir in writer
