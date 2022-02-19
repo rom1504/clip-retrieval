@@ -115,7 +115,8 @@ class LoggerReader:
                                 del stats["wip_" + filename]
                             break
                         except Exception as e:  # pylint: disable=broad-except
-                            print(e)
+                            if i == 4:
+                                print(f"failed to read {k} error : {e}")
                             time.sleep(1)
 
             stats_aggregated = defaultdict(lambda: 0)
