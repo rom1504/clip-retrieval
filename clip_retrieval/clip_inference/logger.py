@@ -109,6 +109,8 @@ class LoggerReader:
                     for i in range(5):  # pylint: disable=unused-variable
                         try:
                             fs.invalidate_cache()
+                            if not fs.exists(k):
+                                continue
                             with fs.open(k, "r") as f:
                                 stats[filename] = json.loads(f.read())
                             if filename[:4] != "wip_" and "wip_" + filename in stats:
