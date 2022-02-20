@@ -104,6 +104,14 @@ clip_inference turn a set of text+image into clip embeddings
 Example of hdfs query using webdataset format:
 `clip_inference --input_dataset "pipe:hdfs dfs -cat /myfolder/webdataset/{00000..00010}.tar" --output_folder "hdfs://myfolder/embeddings" --input_format webdataset
 
+### Loading/writing files on s3
+
+`clip_inference --input_dataset "pipe:aws s3 cp --quiet s3://myfolder/webdataset/{00000..00010}.tar" --output_folder "s3://myfolder/embeddings" --input_format webdataset
+
+### Distributed inference
+
+To run this on multiple nodes (and multiple gpus), see tutorial at [docs/distributed_clip_inference.md](docs/distributed_clip_inference.md)
+
 ## Clip index
 
 Clip index takes as input the output of clip inference and makes an index out of it using [autofaiss](https://github.com/criteo/autofaiss)
