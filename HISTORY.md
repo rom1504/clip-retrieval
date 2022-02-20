@@ -1,3 +1,9 @@
+## 2.24.0
+
+* use zero padding for output file names
+* add proper multi gpu support in pyspark distributor
+* improve printing of error in logger
+
 ## 2.23.3
 
 * fix another small issue with logger reporting
