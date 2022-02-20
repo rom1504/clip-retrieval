@@ -1,3 +1,7 @@
+## 2.24.1
+
+* improve logger by checking the file exists before reading
+
 ## 2.24.0
 
 * use zero padding for output file names
