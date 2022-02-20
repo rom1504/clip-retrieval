@@ -8,7 +8,12 @@ import os
 def test_writer():
     with tempfile.TemporaryDirectory() as tmpdir:
         writer = NumpyWriter(
-            partition_id=0, output_folder=tmpdir, enable_text=False, enable_image=True, enable_metadata=False,
+            partition_id=0,
+            output_folder=tmpdir,
+            enable_text=False,
+            enable_image=True,
+            enable_metadata=False,
+            output_partition_count=1,
         )
         current_folder = os.path.dirname(__file__)
         embedding_files = [i for i in os.listdir(current_folder + "/test_embeddings")]

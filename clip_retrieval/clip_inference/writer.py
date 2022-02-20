@@ -3,12 +3,13 @@
 import fsspec
 from io import BytesIO
 import json
+import math
 
 
 class OutputSink:
     """This output sink can save image, text embeddings as npy and metadata as parquet"""
 
-    def __init__(self, output_folder, enable_text, enable_image, enable_metadata, partition_id):
+    def __init__(self, output_folder, enable_text, enable_image, enable_metadata, partition_id, output_partition_count):
         self.enable_text = enable_text
         self.enable_image = enable_image
         self.enable_metadata = enable_metadata
@@ -18,6 +19,7 @@ class OutputSink:
         self.text_emb_folder = output_folder + "/text_emb"
         self.metadata_folder = output_folder + "/metadata"
         self.batch_num = partition_id
+        self.oom_partition_count = int(math.log10(output_partition_count)) + 1
 
         if enable_image:
             self.fs.makedirs(self.img_emb_folder, exist_ok=True)
@@ -62,9 +64,10 @@ class OutputSink:
 
         data_lists = []
         data_columns = []
+        batch_num_str = str(self.batch_num).zfill(self.oom_partition_count)
         if self.enable_image:
             img_emb_mat = np.concatenate(self.image_embeddings)
-            output_path_img = self.img_emb_folder + "/img_emb_" + str(self.batch_num)
+            output_path_img = self.img_emb_folder + "/img_emb_" + batch_num_str
 
             with self.fs.open(output_path_img + ".npy", "wb") as f:
                 npb = BytesIO()
@@ -76,7 +79,7 @@ class OutputSink:
 
         if self.enable_text:
             text_emb_mat = np.concatenate(self.text_embeddings)
-            output_path_text = self.text_emb_folder + "/text_emb_" + str(self.batch_num)
+            output_path_text = self.text_emb_folder + "/text_emb_" + batch_num_str
 
             with self.fs.open(output_path_text + ".npy", "wb") as f:
                 npb = BytesIO()
@@ -98,7 +101,7 @@ class OutputSink:
             )
             df = df.join(without_existing_columns).drop(columns=["metadata"])
 
-        output_path_metadata = self.metadata_folder + "/metadata_" + str(self.batch_num) + ".parquet"
+        output_path_metadata = self.metadata_folder + "/metadata_" + batch_num_str + ".parquet"
         with self.fs.open(output_path_metadata, "wb") as f:
             df.to_parquet(f)
 
@@ -110,8 +113,12 @@ class OutputSink:
 
 
 class NumpyWriter:
-    def __init__(self, partition_id, output_folder, enable_text, enable_image, enable_metadata):
-        self.sink = OutputSink(output_folder, enable_text, enable_image, enable_metadata, partition_id)
+    """the numpy writer writes embeddings to folders img_emb, text_emb, and metadata"""
+
+    def __init__(self, partition_id, output_folder, enable_text, enable_image, enable_metadata, output_partition_count):
+        self.sink = OutputSink(
+            output_folder, enable_text, enable_image, enable_metadata, partition_id, output_partition_count
+        )
 
     def __call__(self, batch):
         self.sink.add(batch)

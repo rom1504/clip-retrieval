@@ -101,6 +101,7 @@ def main(
             enable_text=enable_text,
             enable_image=enable_image,
             enable_metadata=enable_metadata,
+            output_partition_count=output_partition_count,
         )
 
     def logger_builder(i):

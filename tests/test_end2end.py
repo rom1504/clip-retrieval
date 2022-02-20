@@ -83,13 +83,18 @@ def test_end2end():
         f.write('{"example_index": "' + index_folder + '"}')
 
     p = subprocess.Popen(
-        f"clip-retrieval back --port=1234 --indices_paths='{indice_path}'", shell=True, stdout=subprocess.PIPE
+        f"clip-retrieval back --port=1239 --indices_paths='{indice_path}'", shell=True, stdout=subprocess.PIPE
     )
-    time.sleep(80)
-    r = requests.post(
-        "http://localhost:1234/knn-service",
-        json={"text": "cat", "modality": "image", "num_images": 10, "indice_name": "example_index"},
-    )
-    _ = r.json()
-    assert r.status_code == 200
-    p.kill()
+    for i in range(8):
+        try:
+            time.sleep(10)
+            r = requests.post(
+                "http://localhost:1239/knn-service",
+                json={"text": "cat", "modality": "image", "num_images": 10, "indice_name": "example_index"},
+            )
+            _ = r.json()
+            assert r.status_code == 200
+            break
+        except Exception as e:
+            if i == 7:
+                raise e

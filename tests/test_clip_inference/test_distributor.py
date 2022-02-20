@@ -52,7 +52,12 @@ def test_distributor(distributor_kind):
 
         def writer_builder(i):
             return NumpyWriter(
-                partition_id=i, output_folder=tmpdir, enable_text=False, enable_image=True, enable_metadata=False,
+                partition_id=i,
+                output_folder=tmpdir,
+                enable_text=False,
+                enable_image=True,
+                enable_metadata=False,
+                output_partition_count=output_partition_count,
             )
 
         runner = Runner(
