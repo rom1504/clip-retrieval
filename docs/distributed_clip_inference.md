@@ -199,8 +199,8 @@ clip_inference(input_dataset="pipe:aws s3 cp --quiet s3://laion-us-east-1/laion-
 ## Some benchmarks
 
 Using 1 node with 8 a100 on aws, using s3 as input and output:
-* 7000 sample/s on 8 a100 on vit-b / 32 (2500 for one gpu so it's resizing bottleneck'd)
-* 7000 sample/s on 8 a100 on vit-b / 16 (1300 for one gpu so it's resizing bottleneck'd but less)
-* 2500 sample/s on 8 a100 on vit-l / 14 : compute optimal
+* 7000 sample/s on 8 a100 on vit-b / 32 : 2500 for one gpu so it's resizing bottlenecked
+* 7000 sample/s on 8 a100 on vit-b / 16 : 1100 sample/s for one gpu so it's still bottlenecked by resizing but much better
+* 2500 sample/s on 8 a100 on vit-l / 14 : 312 sample/s for one gpu so it's optimal
 
 on 4 such nodes, the speed are multiplied by 4 which is optimal.
