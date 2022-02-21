@@ -1,3 +1,7 @@
+## 2.24.4
+
+* fix pex building
+
 ## 2.24.3
 
 * fix version ranges
