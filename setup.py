@@ -17,6 +17,13 @@ if __name__ == "__main__":
 
     extra_files = package_files("front/build")
 
+    def _read_reqs(relpath):
+        fullpath = os.path.join(os.path.dirname(__file__), relpath)
+        with open(fullpath) as f:
+            return [s.strip() for s in f.readlines() if (s.strip() and not s.startswith("#"))]
+
+    REQUIREMENTS = _read_reqs("requirements.txt")
+
     setup(
         name="clip_retrieval",
         packages=find_packages(),
@@ -33,29 +40,7 @@ if __name__ == "__main__":
         url="https://github.com/rom1504/clip-retrieval",
         data_files=[(".", ["README.md"]),],
         keywords=["machine learning", "computer vision", "download", "image", "dataset"],
-        install_requires=[
-            "img2dataset",
-            "clip-anytorch",
-            "tqdm",
-            "fire",
-            "torch",
-            "torchvision",
-            "numpy",
-            "faiss-cpu",
-            "flask",
-            "flask_restful",
-            "flask_cors",
-            "pandas",
-            "pyarrow",
-            "autofaiss",
-            "pyyaml",
-            "webdataset",
-            "h5py",
-            "prometheus-client",
-            "fsspec==2021.11.0",
-            "sentence-transformers",
-            "wandb",
-        ],
+        install_requires=REQUIREMENTS,
         classifiers=[
             "Development Status :: 4 - Beta",
             "Intended Audience :: Developers",
