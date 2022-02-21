@@ -1,3 +1,7 @@
+## 2.24.2
+
+* fix sample_count == 0 issue in logger and handle no text sample properly in main
+
 ## 2.24.1
 
 * improve logger by checking the file exists before reading
