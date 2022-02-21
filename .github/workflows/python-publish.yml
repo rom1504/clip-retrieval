@@ -4,6 +4,9 @@ on:
   push:
     branches:
     - main
+  pull_request:
+    branches:
+    - main
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -26,7 +29,7 @@ jobs:
       run: |
         make build-pex
     - name: Release
-      if: ${{ steps.regex-match.outputs.match != '' }}
+      if: ${{ steps.regex-match.outputs.match != '' && github.event_name != 'pull_request' }}
       uses: softprops/action-gh-release@v1
       with:
         files: |
@@ -34,7 +37,7 @@ jobs:
           clip_retrieval.tgz
         tag_name: ${{ steps.regex-match.outputs.group1 }}
     - name: Build and publish
-      if: ${{ steps.regex-match.outputs.match != '' }}
+      if: ${{ steps.regex-match.outputs.match != '' && github.event_name != 'pull_request' }}
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
