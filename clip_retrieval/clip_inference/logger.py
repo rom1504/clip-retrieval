@@ -130,6 +130,8 @@ class LoggerReader:
             total_duration = current_time - self.start_time
 
             if stats_aggregated["sample_count"] == 0:
+                if last_one:
+                    break
                 continue
 
             stats_aggregated["average_read_duration_per_sample"] = (

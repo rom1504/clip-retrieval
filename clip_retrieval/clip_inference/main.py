@@ -47,9 +47,20 @@ def main(
                 *path.glob("**/*.jpeg"),
                 *path.glob("**/*.bmp"),
             ]
+            text_files = [
+                *path.glob("**/*.txt"),
+            ]
+            if len(text_files) == 0:
+                enable_text = False
             sample_count = len(image_files)
         elif input_format == "webdataset":
             sample_count = len(input_dataset) * wds_number_file_per_input_file
+
+        if sample_count == 0:
+            print("no sample found")
+            return
+        else:
+            print("The number of samples has been estimated to be {}".format(sample_count))
 
         output_partition_count = int(sample_count / write_batch_size) + 1
 
