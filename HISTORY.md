@@ -1,3 +1,7 @@
+## 2.24.5
+
+* properly close the wandb run at the end
+
 ## 2.24.4
 
 * fix pex building
