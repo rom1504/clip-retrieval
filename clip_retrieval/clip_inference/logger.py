@@ -25,6 +25,7 @@ class LoggerWriter:
     def end(self):
         self.queue.put(None)
         self.updater_process.join()
+        self.queue.close()
 
     def __call__(self, stats):
         self.queue.put(stats)
@@ -78,11 +79,14 @@ class LoggerReader:
     def end(self):
         self.queue.put("end")
         self.reader_process.join()
+        self.queue.close()
 
     def reader(self):
         """reader process that reads stats from files and aggregates them"""
         if self.enable_wandb:
-            wandb.init(project=self.wandb_project)
+            self.current_run = wandb.init(project=self.wandb_project)
+        else:
+            self.current_run = None
 
         last_check = 0
         stats = {}
@@ -131,6 +135,7 @@ class LoggerReader:
 
             if stats_aggregated["sample_count"] == 0:
                 if last_one:
+                    self._finish()
                     break
                 continue
 
@@ -175,4 +180,9 @@ class LoggerReader:
                 wandb.log(stats_for_logging)
 
             if last_one:
+                self._finish()
                 break
+
+    def _finish(self):
+        if self.current_run is not None:
+            self.current_run.finish()
