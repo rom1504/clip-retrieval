@@ -1,3 +1,7 @@
+## 2.24.7
+
+* going back to autofaiss main
+
 ## 2.24.6
 
 * switch to fork of autofaiss
