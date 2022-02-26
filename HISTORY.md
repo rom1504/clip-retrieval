@@ -1,3 +1,7 @@
+## 2.24.6
+
+* switch to fork of autofaiss
+
 ## 2.24.5
 
 * properly close the wandb run at the end
