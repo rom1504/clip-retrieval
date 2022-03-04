@@ -1,3 +1,7 @@
+## 2.24.8
+
+* fix file count check for input format files
+
 ## 2.24.7
 
 * going back to autofaiss main
