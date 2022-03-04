@@ -52,7 +52,7 @@ class Runner:
                     "total_duration": total_duration,
                     "sample_count": batch["image_tensor"].shape[0]
                     if "image_tensor" in batch
-                    else batch["text_tensor"].shape[0],
+                    else batch["text_tokens"].shape[0],
                 }
             )
         logger.end()
