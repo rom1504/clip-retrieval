@@ -1,3 +1,7 @@
+## 2.24.9
+
+* fix image_tensor_count vs text_counter count in runner
+
 ## 2.24.8
 
 * fix file count check for input format files
