@@ -1,3 +1,7 @@
+## 2.24.10
+
+* one more fix for text only
+
 ## 2.24.9
 
 * fix image_tensor_count vs text_counter count in runner
