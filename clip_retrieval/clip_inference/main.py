@@ -1,10 +1,10 @@
 """main module combines distributor, runner, reader, mapper, writer to produce clip embeddings"""
 
-from pathlib import Path
 from braceexpand import braceexpand
 import fire
 from clip_retrieval.clip_inference.load_clip import load_clip
 from clip_retrieval.clip_inference.logger import LoggerReader, LoggerWriter
+from clip_retrieval.clip_inference.reader import folder_to_keys
 
 from clip_retrieval.clip_inference.mapper import ClipMapper
 from clip_retrieval.clip_inference.reader import FilesReader, WebdatasetReader
@@ -40,19 +40,19 @@ def main(
         input_dataset = list(braceexpand(input_dataset))
     if output_partition_count is None:
         if input_format == "files":
-            path = Path(input_dataset)
-            image_files = [
-                *path.glob("**/*.png"),
-                *path.glob("**/*.jpg"),
-                *path.glob("**/*.jpeg"),
-                *path.glob("**/*.bmp"),
-            ]
-            text_files = [
-                *path.glob("**/*.txt"),
-            ]
-            if len(text_files) == 0:
+            keys, text_files, image_files, metadata_files = folder_to_keys(
+                input_dataset, enable_text=enable_text, enable_image=enable_image, enable_metadata=enable_metadata
+            )
+            if text_files is None or len(text_files) == 0:
                 enable_text = False
-            sample_count = len(image_files)
+            if image_files is None or len(image_files) == 0:
+                enable_image = False
+            if metadata_files is None or len(metadata_files) == 0:
+                enable_metadata = False
+            keys, text_files, image_files, metadata_files = folder_to_keys(
+                input_dataset, enable_text=enable_text, enable_image=enable_image, enable_metadata=enable_metadata
+            )
+            sample_count = len(keys)
         elif input_format == "webdataset":
             sample_count = len(input_dataset) * wds_number_file_per_input_file
 
