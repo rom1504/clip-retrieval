@@ -92,9 +92,9 @@ parallel-ssh -l $USER -i -h  ips.txt "sudo apt install openjdk-11-jre-headless l
 
 put in same VPC and security group and allow inbound
 
-##### Download img2dataset on all nodes
+##### Download clip retrieval on all nodes
 
-Download img2dataset on all node by retrying this N times until parallel ssh says success for all:
+Download clip retrieval on all node by retrying this N times until parallel ssh says success for all:
 ```bash
 
 parallel-ssh -i -h ips.txt "rm -rf clip_retrieval.pex"
