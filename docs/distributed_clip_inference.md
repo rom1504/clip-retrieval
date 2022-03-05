@@ -20,6 +20,7 @@ tar xf spark-3.2.0-bin-hadoop3.2.tgz
 
 Then download clip inference:
 ```bash
+rm -rf clip_retrieval.pex
 wget https://github.com/rom1504/clip-retrieval/releases/latest/download/clip_retrieval.tgz -O clip_retrieval.tgz
 wget https://github.com/rom1504/clip-retrieval/releases/latest/download/clip_retrieval_torch.tgz -O clip_retrieval_torch.tgz
 tar xf clip_retrieval.tgz
@@ -83,7 +84,7 @@ parallel-ssh -l $USER -i -h  ips.txt uname -a
 
 ```bash
 parallel-ssh -l $USER -i -h  ips.txt "sudo apt update"
-parallel-ssh -l $USER -i -h  ips.txt "sudo apt install openjdk-11-jre-headless libgl1 htop tmux bwm-ng sshfs python3-distutils python3-apt -y"
+parallel-ssh -l $USER -i -h  ips.txt "sudo apt install openjdk-11-jre-headless libgl1 htop tmux bwm-ng sshfs python3-distutils python3-apt python3.8 -y"
 ```
 
 
