@@ -18,6 +18,7 @@ import tempfile
 import io
 import numpy as np
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
+import pyarrow as pa
 
 import h5py
 from tqdm import tqdm
@@ -237,11 +238,10 @@ class KnnService(Resource):
                     nprobe = math.ceil(num_result_ids / 3000)
                     params = faiss.ParameterSpace()
                     params.set_index_parameters(index, f"nprobe={nprobe},efSearch={nprobe*2},ht={2048}")
+            distances, indices = index.search(query, num_result_ids)
             if self.metadata_is_ordered_by_ivf:
-                distances, indices = index.search(query, num_result_ids)
                 results = np.take(ivf_old_to_new_mapping, indices[0])
             else:
-                distances, indices = index.search(query, num_result_ids)
                 results = indices[0]
             if self.metadata_is_ordered_by_ivf:
                 params = faiss.ParameterSpace()
@@ -394,6 +394,79 @@ class Hdf5MetadataProvider:
         return items
 
 
+def load_index(path, enable_faiss_memory_mapping):
+    if enable_faiss_memory_mapping:
+        if os.path.isdir(path):
+            return faiss.read_index(
+                path + "/populated.index", faiss.IO_FLAG_MMAP | faiss.IO_FLAG_READ_ONLY | faiss.IO_FLAG_ONDISK_SAME_DIR
+            )
+        else:
+            return faiss.read_index(path, faiss.IO_FLAG_MMAP | faiss.IO_FLAG_READ_ONLY)
+    else:
+        return faiss.read_index(path)
+
+
+class ArrowMetadataProvider:
+    """The arrow metadata provider provides metadata from contiguous ids using arrow"""
+
+    def __init__(self, arrow_folder):
+        arrow_files = [str(a) for a in sorted(Path(arrow_folder).glob("*"))]
+        self.table = pa.concat_tables(
+            [pa.ipc.RecordBatchFileReader(pa.memory_map(arrow_file, "r")).read_all() for arrow_file in arrow_files]
+        )
+
+    def get(self, ids, cols=None):
+        """implement the get method from the arrow metadata provide, get metadata from ids"""
+        items = [{} for _ in range(len(ids))]
+        if cols is None:
+            cols = self.table.schema.names
+        else:
+            cols = list(set(self.table.schema.names) & set(cols))
+        t = pa.concat_tables([self.table[i : i + 1] for i in ids])
+        for k in cols:
+            for i, _ in enumerate(ids):
+                items[i][k] = t[k][i : i + 1][0].as_py()
+        return items
+
+
+def load_metadata_provider(
+    indice_folder, enable_hdf5, reorder_metadata_by_ivf_index, image_index, columns_to_return, use_arrow
+):
+    """load the metadata provider"""
+    parquet_folder = indice_folder + "/metadata"
+    ivf_old_to_new_mapping = None
+    if use_arrow:
+        mmap_folder = parquet_folder
+        metadata_provider = ArrowMetadataProvider(mmap_folder)
+    elif enable_hdf5:
+        hdf5_path = None
+        if reorder_metadata_by_ivf_index:
+            hdf5_path = indice_folder + "/metadata_reordered.hdf5"
+            ivf_old_to_new_mapping_path = indice_folder + "/ivf_old_to_new_mapping.npy"
+            if not os.path.exists(ivf_old_to_new_mapping_path):
+                ivf_old_to_new_mapping = get_old_to_new_mapping(image_index)
+                ivf_old_to_new_mapping_write = np.memmap(
+                    ivf_old_to_new_mapping_path, dtype="int64", mode="write", shape=ivf_old_to_new_mapping.shape
+                )
+                ivf_old_to_new_mapping_write[:] = ivf_old_to_new_mapping
+                del ivf_old_to_new_mapping_write
+                del ivf_old_to_new_mapping
+            ivf_old_to_new_mapping = np.memmap(ivf_old_to_new_mapping_path, dtype="int64", mode="r")
+            if not os.path.exists(hdf5_path):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    re_order_parquet(image_index, parquet_folder, str(tmpdir), columns_to_return)
+                    external_sort_parquet(Hdf5Sink(hdf5_path, columns_to_return), str(tmpdir))
+        else:
+            hdf5_path = indice_folder + "/metadata.hdf5"
+            if not os.path.exists(hdf5_path):
+                parquet_to_hdf5(parquet_folder, hdf5_path, columns_to_return)
+        metadata_provider = Hdf5MetadataProvider(hdf5_path)
+    else:
+        metadata_provider = ParquetMetadataProvider(parquet_folder)
+
+    return metadata_provider, ivf_old_to_new_mapping
+
+
 def load_clip_indices(
     indices_paths,
     enable_hdf5,
@@ -403,6 +476,7 @@ def load_clip_indices(
     enable_mclip_option=True,
     clip_model="ViT-B/32",
     use_jit=True,
+    use_arrow=False,
 ):
     """This load clips indices from disk"""
     LOGGER.info("loading clip...")
@@ -429,52 +503,14 @@ def load_clip_indices(
         text_present = os.path.exists(indice_folder + "/text.index")
 
         LOGGER.info("loading indices...")
-        if image_present:
-            if enable_faiss_memory_mapping:
-                image_index = faiss.read_index(
-                    indice_folder + "/image.index", faiss.IO_FLAG_MMAP | faiss.IO_FLAG_READ_ONLY
-                )
-            else:
-                image_index = faiss.read_index(indice_folder + "/image.index")
-        else:
-            image_index = None
-        if text_present:
-            if enable_faiss_memory_mapping:
-                text_index = faiss.read_index(
-                    indice_folder + "/text.index", faiss.IO_FLAG_MMAP | faiss.IO_FLAG_READ_ONLY
-                )
-            else:
-                text_index = faiss.read_index(indice_folder + "/text.index")
-        else:
-            text_index = None
+        image_index = load_index(indice_folder + "/image.index", enable_faiss_memory_mapping) if image_present else None
+        text_index = load_index(indice_folder + "/text.index", enable_faiss_memory_mapping) if text_present else None
 
-        parquet_folder = indice_folder + "/metadata"
         LOGGER.info("loading metadata...")
-        if enable_hdf5:
-            hdf5_path = None
-            if reorder_metadata_by_ivf_index:
-                hdf5_path = indice_folder + "/metadata_reordered.hdf5"
-                ivf_old_to_new_mapping_path = indice_folder + "/ivf_old_to_new_mapping.npy"
-                if not os.path.exists(ivf_old_to_new_mapping_path):
-                    ivf_old_to_new_mapping = get_old_to_new_mapping(image_index)
-                    ivf_old_to_new_mapping_write = np.memmap(
-                        ivf_old_to_new_mapping_path, dtype="int64", mode="write", shape=ivf_old_to_new_mapping.shape
-                    )
-                    ivf_old_to_new_mapping_write[:] = ivf_old_to_new_mapping
-                    del ivf_old_to_new_mapping_write
-                    del ivf_old_to_new_mapping
-                ivf_old_to_new_mapping = np.memmap(ivf_old_to_new_mapping_path, dtype="int64", mode="r")
-                if not os.path.exists(hdf5_path):
-                    with tempfile.TemporaryDirectory() as tmpdir:
-                        re_order_parquet(image_index, parquet_folder, str(tmpdir), columns_to_return)
-                        external_sort_parquet(Hdf5Sink(hdf5_path, columns_to_return), str(tmpdir))
-            else:
-                hdf5_path = indice_folder + "/metadata.hdf5"
-                if not os.path.exists(hdf5_path):
-                    parquet_to_hdf5(parquet_folder, hdf5_path, columns_to_return)
-            metadata_provider = Hdf5MetadataProvider(hdf5_path)
-        else:
-            metadata_provider = ParquetMetadataProvider(parquet_folder)
+
+        metadata_provider, ivf_old_to_new_mapping = load_metadata_provider(
+            indice_folder, enable_hdf5, reorder_metadata_by_ivf_index, image_index, columns_to_return, use_arrow
+        )
 
         indices_loaded[name] = {
             "metadata_provider": metadata_provider,
@@ -502,6 +538,7 @@ def clip_back(
     enable_mclip_option=True,
     clip_model="ViT-B/32",
     use_jit=True,
+    use_arrow=False,
 ):
     """main entry point of clip back, start the endpoints"""
     LOGGER.info("starting boot of clip back")
@@ -516,6 +553,7 @@ def clip_back(
         enable_mclip_option,
         clip_model,
         use_jit,
+        use_arrow,
     )
     LOGGER.info("indices loaded")
 
