@@ -57,6 +57,7 @@ class ClipFront extends LitElement {
     this.firstLoad = true
     this.imageUrl = imageUrl === null ? undefined : imageUrl
     this.hideDuplicateUrls = true
+    this.hideDuplicateImages = true
     this.initIndices()
   }
 
@@ -95,6 +96,7 @@ class ClipFront extends LitElement {
       displayFullCaptions: { type: Boolean },
       safeMode: { type: Boolean },
       hideDuplicateUrls: { type: Boolean },
+      hideDuplicateImages: { type: Boolean },
       useMclip: { type: Boolean }
     }
   }
@@ -144,7 +146,7 @@ class ClipFront extends LitElement {
         return
       }
     }
-    if (_changedProperties.has('useMclip') || _changedProperties.has('modality') || _changedProperties.has('currentIndex')) {
+    if (_changedProperties.has('useMclip') || _changedProperties.has('modality') || _changedProperties.has('currentIndex') || _changedProperties.has('hideDuplicateUrls') || _changedProperties.has('hideDuplicateImages')) {
       if (this.image !== undefined || this.text !== '' || this.imageUrl !== undefined) {
         this.redoSearch()
       }
@@ -237,7 +239,7 @@ class ClipFront extends LitElement {
     }
     this.image = undefined
     this.imageUrl = undefined
-    const results = await this.service.callClipService(this.text, null, null, this.modality, this.numImages, this.currentIndex, this.numResultIds, this.useMclip)
+    const results = await this.service.callClipService(this.text, null, null, this.modality, this.numImages, this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages)
     console.log(results)
     this.images = results
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
@@ -249,7 +251,7 @@ class ClipFront extends LitElement {
   async imageSearch () {
     this.text = ''
     this.imageUrl = undefined
-    const results = await this.service.callClipService(null, this.image, null, this.modality, this.numImages, this.currentIndex, this.numResultIds, this.useMclip)
+    const results = await this.service.callClipService(null, this.image, null, this.modality, this.numImages, this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages)
     console.log(results)
     this.images = results
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
@@ -261,7 +263,7 @@ class ClipFront extends LitElement {
   async imageUrlSearch () {
     this.text = ''
     this.image = undefined
-    const results = await this.service.callClipService(null, null, this.imageUrl, this.modality, this.numImages, this.currentIndex, this.numResultIds, this.useMclip)
+    const results = await this.service.callClipService(null, null, this.imageUrl, this.modality, this.numImages, this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages)
     console.log(results)
     this.images = results
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
@@ -553,6 +555,7 @@ class ClipFront extends LitElement {
       <label>Display similarities<input type="checkbox" ?checked="${this.displaySimilarities}" @click=${() => { this.displaySimilarities = !this.displaySimilarities }} /></label><br />
       <label>Safe mode<input type="checkbox" ?checked="${this.safeMode}" @click=${() => { this.safeMode = !this.safeMode }} /></label><br />
       <label>Hide duplicate urls<input type="checkbox" ?checked="${this.hideDuplicateUrls}" @click=${() => { this.hideDuplicateUrls = !this.hideDuplicateUrls }} /></label><br />
+      <label>Hide (near) duplicate images<input type="checkbox" ?checked="${this.hideDuplicateImages}" @click=${() => { this.hideDuplicateImages = !this.hideDuplicateImages }} /></label><br />
       <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>
   html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select><br />
       <label>Search with multilingual clip <input type="checkbox" ?checked="${this.useMclip}" @click=${() => { this.useMclip = !this.useMclip }} /></label><br />

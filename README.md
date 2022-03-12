@@ -169,6 +169,8 @@ That decreases the memory usage to zero.
 A `--enable_hdf5 True` option can be passed to enable hdf5 caching for the metadata.
 HDF5 caching makes it possible to use the metadata with almost no memory usage.
 
+`--use_arrow True` allows using arrow instead of hdf5. Should be used along with [clip_back_prepro](clip_back_prepro) for very large datasets (billions)
+
 `--reorder_metadata_by_ivf_index True` option takes advantage of the data locality property of results of a knn ivf indices: it orders the metadata collection in order of the IVF clusters. That makes it possible to have much faster metadata retrieval as the reads are then accessing a few mostly sequential parts of the metadata instead of many non sequential parts. In practice that means being able to retrieve 1M items in 1s whereas only 1000 items can be retrieved in 1s without this method. This will order the metadata using the first image index.
 
 hdf5 caching is a good idea to use if:
