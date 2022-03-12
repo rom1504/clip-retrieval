@@ -5,6 +5,7 @@ from flask import Flask, request, make_response
 from flask_restful import Resource, Api
 from flask_cors import CORS
 import faiss
+from collections import defaultdict
 import json
 from io import BytesIO
 from PIL import Image
@@ -174,33 +175,10 @@ class KnnService(Resource):
         self.metadata_is_ordered_by_ivf = kwargs["metadata_is_ordered_by_ivf"]
         self.mclip_model = kwargs["mclip_model"]
 
-    def query(
-        self,
-        text_input=None,
-        image_input=None,
-        image_url_input=None,
-        modality="image",
-        num_images=100,
-        num_result_ids=100,
-        indice_name=None,
-        use_mclip=False,
-    ):
-        """implement the querying functionality of the knn service: from text and image to nearest neighbors"""
+    def compute_query(self, text_input, image_input, image_url_input, use_mclip):
+        """compute the query embedding"""
         import torch  # pylint: disable=import-outside-toplevel
         import clip  # pylint: disable=import-outside-toplevel
-
-        if not self.mclip_model:
-            use_mclip = False
-
-        if text_input is None and image_input is None and image_url_input is None:
-            raise ValueError("must fill one of text, image and image url input")
-        if indice_name is None:
-            indice_name = next(iter(self.indices_loaded.keys()))
-        image_index = self.indices_loaded[indice_name]["image_index"]
-        text_index = self.indices_loaded[indice_name]["text_index"]
-        metadata_provider = self.indices_loaded[indice_name]["metadata_provider"]
-        if self.metadata_is_ordered_by_ivf:
-            ivf_old_to_new_mapping = self.indices_loaded[indice_name]["ivf_old_to_new_mapping"]
 
         if text_input is not None:
             if use_mclip:
@@ -229,6 +207,80 @@ class KnnService(Resource):
                 image_features /= image_features.norm(dim=-1, keepdim=True)
                 query = image_features.cpu().detach().numpy().astype("float32")
 
+        return query
+
+    def hash_based_dedup(self, embeddings):
+        """deduplicate embeddings based on their hash"""
+        embeddings = normalized(embeddings)
+        seen_hashes = set()
+        to_remove = []
+        for i, embedding in enumerate(embeddings):
+            h = hash(np.round(embedding, 2).tobytes())
+            if h in seen_hashes:
+                to_remove.append(i)
+                continue
+            seen_hashes.add(h)
+
+        return to_remove
+
+    def connected_components(self, neighbors):
+        """find connected components in the graph"""
+        seen = set()
+
+        def component(node):
+            r = []
+            nodes = set([node])
+            while nodes:
+                node = nodes.pop()
+                seen.add(node)
+                nodes |= set(neighbors[node]) - seen
+                r.append(node)
+            return r
+
+        u = []
+        for node in neighbors:
+            if node not in seen:
+                u.append(component(node))
+        return u
+
+    def get_non_uniques(self, embeddings, threshold=0.94):
+        """find non-unique embeddings"""
+        index = faiss.IndexFlatIP(embeddings.shape[1])
+        index.add(embeddings)  # pylint: disable=no-value-for-parameter
+        l, _, I = index.range_search(  # pylint: disable=no-value-for-parameter,invalid-name
+            embeddings, radius=threshold
+        )
+
+        same_mapping = defaultdict(list)
+
+        # https://github.com/facebookresearch/faiss/wiki/Special-operations-on-indexes#range-search
+        for i in range(embeddings.shape[0]):
+            for j in I[l[i] : l[i + 1]]:
+                same_mapping[int(i)].append(int(j))
+
+        groups = self.connected_components(same_mapping)
+        non_uniques = set()
+        for g in groups:
+            for e in g[1:]:
+                non_uniques.add(e)
+
+        return list(non_uniques)
+
+    def connected_components_dedup(self, embeddings):
+        embeddings = normalized(embeddings)
+        non_uniques = self.get_non_uniques(embeddings)
+        return non_uniques
+
+    def post_filter(self, embeddings):
+        return self.connected_components_dedup(embeddings)
+
+    def knn_search(self, query, modality, num_result_ids, indice_name, deduplicate):
+        """compute the knn search"""
+        image_index = self.indices_loaded[indice_name]["image_index"]
+        text_index = self.indices_loaded[indice_name]["text_index"]
+        if self.metadata_is_ordered_by_ivf:
+            ivf_old_to_new_mapping = self.indices_loaded[indice_name]["ivf_old_to_new_mapping"]
+
         index = image_index if modality == "image" else text_index
 
         with KNN_INDEX_TIME.time():
@@ -238,7 +290,7 @@ class KnnService(Resource):
                     nprobe = math.ceil(num_result_ids / 3000)
                     params = faiss.ParameterSpace()
                     params.set_index_parameters(index, f"nprobe={nprobe},efSearch={nprobe*2},ht={2048}")
-            distances, indices = index.search(query, num_result_ids)
+            distances, indices, embeddings = index.search_and_reconstruct(query, num_result_ids)
             if self.metadata_is_ordered_by_ivf:
                 results = np.take(ivf_old_to_new_mapping, indices[0])
             else:
@@ -247,23 +299,32 @@ class KnnService(Resource):
                 params = faiss.ParameterSpace()
                 params.set_index_parameters(index, f"nprobe={previous_nprobe},efSearch={previous_nprobe*2},ht={2048}")
         nb_results = np.where(results == -1)[0]
+
         if len(nb_results) > 0:
             nb_results = nb_results[0]
         else:
             nb_results = len(results)
         result_indices = results[:nb_results]
         result_distances = distances[0][:nb_results]
-        existing_indices = set()
+        result_embeddings = embeddings[0][:nb_results]
+        local_indices_to_remove = self.post_filter(result_embeddings) if deduplicate else []
+        indices_to_remove = set()
+        for local_index in local_indices_to_remove:
+            indices_to_remove.add(result_indices[local_index])
         indices = []
         distances = []
         for ind, distance in zip(result_indices, result_distances):
-            if ind not in existing_indices:
-                existing_indices.add(ind)
+            if ind not in indices_to_remove:
+                indices_to_remove.add(ind)
                 indices.append(ind)
                 distances.append(distance)
-        del existing_indices
-        del result_indices
-        del result_distances
+
+        return distances, indices
+
+    def map_to_metadata(self, indices, distances, num_images, indice_name):
+        """map the indices to the metadata"""
+        metadata_provider = self.indices_loaded[indice_name]["metadata_provider"]
+
         results = []
         with METADATA_GET_TIME.time():
             metas = metadata_provider.get(indices[:num_images], self.columns_to_return)
@@ -283,6 +344,39 @@ class KnnService(Resource):
             output["id"] = i.item()
             output["similarity"] = d.item()
             results.append(output)
+
+        return results
+
+    def query(
+        self,
+        text_input=None,
+        image_input=None,
+        image_url_input=None,
+        modality="image",
+        num_images=100,
+        num_result_ids=100,
+        indice_name=None,
+        use_mclip=False,
+        deduplicate=True,
+    ):
+        """implement the querying functionality of the knn service: from text and image to nearest neighbors"""
+
+        if not self.mclip_model:
+            use_mclip = False
+
+        if text_input is None and image_input is None and image_url_input is None:
+            raise ValueError("must fill one of text, image and image url input")
+        if indice_name is None:
+            indice_name = next(iter(self.indices_loaded.keys()))
+
+        query = self.compute_query(
+            text_input=text_input, image_input=image_input, image_url_input=image_url_input, use_mclip=use_mclip
+        )
+        distances, indices = self.knn_search(
+            query, modality=modality, num_result_ids=num_result_ids, indice_name=indice_name, deduplicate=deduplicate
+        )
+        results = self.map_to_metadata(indices, distances, num_images, indice_name)
+
         return results
 
     @FULL_KNN_REQUEST_TIME.time()
@@ -297,8 +391,17 @@ class KnnService(Resource):
         num_result_ids = json_data.get("num_result_ids", num_images)
         indice_name = json_data["indice_name"]
         use_mclip = json_data.get("use_mclip", False)
+        deduplicate = json_data.get("deduplicate", False)
         return self.query(
-            text_input, image_input, image_url_input, modality, num_images, num_result_ids, indice_name, use_mclip
+            text_input,
+            image_input,
+            image_url_input,
+            modality,
+            num_images,
+            num_result_ids,
+            indice_name,
+            use_mclip,
+            deduplicate,
         )
 
 
@@ -397,9 +500,7 @@ class Hdf5MetadataProvider:
 def load_index(path, enable_faiss_memory_mapping):
     if enable_faiss_memory_mapping:
         if os.path.isdir(path):
-            return faiss.read_index(
-                path + "/populated.index", faiss.IO_FLAG_MMAP | faiss.IO_FLAG_READ_ONLY | faiss.IO_FLAG_ONDISK_SAME_DIR
-            )
+            return faiss.read_index(path + "/populated.index", faiss.IO_FLAG_ONDISK_SAME_DIR)
         else:
             return faiss.read_index(path, faiss.IO_FLAG_MMAP | faiss.IO_FLAG_READ_ONLY)
     else:
@@ -410,7 +511,8 @@ class ArrowMetadataProvider:
     """The arrow metadata provider provides metadata from contiguous ids using arrow"""
 
     def __init__(self, arrow_folder):
-        arrow_files = [str(a) for a in sorted(Path(arrow_folder).glob("*"))]
+        arrow_files = [str(a) for a in sorted(Path(arrow_folder).glob("**/*")) if a.is_file()]
+        print(arrow_files)
         self.table = pa.concat_tables(
             [pa.ipc.RecordBatchFileReader(pa.memory_map(arrow_file, "r")).read_all() for arrow_file in arrow_files]
         )

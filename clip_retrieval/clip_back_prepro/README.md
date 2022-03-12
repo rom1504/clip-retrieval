@@ -13,8 +13,8 @@ The benefit of arrow format compared to parquet is that it's possible to memmap 
 Usage example
 
 ```bash
-clip_retrieval parquet_to_arrow --parquet_folder "/media/hd2/allmeta/2Bmulti"\
- --output_arrow_file "/media/nvme/2Bmulti.arrow"\
+clip-retrieval parquet_to_arrow --parquet_folder "/media/hd2/allmeta/2Ben"\
+ --output_arrow_folder "/media/nvme/large_index/metadata/2B-en"\
   --columns_to_return='["url", "caption"]'
 ```
 

@@ -1,5 +1,6 @@
 """cli entry point"""
 
+from clip_retrieval.clip_back_prepro.parquet_to_arrow import parquet_to_arrow
 from clip_retrieval.clip_back import clip_back
 from clip_retrieval.clip_inference import clip_inference
 from clip_retrieval.clip_filter import clip_filter
@@ -7,7 +8,6 @@ from clip_retrieval.clip_index import clip_index
 from clip_retrieval.clip_end2end import clip_end2end
 from clip_retrieval.clip_front import clip_front
 from clip_retrieval.clip_back_prepro.index_combiner import index_combiner
-from clip_retrieval.clip_back_prepro.parquet_to_arrow import parquet_to_arrow
 import fire
 
 
