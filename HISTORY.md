@@ -1,3 +1,9 @@
+## 2.25.0
+* new arrow provider in clip back
+* index combiner script
+* parquet to arrow script
+* deduplication of results feature
+
 ## 2.24.10
 
 * one more fix for text only
