@@ -247,9 +247,7 @@ class KnnService(Resource):
         """find non-unique embeddings"""
         index = faiss.IndexFlatIP(embeddings.shape[1])
         index.add(embeddings)  # pylint: disable=no-value-for-parameter
-        l, _, I = index.range_search(  # pylint: disable=no-value-for-parameter,invalid-name
-            embeddings, radius=threshold
-        )
+        l, _, I = index.range_search(embeddings, threshold)  # pylint: disable=no-value-for-parameter,invalid-name
 
         same_mapping = defaultdict(list)
 
