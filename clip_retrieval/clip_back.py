@@ -512,7 +512,6 @@ class ArrowMetadataProvider:
 
     def __init__(self, arrow_folder):
         arrow_files = [str(a) for a in sorted(Path(arrow_folder).glob("**/*")) if a.is_file()]
-        print(arrow_files)
         self.table = pa.concat_tables(
             [pa.ipc.RecordBatchFileReader(pa.memory_map(arrow_file, "r")).read_all() for arrow_file in arrow_files]
         )
