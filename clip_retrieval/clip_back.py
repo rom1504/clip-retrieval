@@ -477,21 +477,8 @@ class Hdf5MetadataProvider:
         else:
             cols = list(self.ds.keys() & set(cols))
         for k in cols:
-            sorted_ids = sorted([(k, i) for i, k in list(enumerate(ids))])
-            for_hdf5 = [k for k, _ in sorted_ids]
-            for_np = [i for _, i in sorted_ids]
-            if len(for_hdf5) <= 10000:
-                batch_size = 100
-            else:
-                batch_size = 1000
-            g = [
-                self.ds[k][for_hdf5[i * batch_size : (i + 1) * batch_size]]
-                for i in range(math.ceil(len(for_hdf5) / batch_size))
-            ]
-            g = np.concatenate(g)
-            gg = g[for_np]
-            for i, e in enumerate(gg):
-                items[i][k] = e
+            for i, e in enumerate(ids):
+                items[i][k] = self.ds[k][e]
         return items
 
 

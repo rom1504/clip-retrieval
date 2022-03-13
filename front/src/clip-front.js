@@ -57,7 +57,7 @@ class ClipFront extends LitElement {
     this.firstLoad = true
     this.imageUrl = imageUrl === null ? undefined : imageUrl
     this.hideDuplicateUrls = true
-    this.hideDuplicateImages = false
+    this.hideDuplicateImages = true
     this.initIndices()
   }
 
