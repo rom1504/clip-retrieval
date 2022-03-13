@@ -1,4 +1,9 @@
+## 2.25.1
+
+* add back node build in publish
+
 ## 2.25.0
+
 * new arrow provider in clip back
 * index combiner script
 * parquet to arrow script
