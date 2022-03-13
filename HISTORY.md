@@ -1,3 +1,7 @@
+## 2.25.2
+
+* fix range search use
+
 ## 2.25.1
 
 * add back node build in publish
