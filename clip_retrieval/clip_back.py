@@ -503,16 +503,12 @@ class ArrowMetadataProvider:
 
     def get(self, ids, cols=None):
         """implement the get method from the arrow metadata provide, get metadata from ids"""
-        items = [{} for _ in range(len(ids))]
         if cols is None:
             cols = self.table.schema.names
         else:
             cols = list(set(self.table.schema.names) & set(cols))
         t = pa.concat_tables([self.table[i : i + 1] for i in ids])
-        for k in cols:
-            for i, _ in enumerate(ids):
-                items[i][k] = t[k][i : i + 1][0].as_py()
-        return items
+        return t.select(cols).to_pandas().to_dict("records")
 
 
 def load_metadata_provider(
