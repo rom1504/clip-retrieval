@@ -1,3 +1,7 @@
+## 2.25.3
+
+* turn off image dedup by default temporarily
+
 ## 2.25.2
 
 * fix range search use
