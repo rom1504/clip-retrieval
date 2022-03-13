@@ -1,3 +1,7 @@
+## 2.25.4
+
+* enable back dedup of images
+
 ## 2.25.3
 
 * turn off image dedup by default temporarily
