@@ -46,6 +46,8 @@ TEXT_CLIP_INFERENCE_TIME = Histogram("text_clip_inference_time", "Time spent doi
 IMAGE_CLIP_INFERENCE_TIME = Histogram("image_clip_inference_time", "Time spent doing a image clip inference")
 METADATA_GET_TIME = Histogram("metadata_get_time", "Time spent retrieving metadata")
 KNN_INDEX_TIME = Histogram("knn_index_time", "Time spent doing a knn on the index")
+DEDUP_TIME = Histogram("dedup_time", "Time spent deduping")
+SAFETY_TIME = Histogram("safety_time", "Time spent doing a safety inference")
 IMAGE_PREPRO_TIME = Histogram("image_prepro_time", "Time spent doing the image preprocessing")
 TEXT_PREPRO_TIME = Histogram("text_prepro_time", "Time spent doing the text preprocessing")
 
@@ -89,6 +91,8 @@ class MetricsSummary(Resource):
                             IMAGE_CLIP_INFERENCE_TIME,
                             METADATA_GET_TIME,
                             KNN_INDEX_TIME,
+                            DEDUP_TIME,
+                            SAFETY_TIME,
                             IMAGE_PREPRO_TIME,
                             TEXT_PREPRO_TIME,
                         ]
@@ -149,6 +153,8 @@ class MetadataService(Resource):
     def post(self):
         json_data = request.get_json(force=True)
         ids = json_data["ids"]
+        if len(ids) == 0:
+            return []
         indice_name = json_data["indice_name"]
         metadata_provider = self.indices_loaded[indice_name]["metadata_provider"]
         metas = metadata_provider.get(ids, self.columns_to_return)
@@ -174,6 +180,7 @@ class KnnService(Resource):
         self.columns_to_return = kwargs["columns_to_return"]
         self.metadata_is_ordered_by_ivf = kwargs["metadata_is_ordered_by_ivf"]
         self.mclip_model = kwargs["mclip_model"]
+        self.safety_model = kwargs["safety_model"]
 
     def compute_query(self, text_input, image_input, image_url_input, use_mclip):
         """compute the query embedding"""
@@ -211,7 +218,6 @@ class KnnService(Resource):
 
     def hash_based_dedup(self, embeddings):
         """deduplicate embeddings based on their hash"""
-        embeddings = normalized(embeddings)
         seen_hashes = set()
         to_remove = []
         for i, embedding in enumerate(embeddings):
@@ -265,14 +271,28 @@ class KnnService(Resource):
         return list(non_uniques)
 
     def connected_components_dedup(self, embeddings):
-        embeddings = normalized(embeddings)
         non_uniques = self.get_non_uniques(embeddings)
         return non_uniques
 
-    def post_filter(self, embeddings):
-        return self.connected_components_dedup(embeddings)
+    def get_unsafe(self, embeddings, threshold=0.5):
+        """find unsafe embeddings"""
 
-    def knn_search(self, query, modality, num_result_ids, indice_name, deduplicate):
+        nsfw_values = self.safety_model.predict(embeddings, batch_size=embeddings.shape[0])
+        x = np.array([e[0] for e in nsfw_values])
+        return np.where(x > threshold)[0]
+
+    def post_filter(self, embeddings, deduplicate, use_safety_model):
+        to_remove = set()
+        if deduplicate:
+            with DEDUP_TIME.time():
+                to_remove = set(self.connected_components_dedup(embeddings))
+        if use_safety_model and self.safety_model is not None:
+            with SAFETY_TIME.time():
+                to_remove |= set(self.get_unsafe(embeddings))
+
+        return to_remove
+
+    def knn_search(self, query, modality, num_result_ids, indice_name, deduplicate, use_safety_model):
         """compute the knn search"""
         image_index = self.indices_loaded[indice_name]["image_index"]
         text_index = self.indices_loaded[indice_name]["text_index"]
@@ -305,7 +325,8 @@ class KnnService(Resource):
         result_indices = results[:nb_results]
         result_distances = distances[0][:nb_results]
         result_embeddings = embeddings[0][:nb_results]
-        local_indices_to_remove = self.post_filter(result_embeddings) if deduplicate else []
+        result_embeddings = normalized(result_embeddings)
+        local_indices_to_remove = self.post_filter(result_embeddings, deduplicate, use_safety_model)
         indices_to_remove = set()
         for local_index in local_indices_to_remove:
             indices_to_remove.add(result_indices[local_index])
@@ -356,6 +377,7 @@ class KnnService(Resource):
         indice_name=None,
         use_mclip=False,
         deduplicate=True,
+        use_safety_model=False,
     ):
         """implement the querying functionality of the knn service: from text and image to nearest neighbors"""
 
@@ -371,8 +393,15 @@ class KnnService(Resource):
             text_input=text_input, image_input=image_input, image_url_input=image_url_input, use_mclip=use_mclip
         )
         distances, indices = self.knn_search(
-            query, modality=modality, num_result_ids=num_result_ids, indice_name=indice_name, deduplicate=deduplicate
+            query,
+            modality=modality,
+            num_result_ids=num_result_ids,
+            indice_name=indice_name,
+            deduplicate=deduplicate,
+            use_safety_model=use_safety_model,
         )
+        if len(distances) == 0:
+            return []
         results = self.map_to_metadata(indices, distances, num_images, indice_name)
 
         return results
@@ -390,6 +419,7 @@ class KnnService(Resource):
         indice_name = json_data["indice_name"]
         use_mclip = json_data.get("use_mclip", False)
         deduplicate = json_data.get("deduplicate", False)
+        use_safety_model = json_data.get("use_safety_model", False)
         return self.query(
             text_input,
             image_input,
@@ -400,6 +430,7 @@ class KnnService(Resource):
             indice_name,
             use_mclip,
             deduplicate,
+            use_safety_model,
         )
 
 
@@ -549,6 +580,37 @@ def load_metadata_provider(
     return metadata_provider, ivf_old_to_new_mapping
 
 
+def load_safety_model():
+    """load the safety model"""
+    import autokeras as ak  # pylint: disable=import-outside-toplevel
+    from tensorflow.keras.models import load_model  # pylint: disable=import-outside-toplevel
+    from os.path import expanduser  # pylint: disable=import-outside-toplevel
+
+    home = expanduser("~")
+
+    cache_folder = home + "/.cache/clip_retrieval"
+    model_dir = cache_folder + "/clip_autokeras_binary_nsfw"
+    if not os.path.exists(model_dir):
+        os.makedirs(cache_folder, exist_ok=True)
+
+        from urllib.request import urlretrieve  # pylint: disable=import-outside-toplevel
+
+        path_to_zip_file = cache_folder + "/clip_autokeras_binary_nsfw.zip"
+        url_model = (
+            "https://raw.githubusercontent.com/LAION-AI/CLIP-based-NSFW-Detector/main/clip_autokeras_binary_nsfw.zip"
+        )
+        urlretrieve(url_model, path_to_zip_file)
+        import zipfile  # pylint: disable=import-outside-toplevel
+
+        with zipfile.ZipFile(path_to_zip_file, "r") as zip_ref:
+            zip_ref.extractall(cache_folder)
+
+    loaded_model = load_model(model_dir, custom_objects=ak.CUSTOM_OBJECTS)
+    loaded_model.predict(np.random.rand(10 ** 3, 768).astype("float32"), batch_size=10 ** 3)
+
+    return loaded_model
+
+
 def load_clip_indices(
     indices_paths,
     enable_hdf5,
@@ -621,11 +683,14 @@ def clip_back(
     clip_model="ViT-B/32",
     use_jit=True,
     use_arrow=False,
+    provide_safety_model=False,
 ):
     """main entry point of clip back, start the endpoints"""
-    LOGGER.info("starting boot of clip back")
+    print("starting boot of clip back")
     if columns_to_return is None:
         columns_to_return = ["url", "image_path", "caption", "NSFW"]
+    safety_model = load_safety_model() if provide_safety_model else None
+    print("safety model loaded")
     indices_loaded, indices, device, model, preprocess, mclip_model = load_clip_indices(
         indices_paths,
         enable_hdf5,
@@ -637,7 +702,7 @@ def clip_back(
         use_jit,
         use_arrow,
     )
-    LOGGER.info("indices loaded")
+    print("indices loaded")
 
     app = Flask(__name__)
     app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {"/metrics": make_wsgi_app()})
@@ -664,6 +729,7 @@ def clip_back(
             "columns_to_return": columns_to_return,
             "metadata_is_ordered_by_ivf": reorder_metadata_by_ivf_index,
             "mclip_model": mclip_model,
+            "safety_model": safety_model,
         },
     )
     CORS(app)

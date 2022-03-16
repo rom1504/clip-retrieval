@@ -42,7 +42,7 @@ class ClipFront extends LitElement {
     }
     this.service = new ClipService(this.backendHost)
     this.numImages = 40
-    this.numResultIds = 2000
+    this.numResultIds = 3000
     this.lastMetadataId = null
     this.onGoingMetadataFetch = false
     this.indices = []
@@ -146,7 +146,8 @@ class ClipFront extends LitElement {
         return
       }
     }
-    if (_changedProperties.has('useMclip') || _changedProperties.has('modality') || _changedProperties.has('currentIndex') || _changedProperties.has('hideDuplicateUrls') || _changedProperties.has('hideDuplicateImages')) {
+    if (_changedProperties.has('useMclip') || _changedProperties.has('modality') || _changedProperties.has('currentIndex') ||
+     _changedProperties.has('hideDuplicateUrls') || _changedProperties.has('hideDuplicateImages') || _changedProperties.has('safeMode')) {
       if (this.image !== undefined || this.text !== '' || this.imageUrl !== undefined) {
         this.redoSearch()
       }
@@ -229,7 +230,8 @@ class ClipFront extends LitElement {
     const image = this.image === undefined ? null : this.image
     const imageUrl = this.imageUrl === undefined ? null : this.imageUrl
     const count = this.modality === 'image' && this.currentIndex === this.indices[0] ? 10000 : 100
-    const results = await this.service.callClipService(text, image, imageUrl, this.modality, count, this.currentIndex, count, this.useMclip)
+    const results = await this.service.callClipService(text, image, imageUrl, this.modality, count,
+      this.currentIndex, count, this.useMclip, this.hideDuplicateImages, this.safeMode)
     downloadFile('clipsubset.json', JSON.stringify(results, null, 2))
   }
 
@@ -239,7 +241,8 @@ class ClipFront extends LitElement {
     }
     this.image = undefined
     this.imageUrl = undefined
-    const results = await this.service.callClipService(this.text, null, null, this.modality, this.numImages, this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages)
+    const results = await this.service.callClipService(this.text, null, null, this.modality, this.numImages,
+      this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode)
     console.log(results)
     this.images = results
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
@@ -251,7 +254,8 @@ class ClipFront extends LitElement {
   async imageSearch () {
     this.text = ''
     this.imageUrl = undefined
-    const results = await this.service.callClipService(null, this.image, null, this.modality, this.numImages, this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages)
+    const results = await this.service.callClipService(null, this.image, null, this.modality, this.numImages,
+      this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode)
     console.log(results)
     this.images = results
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
@@ -263,7 +267,8 @@ class ClipFront extends LitElement {
   async imageUrlSearch () {
     this.text = ''
     this.image = undefined
-    const results = await this.service.callClipService(null, null, this.imageUrl, this.modality, this.numImages, this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages)
+    const results = await this.service.callClipService(null, null, this.imageUrl, this.modality, this.numImages,
+      this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode)
     console.log(results)
     this.images = results
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
@@ -440,22 +445,6 @@ class ClipFront extends LitElement {
     `
   }
 
-  isSafe (image) {
-    if ((image['NSFW'] === 'UNSURE' || image['NSFW'] === 'NSFW')) {
-      return false
-    }
-    const badWords = ['boob', 'sexy', 'ass', 'mature', 'nude', 'naked', 'porn', 'xvideo',
-      'ghetto', 'tube', 'hump', 'fuck', 'dick', 'whore', 'masturbate', 'video', 'puss',
-      'erotic', 'hotmirrorpics', 'butt', 'spank', 'cum', 'voyeur', 'lesbian', 'topless',
-      'exhibitioni', 'prostitute', 'piss', 'drug', 'sex', 'hot ', 'nudity', 'nudist',
-      'domination', 'xxx', 'slave', 'bdsm', 'fisted', 'bbw', 'x5o']
-    if (badWords.some(word => (image[this.urlColumn] !== undefined && image[this.urlColumn].toLowerCase().includes(word)) ||
-    (image['caption'] !== undefined && image['caption'].toLowerCase().includes(word)))) {
-      return false
-    }
-    return true
-  }
-
   updateImage (file) {
     var reader = new FileReader()
     reader.readAsDataURL(file)
@@ -526,7 +515,6 @@ class ClipFront extends LitElement {
   render () {
     const preFiltered = this.images
       .filter(image => image['caption'] !== undefined || image[this.urlColumn] !== undefined || image['image'] !== undefined)
-      .filter(image => !this.safeMode || this.isSafe(image))
     const filteredImages = this.hideDuplicateUrls ? this.filterDuplicateUrls(preFiltered) : preFiltered
 
     return html`
