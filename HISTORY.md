@@ -1,3 +1,7 @@
+## 2.26.0
+
+* replace safety heuristic by safety model
+
 ## 2.25.4
 
 * enable back dedup of images
