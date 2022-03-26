@@ -155,27 +155,46 @@ echo '{"example_index": "output_folder"}' > indices_paths.json
 clip-retrieval back --port 1234 --indices-paths indices_paths.json
 ```
 
-`--use_jit True` uses jit for the clip model
 
-`--clip_model "ViT-B/32"` allows choosing the clip model to use
-
-`--enable_mclip_option True` loads the mclip model, making it possible to search in any language.
-
-`--columns_to_return='["url", "image_path", "caption", "NSFW"]` allows you to specify which columns should be fetched from the metadata and returned by the backend. It's useful to specify less in case of hdf5 caching to speed up the queries.
-
-A `--enable_faiss_memory_mapping=True` option can be passed to use an index with memory mapping.
+Options:
+* `--use_jit True` uses jit for the clip model
+* `--clip_model "ViT-B/32"` allows choosing the clip model to use
+* `--enable_mclip_option True` loads the mclip model, making it possible to search in any language.
+* `--columns_to_return='["url", "image_path", "caption", "NSFW"]` allows you to specify which columns should be fetched from the metadata and returned by the backend. It's useful to specify less in case of hdf5 caching to speed up the queries.
+* `--enable_faiss_memory_mapping=True` option can be passed to use an index with memory mapping.
 That decreases the memory usage to zero.
-
-A `--enable_hdf5 True` option can be passed to enable hdf5 caching for the metadata.
+* `--enable_hdf5 True` option can be passed to enable hdf5 caching for the metadata.
 HDF5 caching makes it possible to use the metadata with almost no memory usage.
+* `--use_arrow True` allows using arrow instead of hdf5. Should be used along with [clip_back_prepro](clip_back_prepro) for very large datasets (billions)
+* `--reorder_metadata_by_ivf_index True` option takes advantage of the data locality property of results of a knn ivf indices: it orders the metadata collection in order of the IVF clusters. That makes it possible to have much faster metadata retrieval as the reads are then accessing a few mostly sequential parts of the metadata instead of many non sequential parts. In practice that means being able to retrieve 1M items in 1s whereas only 1000 items can be retrieved in 1s without this method. This will order the metadata using the first image index.
+* `--provide_safety_model True` will automatically download and load a safety model. You need to `pip install autokeras` optional dependency for this to work.
 
-`--use_arrow True` allows using arrow instead of hdf5. Should be used along with [clip_back_prepro](clip_back_prepro) for very large datasets (billions)
+These options can also be provided in the config file to have different options for each index. Example:
+```json
+{
+        "laion_400m": {
+                "indice_folder": "/home/rom1504/the_big_index",
+                "provide_safety_model": true,
+                "enable_faiss_memory_mapping": true,
+                "enable_hdf5": true,
+                "reorder_metadata_by_ivf_index": true,
+                "enable_mclip_option": true
+        },
+        "laion5B": {
+                "indice_folder": "/media/hd2/index_at_hf/laion5B-index",
+                "provide_safety_model": true,
+                "enable_faiss_memory_mapping": true,
+                "use_arrow": true,
+                "enable_hdf5": false,
+                "reorder_metadata_by_ivf_index": false,
+                "columns_to_return": ["url", "caption"],
+                "clip_model": "ViT-L/14",
+                "enable_mclip_option": false
+        }
+}
+```
 
-`--reorder_metadata_by_ivf_index True` option takes advantage of the data locality property of results of a knn ivf indices: it orders the metadata collection in order of the IVF clusters. That makes it possible to have much faster metadata retrieval as the reads are then accessing a few mostly sequential parts of the metadata instead of many non sequential parts. In practice that means being able to retrieve 1M items in 1s whereas only 1000 items can be retrieved in 1s without this method. This will order the metadata using the first image index.
-
-`--provide_safety_model True` will automatically download and load a safety model. You need to `pip install autokeras` optional dependency for this to work.
-
-hdf5 caching is a good idea to use if:
+hdf5 or arrow caching is a good idea to use if:
 * you do not have enough ram to load the metadata in memory
 * your disk is fast (ie you have a ssd)
 
