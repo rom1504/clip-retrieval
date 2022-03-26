@@ -1,3 +1,7 @@
+## 2.28.0
+
+* add feature to pass options in config file
+
 ## 2.27.0
 
 * safety model for ViT-B/32
