@@ -172,16 +172,8 @@ HDF5 caching makes it possible to use the metadata with almost no memory usage.
 These options can also be provided in the config file to have different options for each index. Example:
 ```json
 {
-        "laion_400m": {
-                "indice_folder": "/home/rom1504/the_big_index",
-                "provide_safety_model": true,
-                "enable_faiss_memory_mapping": true,
-                "enable_hdf5": true,
-                "reorder_metadata_by_ivf_index": true,
-                "enable_mclip_option": true
-        },
         "laion5B": {
-                "indice_folder": "/media/hd2/index_at_hf/laion5B-index",
+                "indice_folder": "/mnt/laion5B/prepared_data",
                 "provide_safety_model": true,
                 "enable_faiss_memory_mapping": true,
                 "use_arrow": true,
@@ -190,6 +182,16 @@ These options can also be provided in the config file to have different options 
                 "columns_to_return": ["url", "caption"],
                 "clip_model": "ViT-L/14",
                 "enable_mclip_option": false
+        },
+        "laion_400m": {
+                "indice_folder": "/mnt/laion400M/index100",
+                "provide_safety_model": true,
+                "enable_faiss_memory_mapping": true,
+                "enable_hdf5": true,
+                "use_arrow": false,
+                "reorder_metadata_by_ivf_index": true,
+                "enable_mclip_option": true,
+                "clip_model": "ViT-B/32"
         }
 }
 ```
