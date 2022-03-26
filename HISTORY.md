@@ -1,3 +1,7 @@
+## 2.27.0
+
+* safety model for ViT-B/32
+
 ## 2.26.0
 
 * replace safety heuristic by safety model
