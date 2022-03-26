@@ -1,6 +1,7 @@
 """Clip back: host a knn service using clip as an encoder"""
 
 
+from typing import Callable, Dict, Any, List
 from flask import Flask, request, make_response
 from flask_restful import Resource, Api
 from flask_cors import CORS
@@ -18,6 +19,7 @@ import urllib
 import tempfile
 import io
 import numpy as np
+from functools import lru_cache
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 import pyarrow as pa
 
@@ -33,6 +35,8 @@ from clip_retrieval.ivf_metadata_ordering import (
     get_old_to_new_mapping,
     re_order_parquet,
 )
+from dataclasses import dataclass
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -127,7 +131,7 @@ class IndicesList(Resource):
         self.indices = kwargs["indices"]
 
     def get(self):
-        return list(self.indices.keys())
+        return self.indices
 
 
 @DOWNLOAD_TIME.time()
@@ -147,8 +151,7 @@ class MetadataService(Resource):
 
     def __init__(self, **kwargs):
         super().__init__()
-        self.indices_loaded = kwargs["indices_loaded"]
-        self.columns_to_return = kwargs["columns_to_return"]
+        self.clip_resources = kwargs["clip_resources"]
 
     def post(self):
         json_data = request.get_json(force=True)
@@ -156,8 +159,8 @@ class MetadataService(Resource):
         if len(ids) == 0:
             return []
         indice_name = json_data["indice_name"]
-        metadata_provider = self.indices_loaded[indice_name]["metadata_provider"]
-        metas = metadata_provider.get(ids, self.columns_to_return)
+        metadata_provider = self.clip_resources[indice_name].metadata_provider
+        metas = metadata_provider.get(ids, self.clip_resources[indice_name].columns_to_return)
         metas_with_ids = [{"id": item_id, "metadata": meta_to_dict(meta)} for item_id, meta in zip(ids, metas)]
         return metas_with_ids
 
@@ -173,16 +176,9 @@ class KnnService(Resource):
 
     def __init__(self, **kwargs):
         super().__init__()
-        self.indices_loaded = kwargs["indices_loaded"]
-        self.device = kwargs["device"]
-        self.model = kwargs["model"]
-        self.preprocess = kwargs["preprocess"]
-        self.columns_to_return = kwargs["columns_to_return"]
-        self.metadata_is_ordered_by_ivf = kwargs["metadata_is_ordered_by_ivf"]
-        self.mclip_model = kwargs["mclip_model"]
-        self.safety_model = kwargs["safety_model"]
+        self.clip_resources = kwargs["clip_resources"]
 
-    def compute_query(self, text_input, image_input, image_url_input, use_mclip):
+    def compute_query(self, clip_resource, text_input, image_input, image_url_input, use_mclip):
         """compute the query embedding"""
         import torch  # pylint: disable=import-outside-toplevel
         import clip  # pylint: disable=import-outside-toplevel
@@ -190,13 +186,13 @@ class KnnService(Resource):
         if text_input is not None:
             if use_mclip:
                 with TEXT_CLIP_INFERENCE_TIME.time():
-                    query = normalized(self.mclip_model(text_input))
+                    query = normalized(clip_resource.mclip_model(text_input))
             else:
                 with TEXT_PREPRO_TIME.time():
-                    text = clip.tokenize([text_input], truncate=True).to(self.device)
+                    text = clip.tokenize([text_input], truncate=True).to(clip_resource.device)
                 with TEXT_CLIP_INFERENCE_TIME.time():
                     with torch.no_grad():
-                        text_features = self.model.encode_text(text)
+                        text_features = clip_resource.model.encode_text(text)
                     text_features /= text_features.norm(dim=-1, keepdim=True)
                     query = text_features.cpu().detach().numpy().astype("float32")
         if image_input is not None or image_url_input is not None:
@@ -207,10 +203,10 @@ class KnnService(Resource):
                 img_data = download_image(image_url_input)
             with IMAGE_PREPRO_TIME.time():
                 img = Image.open(img_data)
-                prepro = self.preprocess(img).unsqueeze(0).to(self.device)
+                prepro = clip_resource.preprocess(img).unsqueeze(0).to(clip_resource.device)
             with IMAGE_CLIP_INFERENCE_TIME.time():
                 with torch.no_grad():
-                    image_features = self.model.encode_image(prepro)
+                    image_features = clip_resource.model.encode_image(prepro)
                 image_features /= image_features.norm(dim=-1, keepdim=True)
                 query = image_features.cpu().detach().numpy().astype("float32")
 
@@ -274,46 +270,46 @@ class KnnService(Resource):
         non_uniques = self.get_non_uniques(embeddings)
         return non_uniques
 
-    def get_unsafe(self, embeddings, threshold=0.5):
+    def get_unsafe(self, safety_model, embeddings, threshold=0.5):
         """find unsafe embeddings"""
-
-        nsfw_values = self.safety_model.predict(embeddings, batch_size=embeddings.shape[0])
+        nsfw_values = safety_model.predict(embeddings, batch_size=embeddings.shape[0])
         x = np.array([e[0] for e in nsfw_values])
         return np.where(x > threshold)[0]
 
-    def post_filter(self, embeddings, deduplicate, use_safety_model):
+    def post_filter(self, safety_model, embeddings, deduplicate, use_safety_model):
         to_remove = set()
         if deduplicate:
             with DEDUP_TIME.time():
                 to_remove = set(self.connected_components_dedup(embeddings))
-        if use_safety_model and self.safety_model is not None:
+        if use_safety_model and safety_model is not None:
             with SAFETY_TIME.time():
-                to_remove |= set(self.get_unsafe(embeddings))
+                to_remove |= set(self.get_unsafe(safety_model, embeddings))
 
         return to_remove
 
-    def knn_search(self, query, modality, num_result_ids, indice_name, deduplicate, use_safety_model):
+    def knn_search(self, query, modality, num_result_ids, clip_resource, deduplicate, use_safety_model):
         """compute the knn search"""
-        image_index = self.indices_loaded[indice_name]["image_index"]
-        text_index = self.indices_loaded[indice_name]["text_index"]
-        if self.metadata_is_ordered_by_ivf:
-            ivf_old_to_new_mapping = self.indices_loaded[indice_name]["ivf_old_to_new_mapping"]
+
+        image_index = clip_resource.image_index
+        text_index = clip_resource.text_index
+        if clip_resource.metadata_is_ordered_by_ivf:
+            ivf_old_to_new_mapping = clip_resource.ivf_old_to_new_mapping
 
         index = image_index if modality == "image" else text_index
 
         with KNN_INDEX_TIME.time():
-            if self.metadata_is_ordered_by_ivf:
+            if clip_resource.metadata_is_ordered_by_ivf:
                 previous_nprobe = faiss.extract_index_ivf(index).nprobe
                 if num_result_ids >= 100000:
                     nprobe = math.ceil(num_result_ids / 3000)
                     params = faiss.ParameterSpace()
                     params.set_index_parameters(index, f"nprobe={nprobe},efSearch={nprobe*2},ht={2048}")
             distances, indices, embeddings = index.search_and_reconstruct(query, num_result_ids)
-            if self.metadata_is_ordered_by_ivf:
+            if clip_resource.metadata_is_ordered_by_ivf:
                 results = np.take(ivf_old_to_new_mapping, indices[0])
             else:
                 results = indices[0]
-            if self.metadata_is_ordered_by_ivf:
+            if clip_resource.metadata_is_ordered_by_ivf:
                 params = faiss.ParameterSpace()
                 params.set_index_parameters(index, f"nprobe={previous_nprobe},efSearch={previous_nprobe*2},ht={2048}")
         nb_results = np.where(results == -1)[0]
@@ -326,7 +322,9 @@ class KnnService(Resource):
         result_distances = distances[0][:nb_results]
         result_embeddings = embeddings[0][:nb_results]
         result_embeddings = normalized(result_embeddings)
-        local_indices_to_remove = self.post_filter(result_embeddings, deduplicate, use_safety_model)
+        local_indices_to_remove = self.post_filter(
+            clip_resource.safety_model, result_embeddings, deduplicate, use_safety_model
+        )
         indices_to_remove = set()
         for local_index in local_indices_to_remove:
             indices_to_remove.add(result_indices[local_index])
@@ -340,13 +338,12 @@ class KnnService(Resource):
 
         return distances, indices
 
-    def map_to_metadata(self, indices, distances, num_images, indice_name):
+    def map_to_metadata(self, indices, distances, num_images, metadata_provider, columns_to_return):
         """map the indices to the metadata"""
-        metadata_provider = self.indices_loaded[indice_name]["metadata_provider"]
 
         results = []
         with METADATA_GET_TIME.time():
-            metas = metadata_provider.get(indices[:num_images], self.columns_to_return)
+            metas = metadata_provider.get(indices[:num_images], columns_to_return)
         for key, (d, i) in enumerate(zip(distances, indices)):
             output = {}
             meta = None if key + 1 > len(metas) else metas[key]
@@ -381,28 +378,33 @@ class KnnService(Resource):
     ):
         """implement the querying functionality of the knn service: from text and image to nearest neighbors"""
 
-        if not self.mclip_model:
-            use_mclip = False
-
         if text_input is None and image_input is None and image_url_input is None:
             raise ValueError("must fill one of text, image and image url input")
         if indice_name is None:
-            indice_name = next(iter(self.indices_loaded.keys()))
+            indice_name = next(iter(self.clip_resources.keys()))
+
+        clip_resource = self.clip_resources[indice_name]
 
         query = self.compute_query(
-            text_input=text_input, image_input=image_input, image_url_input=image_url_input, use_mclip=use_mclip
+            clip_resource=clip_resource,
+            text_input=text_input,
+            image_input=image_input,
+            image_url_input=image_url_input,
+            use_mclip=use_mclip,
         )
         distances, indices = self.knn_search(
             query,
             modality=modality,
             num_result_ids=num_result_ids,
-            indice_name=indice_name,
+            clip_resource=clip_resource,
             deduplicate=deduplicate,
             use_safety_model=use_safety_model,
         )
         if len(distances) == 0:
             return []
-        results = self.map_to_metadata(indices, distances, num_images, indice_name)
+        results = self.map_to_metadata(
+            indices, distances, num_images, clip_resource.metadata_provider, clip_resource.columns_to_return
+        )
 
         return results
 
@@ -580,6 +582,7 @@ def load_metadata_provider(
     return metadata_provider, ivf_old_to_new_mapping
 
 
+@lru_cache(maxsize=None)
 def load_safety_model(clip_model):
     """load the safety model"""
     import autokeras as ak  # pylint: disable=import-outside-toplevel
@@ -623,65 +626,157 @@ def load_safety_model(clip_model):
     return loaded_model
 
 
-def load_clip_indices(
-    indices_paths,
-    enable_hdf5,
-    enable_faiss_memory_mapping,
-    columns_to_return,
-    reorder_metadata_by_ivf_index,
-    enable_mclip_option=True,
-    clip_model="ViT-B/32",
-    use_jit=True,
-    use_arrow=False,
-):
-    """This load clips indices from disk"""
-    LOGGER.info("loading clip...")
+@dataclass
+class ClipResource:
+    """the resource for clip : model, index, options"""
+
+    device: str
+    model: Any
+    preprocess: Callable
+    model_txt_mclip: Any
+    safety_model: Any
+    metadata_provider: Any
+    image_index: Any
+    text_index: Any
+    ivf_old_to_new_mapping: Any
+    columns_to_return: List[str]
+    metadata_is_ordered_by_ivf: bool
+
+
+@dataclass
+class ClipOptions:
+    """the options for clip"""
+
+    indice_folder: str
+    clip_model: str
+    enable_hdf5: bool
+    enable_faiss_memory_mapping: bool
+    columns_to_return: List[str]
+    reorder_metadata_by_ivf_index: bool
+    enable_mclip_option: bool
+    use_jit: bool
+    use_arrow: bool
+    provide_safety_model: bool
+
+
+def dict_to_clip_options(d, clip_options):
+    return ClipOptions(
+        indice_folder=d["indice_folder"] if "indice_folder" in d else clip_options.indice_folder,
+        clip_model=d["clip_model"] if "clip_model" in d else clip_options.clip_model,
+        enable_hdf5=d["enable_hdf5"] if "enable_hdf5" in d else clip_options.enable_hdf5,
+        enable_faiss_memory_mapping=d["enable_faiss_memory_mapping"]
+        if "enable_faiss_memory_mapping" in d
+        else clip_options.enable_faiss_memory_mapping,
+        columns_to_return=d["columns_to_return"] if "columns_to_return" in d else clip_options.columns_to_return,
+        reorder_metadata_by_ivf_index=d["reorder_metadata_by_ivf_index"]
+        if "reorder_metadata_by_ivf_index" in d
+        else clip_options.reorder_metadata_by_ivf_index,
+        enable_mclip_option=d["enable_mclip_option"]
+        if "enable_mclip_option" in d
+        else clip_options.enable_mclip_option,
+        use_jit=d["use_jit"] if "use_jit" in d else clip_options.use_jit,
+        use_arrow=d["use_arrow"] if "use_arrow" in d else clip_options.use_arrow,
+        provide_safety_model=d["provide_safety_model"]
+        if "provide_safety_model" in d
+        else clip_options.provide_safety_model,
+    )
+
+
+@lru_cache(maxsize=None)
+def load_clip(clip_model="ViT-B/32", use_jit=True, device="cpu"):
     import clip  # pylint: disable=import-outside-toplevel
-    import torch  # pylint: disable=import-outside-toplevel
+
+    model, preprocess = clip.load(clip_model, device=device, jit=use_jit)
+    return model, preprocess
+
+
+@lru_cache(maxsize=None)
+def load_mclip():
     from sentence_transformers import SentenceTransformer  # pylint: disable=import-outside-toplevel
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, preprocess = clip.load(clip_model, device=device, jit=use_jit)
+    mclip_model = "sentence-transformers/clip-ViT-B-32-multilingual-v1"
+    mclip = SentenceTransformer(mclip_model)
+    model_txt_mclip = mclip.encode
+    return model_txt_mclip
 
-    if enable_mclip_option:
-        mclip_model = "sentence-transformers/clip-ViT-B-32-multilingual-v1"
-        mclip = SentenceTransformer(mclip_model)
-        model_txt_mclip = mclip.encode
+
+def load_clip_index(clip_options):
+    """load the clip index"""
+    import torch  # pylint: disable=import-outside-toplevel
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model, preprocess = load_clip(clip_options.clip_model, use_jit=clip_options.use_jit, device=device)
+
+    if clip_options.enable_mclip_option:
+        model_txt_mclip = load_mclip()
     else:
         model_txt_mclip = None
 
+    safety_model = load_safety_model(clip_options.clip_model) if clip_options.provide_safety_model else None
+
+    image_present = os.path.exists(clip_options.indice_folder + "/image.index")
+    text_present = os.path.exists(clip_options.indice_folder + "/text.index")
+
+    LOGGER.info("loading indices...")
+    image_index = (
+        load_index(clip_options.indice_folder + "/image.index", clip_options.enable_faiss_memory_mapping)
+        if image_present
+        else None
+    )
+    text_index = (
+        load_index(clip_options.indice_folder + "/text.index", clip_options.enable_faiss_memory_mapping)
+        if text_present
+        else None
+    )
+
+    LOGGER.info("loading metadata...")
+
+    metadata_provider, ivf_old_to_new_mapping = load_metadata_provider(
+        clip_options.indice_folder,
+        clip_options.enable_hdf5,
+        clip_options.reorder_metadata_by_ivf_index,
+        image_index,
+        clip_options.columns_to_return,
+        clip_options.use_arrow,
+    )
+
+    return ClipResource(
+        device=device,
+        model=model,
+        preprocess=preprocess,
+        model_txt_mclip=model_txt_mclip,
+        safety_model=safety_model,
+        metadata_provider=metadata_provider,
+        image_index=image_index,
+        text_index=text_index,
+        ivf_old_to_new_mapping=ivf_old_to_new_mapping if clip_options.reorder_metadata_by_ivf_index else None,
+        columns_to_return=clip_options.columns_to_return,
+        metadata_is_ordered_by_ivf=clip_options.reorder_metadata_by_ivf_index,
+    )
+
+
+def load_clip_indices(indices_paths, clip_options,) -> Dict[str, ClipResource]:
+    """This load clips indices from disk"""
+    LOGGER.info("loading clip...")
+
     indices = json.load(open(indices_paths))
 
-    indices_loaded = {}
+    clip_resources = {}
 
-    for name, indice_folder in indices.items():
-        image_present = os.path.exists(indice_folder + "/image.index")
-        text_present = os.path.exists(indice_folder + "/text.index")
+    for name, indice_value in indices.items():
+        # if indice_folder is a string
+        if isinstance(indice_value, str):
+            clip_options = dict_to_clip_options({"indice_folder": indice_value}, clip_options)
+        elif isinstance(indice_value, dict):
+            clip_options = dict_to_clip_options(indice_value, clip_options)
+        else:
+            raise ValueError("Unknown type for indice_folder")
+        clip_resources[name] = load_clip_index(clip_options)
 
-        LOGGER.info("loading indices...")
-        image_index = load_index(indice_folder + "/image.index", enable_faiss_memory_mapping) if image_present else None
-        text_index = load_index(indice_folder + "/text.index", enable_faiss_memory_mapping) if text_present else None
-
-        LOGGER.info("loading metadata...")
-
-        metadata_provider, ivf_old_to_new_mapping = load_metadata_provider(
-            indice_folder, enable_hdf5, reorder_metadata_by_ivf_index, image_index, columns_to_return, use_arrow
-        )
-
-        indices_loaded[name] = {
-            "metadata_provider": metadata_provider,
-            "image_index": image_index,
-            "text_index": text_index,
-        }
-        if reorder_metadata_by_ivf_index:
-            indices_loaded[name]["ivf_old_to_new_mapping"] = ivf_old_to_new_mapping
-
-    return indices_loaded, indices, device, model, preprocess, model_txt_mclip
+    return clip_resources
 
 
 # reorder_metadata_by_ivf_index allows faster data retrieval of knn results by re-ordering the metadata by the ivf clusters
-
-
 def clip_back(
     indices_paths="indices_paths.json",
     port=1234,
@@ -701,18 +796,21 @@ def clip_back(
     print("starting boot of clip back")
     if columns_to_return is None:
         columns_to_return = ["url", "image_path", "caption", "NSFW"]
-    safety_model = load_safety_model(clip_model) if provide_safety_model else None
     print("safety model loaded")
-    indices_loaded, indices, device, model, preprocess, mclip_model = load_clip_indices(
-        indices_paths,
-        enable_hdf5,
-        enable_faiss_memory_mapping,
-        columns_to_return,
-        reorder_metadata_by_ivf_index,
-        enable_mclip_option,
-        clip_model,
-        use_jit,
-        use_arrow,
+    clip_resources = load_clip_indices(
+        indices_paths=indices_paths,
+        clip_options=ClipOptions(
+            indice_folder="",
+            clip_model=clip_model,
+            enable_hdf5=enable_hdf5,
+            enable_faiss_memory_mapping=enable_faiss_memory_mapping,
+            columns_to_return=columns_to_return,
+            reorder_metadata_by_ivf_index=reorder_metadata_by_ivf_index,
+            enable_mclip_option=enable_mclip_option,
+            use_jit=use_jit,
+            use_arrow=use_arrow,
+            provide_safety_model=provide_safety_model,
+        ),
     )
     print("indices loaded")
 
@@ -724,25 +822,12 @@ def clip_back(
 
     api = Api(app)
     api.add_resource(MetricsSummary, "/metrics-summary")
-    api.add_resource(IndicesList, "/indices-list", resource_class_kwargs={"indices": indices})
+    api.add_resource(IndicesList, "/indices-list", resource_class_kwargs={"indices": list(clip_resources.keys())})
     api.add_resource(
-        MetadataService,
-        "/metadata",
-        resource_class_kwargs={"indices_loaded": indices_loaded, "columns_to_return": columns_to_return},
+        MetadataService, "/metadata", resource_class_kwargs={"clip_resources": clip_resources,},
     )
     api.add_resource(
-        KnnService,
-        "/knn-service",
-        resource_class_kwargs={
-            "indices_loaded": indices_loaded,
-            "device": device,
-            "model": model,
-            "preprocess": preprocess,
-            "columns_to_return": columns_to_return,
-            "metadata_is_ordered_by_ivf": reorder_metadata_by_ivf_index,
-            "mclip_model": mclip_model,
-            "safety_model": safety_model,
-        },
+        KnnService, "/knn-service", resource_class_kwargs={"clip_resources": clip_resources,},
     )
     CORS(app)
     LOGGER.info("starting!")
