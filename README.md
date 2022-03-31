@@ -17,6 +17,8 @@ Easily compute clip embeddings and build a clip retrieval system with them. 100M
 End to end this make it possible to build a simple semantic search system.
 Interested to learn about semantic search in general ? You can read my [medium post](https://rom1504.medium.com/semantic-search-with-embeddings-index-anything-8fb18556443c) on the topic.
 
+Also see [laion5B](https://laion.ai/laion-5b-a-new-era-of-open-large-scale-multi-modal-datasets/) and [semantic search at billions scale](https://rom1504.medium.com/semantic-search-at-billions-scale-95f21695689a) to read more on how to make this scale to billion of samples.
+
 [<img src="https://github.com/rom1504/clip-retrieval/raw/main/doc_assets/clip-front-pic.png" alt="clip front" width="500">](https://rom1504.github.io/clip-retrieval/)
 
 ## Who is using clip retrieval ?
