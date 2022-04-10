@@ -186,7 +186,7 @@ class KnnService(Resource):
         if text_input is not None:
             if use_mclip:
                 with TEXT_CLIP_INFERENCE_TIME.time():
-                    query = normalized(clip_resource.mclip_model(text_input))
+                    query = normalized(clip_resource.model_txt_mclip(text_input))
             else:
                 with TEXT_PREPRO_TIME.time():
                     text = clip.tokenize([text_input], truncate=True).to(clip_resource.device)
