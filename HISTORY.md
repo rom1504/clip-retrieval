@@ -1,3 +1,7 @@
+## 2.29.0
+
+* add violence detector to clip back
+
 ## 2.28.0
 
 * add feature to pass options in config file
