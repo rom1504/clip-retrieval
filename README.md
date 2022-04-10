@@ -169,7 +169,8 @@ That decreases the memory usage to zero.
 HDF5 caching makes it possible to use the metadata with almost no memory usage.
 * `--use_arrow True` allows using arrow instead of hdf5. Should be used along with [clip_back_prepro](clip_back_prepro) for very large datasets (billions)
 * `--reorder_metadata_by_ivf_index True` option takes advantage of the data locality property of results of a knn ivf indices: it orders the metadata collection in order of the IVF clusters. That makes it possible to have much faster metadata retrieval as the reads are then accessing a few mostly sequential parts of the metadata instead of many non sequential parts. In practice that means being able to retrieve 1M items in 1s whereas only 1000 items can be retrieved in 1s without this method. This will order the metadata using the first image index.
-* `--provide_safety_model True` will automatically download and load a safety model. You need to `pip install autokeras` optional dependency for this to work.
+* `--provide_safety_model True` will automatically download and load a [safety model](https://github.com/LAION-AI/CLIP-based-NSFW-Detector). You need to `pip install autokeras` optional dependency for this to work.
+* `--provide_violence_detector True` will load a [violence detector](https://github.com/ml-research/OffImgDetectionCLIP), [paper](https://arxiv.org/abs/2202.06675.pdf)
 
 These options can also be provided in the config file to have different options for each index. Example:
 ```json

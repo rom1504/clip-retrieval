@@ -14,7 +14,7 @@ export default class ClipService {
     return result
   }
 
-  async callClipService (text, image, imageUrl, modality, numImages, indexName, numResultIds, useMclip, hideDuplicateImages, useSafetyModel) {
+  async callClipService (text, image, imageUrl, modality, numImages, indexName, numResultIds, useMclip, hideDuplicateImages, useSafetyModel, useViolenceDetector) {
     console.log('calling', text, numImages)
     const result = JsonBigint.parse(await (await fetch(this.backend + `/knn-service`, {
       method: 'POST',
@@ -28,7 +28,8 @@ export default class ClipService {
         'num_result_ids': numResultIds,
         'use_mclip': useMclip,
         'deduplicate': hideDuplicateImages,
-        'use_safety_model': useSafetyModel
+        'use_safety_model': useSafetyModel,
+        'use_violence_detector': useViolenceDetector
       })
     })).text())
 
