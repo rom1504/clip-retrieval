@@ -476,9 +476,9 @@ def parquet_to_hdf5(parquet_folder, output_hdf5_file, columns_to_return):
             if k not in columns_to_return:
                 continue
             col = df[k]
-            if col.dtype == "float64" or col.dtype == "float32":
+            if col.dtype in ("float64", "float32"):
                 col = col.fillna(0.0)
-            if col.dtype == "int64" or col.dtype == "int32":
+            if col.dtype in ("int64", "int32"):
                 col = col.fillna(0)
             if col.dtype == "object":
                 col = col.fillna("")
@@ -613,7 +613,7 @@ def load_safety_model(clip_model):
                 "https://raw.githubusercontent.com/LAION-AI/CLIP-based-NSFW-Detector/main/clip_autokeras_nsfw_b32.zip"
             )
         else:
-            raise ValueError("Unknown model {}".format(clip_model))
+            raise ValueError("Unknown model {}".format(clip_model))  # pylint: disable=consider-using-f-string
         urlretrieve(url_model, path_to_zip_file)
         import zipfile  # pylint: disable=import-outside-toplevel
 
@@ -621,7 +621,7 @@ def load_safety_model(clip_model):
             zip_ref.extractall(cache_folder)
 
     loaded_model = load_model(model_dir, custom_objects=ak.CUSTOM_OBJECTS)
-    loaded_model.predict(np.random.rand(10 ** 3, dim).astype("float32"), batch_size=10 ** 3)
+    loaded_model.predict(np.random.rand(10**3, dim).astype("float32"), batch_size=10**3)
 
     return loaded_model
 
@@ -755,11 +755,15 @@ def load_clip_index(clip_options):
     )
 
 
-def load_clip_indices(indices_paths, clip_options,) -> Dict[str, ClipResource]:
+def load_clip_indices(
+    indices_paths,
+    clip_options,
+) -> Dict[str, ClipResource]:
     """This load clips indices from disk"""
     LOGGER.info("loading clip...")
 
-    indices = json.load(open(indices_paths))
+    with open(indices_paths, "r", encoding="utf-8") as f:
+        indices = json.load(f)
 
     clip_resources = {}
 
@@ -824,10 +828,18 @@ def clip_back(
     api.add_resource(MetricsSummary, "/metrics-summary")
     api.add_resource(IndicesList, "/indices-list", resource_class_kwargs={"indices": list(clip_resources.keys())})
     api.add_resource(
-        MetadataService, "/metadata", resource_class_kwargs={"clip_resources": clip_resources,},
+        MetadataService,
+        "/metadata",
+        resource_class_kwargs={
+            "clip_resources": clip_resources,
+        },
     )
     api.add_resource(
-        KnnService, "/knn-service", resource_class_kwargs={"clip_resources": clip_resources,},
+        KnnService,
+        "/knn-service",
+        resource_class_kwargs={
+            "clip_resources": clip_resources,
+        },
     )
     CORS(app)
     LOGGER.info("starting!")

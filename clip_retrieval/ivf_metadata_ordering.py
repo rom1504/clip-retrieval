@@ -30,7 +30,7 @@ def search_to_new_ids(index, query, k):
     for i in list_sizes:
         starting_offset.append(c)
         c += i
-    old_id_to_new_id = dict()
+    old_id_to_new_id = {}
     for i in l[0]:
         i = int(i)
         ids = il.get_ids(i)
@@ -97,7 +97,7 @@ class Hdf5Sink:
 
     def write(self, sample):
         self.buffer.append(sample)
-        if len(self.buffer) == 10 ** 6:
+        if len(self.buffer) == 10**6:
             self._write_buffer()
 
     def end(self):
@@ -111,13 +111,13 @@ class Hdf5Sink:
         if len(self.buffer) == 0:
             return
         df = pd.DataFrame(self.buffer, columns=self.keys)
-        for k in df.keys():
+        for k, v in df.items():
             if k not in self.keys:
                 continue
-            col = df[k]
-            if col.dtype == "float64" or col.dtype == "float32":
+            col = v
+            if col.dtype in ("float64", "float32"):
                 col = col.fillna(0.0)
-            if col.dtype == "int64" or col.dtype == "int32":
+            if col.dtype in ("int64", "int32"):
                 col = col.fillna(0)
             if col.dtype == "object":
                 col = col.fillna("")
@@ -154,8 +154,8 @@ def external_sort_parquet(output_sink, input_path):
     h = []
     data_dir = Path(input_path)
     files = [pq.ParquetFile(filename, memory_map=True) for filename in sorted(data_dir.glob("*.parquet"))]
-    batches_list = [ffile.iter_batches(batch_size=10 ** 4) for ffile in files]
-    index_to_value = dict()
+    batches_list = [ffile.iter_batches(batch_size=10**4) for ffile in files]
+    index_to_value = {}
     counts = [ffile.metadata.num_rows for ffile in files]
     current_count_per_file = defaultdict(lambda: 0)
 

@@ -45,7 +45,10 @@ def test_runner():
             )
 
         def logger_builder(i):
-            return LoggerWriter(partition_id=i, stats_folder=tmpdir + "/stats",)
+            return LoggerWriter(
+                partition_id=i,
+                stats_folder=tmpdir + "/stats",
+            )
 
         def writer_builder(i):
             return NumpyWriter(
