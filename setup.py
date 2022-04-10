@@ -38,7 +38,9 @@ if __name__ == "__main__":
         author="Romain Beaumont",
         author_email="romain.rom1@gmail.com",
         url="https://github.com/rom1504/clip-retrieval",
-        data_files=[(".", ["README.md"]),],
+        data_files=[
+            (".", ["README.md"]),
+        ],
         keywords=["machine learning", "computer vision", "download", "image", "dataset"],
         install_requires=REQUIREMENTS,
         classifiers=[

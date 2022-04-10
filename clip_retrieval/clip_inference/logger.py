@@ -126,9 +126,9 @@ class LoggerReader:
                             time.sleep(1)
 
             stats_aggregated = defaultdict(lambda: 0)
-            for k in stats:
-                for k2 in stats[k]:
-                    stats_aggregated[k2] += stats[k][k2]
+            for k, v in stats.items():
+                for k2 in v:
+                    stats_aggregated[k2] += v[k2]
 
             current_time = time.perf_counter()
             total_duration = current_time - self.start_time

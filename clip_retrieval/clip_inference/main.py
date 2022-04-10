@@ -23,7 +23,7 @@ def main(
     enable_text=True,
     enable_image=True,
     enable_metadata=False,
-    write_batch_size=10 ** 6,
+    write_batch_size=10**6,
     wds_image_key="jpg",
     wds_caption_key="txt",
     clip_model="ViT-B/32",
@@ -60,7 +60,7 @@ def main(
             print("no sample found")
             return
         else:
-            print("The number of samples has been estimated to be {}".format(sample_count))
+            print(f"The number of samples has been estimated to be {sample_count}")
 
         output_partition_count = int(sample_count / write_batch_size) + 1
 
@@ -116,7 +116,10 @@ def main(
         )
 
     def logger_builder(i):
-        return LoggerWriter(partition_id=i, stats_folder=output_folder + "/stats",)
+        return LoggerWriter(
+            partition_id=i,
+            stats_folder=output_folder + "/stats",
+        )
 
     runner = Runner(
         reader_builder=reader_builder,
