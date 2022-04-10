@@ -54,6 +54,7 @@ class ClipFront extends LitElement {
     this.displaySimilarities = false
     this.displayFullCaptions = false
     this.safeMode = true
+    this.removeViolence = true
     this.firstLoad = true
     this.imageUrl = imageUrl === null ? undefined : imageUrl
     this.hideDuplicateUrls = true
@@ -95,6 +96,7 @@ class ClipFront extends LitElement {
       displayCaptions: { type: Boolean },
       displayFullCaptions: { type: Boolean },
       safeMode: { type: Boolean },
+      removeViolence: { type: Boolean },
       hideDuplicateUrls: { type: Boolean },
       hideDuplicateImages: { type: Boolean },
       useMclip: { type: Boolean }
@@ -147,7 +149,7 @@ class ClipFront extends LitElement {
       }
     }
     if (_changedProperties.has('useMclip') || _changedProperties.has('modality') || _changedProperties.has('currentIndex') ||
-     _changedProperties.has('hideDuplicateUrls') || _changedProperties.has('hideDuplicateImages') || _changedProperties.has('safeMode')) {
+     _changedProperties.has('hideDuplicateUrls') || _changedProperties.has('hideDuplicateImages') || _changedProperties.has('safeMode') || _changedProperties.has('removeViolence')) {
       if (this.image !== undefined || this.text !== '' || this.imageUrl !== undefined) {
         this.redoSearch()
       }
@@ -231,7 +233,7 @@ class ClipFront extends LitElement {
     const imageUrl = this.imageUrl === undefined ? null : this.imageUrl
     const count = this.modality === 'image' && this.currentIndex === this.indices[0] ? 10000 : 100
     const results = await this.service.callClipService(text, image, imageUrl, this.modality, count,
-      this.currentIndex, count, this.useMclip, this.hideDuplicateImages, this.safeMode)
+      this.currentIndex, count, this.useMclip, this.hideDuplicateImages, this.safeMode, this.removeViolence)
     downloadFile('clipsubset.json', JSON.stringify(results, null, 2))
   }
 
@@ -242,7 +244,7 @@ class ClipFront extends LitElement {
     this.image = undefined
     this.imageUrl = undefined
     const results = await this.service.callClipService(this.text, null, null, this.modality, this.numImages,
-      this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode)
+      this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode, this.removeViolence)
     console.log(results)
     this.images = results
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
@@ -255,7 +257,7 @@ class ClipFront extends LitElement {
     this.text = ''
     this.imageUrl = undefined
     const results = await this.service.callClipService(null, this.image, null, this.modality, this.numImages,
-      this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode)
+      this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode, this.removeViolence)
     console.log(results)
     this.images = results
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
@@ -268,7 +270,7 @@ class ClipFront extends LitElement {
     this.text = ''
     this.image = undefined
     const results = await this.service.callClipService(null, null, this.imageUrl, this.modality, this.numImages,
-      this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode)
+      this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode, this.removeViolence)
     console.log(results)
     this.images = results
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
@@ -542,6 +544,7 @@ class ClipFront extends LitElement {
       <label>Display full captions<input type="checkbox" ?checked="${this.displayFullCaptions}" @click=${() => { this.displayFullCaptions = !this.displayFullCaptions }} /></label><br />
       <label>Display similarities<input type="checkbox" ?checked="${this.displaySimilarities}" @click=${() => { this.displaySimilarities = !this.displaySimilarities }} /></label><br />
       <label>Safe mode<input type="checkbox" ?checked="${this.safeMode}" @click=${() => { this.safeMode = !this.safeMode }} /></label><br />
+      <label>Remove violence<input type="checkbox" ?checked="${this.removeViolence}" @click=${() => { this.removeViolence = !this.removeViolence }} /></label><br />
       <label>Hide duplicate urls<input type="checkbox" ?checked="${this.hideDuplicateUrls}" @click=${() => { this.hideDuplicateUrls = !this.hideDuplicateUrls }} /></label><br />
       <label>Hide (near) duplicate images<input type="checkbox" ?checked="${this.hideDuplicateImages}" @click=${() => { this.hideDuplicateImages = !this.hideDuplicateImages }} /></label><br />
       <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>

@@ -270,24 +270,37 @@ class KnnService(Resource):
         non_uniques = self.get_non_uniques(embeddings)
         return non_uniques
 
-    def get_unsafe(self, safety_model, embeddings, threshold=0.5):
+    def get_unsafe_items(self, safety_model, embeddings, threshold=0.5):
         """find unsafe embeddings"""
         nsfw_values = safety_model.predict(embeddings, batch_size=embeddings.shape[0])
         x = np.array([e[0] for e in nsfw_values])
         return np.where(x > threshold)[0]
 
-    def post_filter(self, safety_model, embeddings, deduplicate, use_safety_model):
+    def get_violent_items(self, safety_prompts, embeddings):
+        safety_predictions = np.einsum("ij,kj->ik", embeddings, safety_prompts)
+        safety_results = np.argmax(safety_predictions, axis=1)
+        return np.where(safety_results == 1)[0]
+
+    def post_filter(
+        self, safety_model, embeddings, deduplicate, use_safety_model, use_violence_detector, violence_detector
+    ):
+        """post filter results : dedup, safety, violence"""
         to_remove = set()
         if deduplicate:
             with DEDUP_TIME.time():
                 to_remove = set(self.connected_components_dedup(embeddings))
+
+        if use_violence_detector and violence_detector is not None:
+            to_remove |= set(self.get_violent_items(violence_detector, embeddings))
         if use_safety_model and safety_model is not None:
             with SAFETY_TIME.time():
-                to_remove |= set(self.get_unsafe(safety_model, embeddings))
+                to_remove |= set(self.get_unsafe_items(safety_model, embeddings))
 
         return to_remove
 
-    def knn_search(self, query, modality, num_result_ids, clip_resource, deduplicate, use_safety_model):
+    def knn_search(
+        self, query, modality, num_result_ids, clip_resource, deduplicate, use_safety_model, use_violence_detector
+    ):
         """compute the knn search"""
 
         image_index = clip_resource.image_index
@@ -323,7 +336,12 @@ class KnnService(Resource):
         result_embeddings = embeddings[0][:nb_results]
         result_embeddings = normalized(result_embeddings)
         local_indices_to_remove = self.post_filter(
-            clip_resource.safety_model, result_embeddings, deduplicate, use_safety_model
+            clip_resource.safety_model,
+            result_embeddings,
+            deduplicate,
+            use_safety_model,
+            use_violence_detector,
+            clip_resource.violence_detector,
         )
         indices_to_remove = set()
         for local_index in local_indices_to_remove:
@@ -375,6 +393,7 @@ class KnnService(Resource):
         use_mclip=False,
         deduplicate=True,
         use_safety_model=False,
+        use_violence_detector=False,
     ):
         """implement the querying functionality of the knn service: from text and image to nearest neighbors"""
 
@@ -399,6 +418,7 @@ class KnnService(Resource):
             clip_resource=clip_resource,
             deduplicate=deduplicate,
             use_safety_model=use_safety_model,
+            use_violence_detector=use_violence_detector,
         )
         if len(distances) == 0:
             return []
@@ -422,6 +442,7 @@ class KnnService(Resource):
         use_mclip = json_data.get("use_mclip", False)
         deduplicate = json_data.get("deduplicate", False)
         use_safety_model = json_data.get("use_safety_model", False)
+        use_violence_detector = json_data.get("use_violence_detector", False)
         return self.query(
             text_input,
             image_input,
@@ -433,6 +454,7 @@ class KnnService(Resource):
             use_mclip,
             deduplicate,
             use_safety_model,
+            use_violence_detector,
         )
 
 
@@ -582,16 +604,53 @@ def load_metadata_provider(
     return metadata_provider, ivf_old_to_new_mapping
 
 
-@lru_cache(maxsize=None)
-def load_safety_model(clip_model):
-    """load the safety model"""
-    import autokeras as ak  # pylint: disable=import-outside-toplevel
-    from tensorflow.keras.models import load_model  # pylint: disable=import-outside-toplevel
+def get_cache_folder(clip_model):
+    """get cache folder for given clip model"""
     from os.path import expanduser  # pylint: disable=import-outside-toplevel
 
     home = expanduser("~")
 
     cache_folder = home + "/.cache/clip_retrieval/" + clip_model.replace("/", "_")
+
+    if not os.path.exists(cache_folder):
+        os.makedirs(cache_folder, exist_ok=True)
+
+    return cache_folder
+
+
+@lru_cache(maxsize=None)
+def load_violence_detector(clip_model):
+    """load violence detector for this clip model"""
+    from urllib.request import urlretrieve  #  pylint: disable=import-outside-toplevel
+
+    cache_folder = get_cache_folder(clip_model)
+    root_url = "https://github.com/LAION-AI/CLIP-based-NSFW-Detector/raw/main"
+
+    if clip_model == "ViT-L/14":
+        name = "violence_detection_vit_l_14.npy"
+    elif clip_model == "ViT-B/32":
+        name = "violence_detection_vit_b_32.npy"
+    else:
+        raise ValueError("Unknown clip model")
+
+    url_model = root_url + "/" + name
+    prompt_file = cache_folder + "/" + name
+
+    if not os.path.exists(prompt_file):
+        urlretrieve(url_model, prompt_file)
+
+    prompts = np.load(prompt_file)
+    return prompts
+
+
+@lru_cache(maxsize=None)
+def load_safety_model(clip_model):
+    """load the safety model"""
+    import autokeras as ak  # pylint: disable=import-outside-toplevel
+    from tensorflow.keras.models import load_model  # pylint: disable=import-outside-toplevel
+
+    cache_folder = get_cache_folder(clip_model)
+
     if clip_model == "ViT-L/14":
         model_dir = cache_folder + "/clip_autokeras_binary_nsfw"
         dim = 768
@@ -635,6 +694,7 @@ class ClipResource:
     preprocess: Callable
     model_txt_mclip: Any
     safety_model: Any
+    violence_detector: Any
     metadata_provider: Any
     image_index: Any
     text_index: Any
@@ -657,6 +717,7 @@ class ClipOptions:
     use_jit: bool
     use_arrow: bool
     provide_safety_model: bool
+    provide_violence_detector: bool
 
 
 def dict_to_clip_options(d, clip_options):
@@ -679,6 +740,9 @@ def dict_to_clip_options(d, clip_options):
         provide_safety_model=d["provide_safety_model"]
         if "provide_safety_model" in d
         else clip_options.provide_safety_model,
+        provide_violence_detector=d["provide_violence_detector"]
+        if "provide_violence_detector" in d
+        else clip_options.provide_violence_detector,
     )
 
 
@@ -713,6 +777,9 @@ def load_clip_index(clip_options):
         model_txt_mclip = None
 
     safety_model = load_safety_model(clip_options.clip_model) if clip_options.provide_safety_model else None
+    violence_detector = (
+        load_violence_detector(clip_options.clip_model) if clip_options.provide_violence_detector else None
+    )
 
     image_present = os.path.exists(clip_options.indice_folder + "/image.index")
     text_present = os.path.exists(clip_options.indice_folder + "/text.index")
@@ -746,6 +813,7 @@ def load_clip_index(clip_options):
         preprocess=preprocess,
         model_txt_mclip=model_txt_mclip,
         safety_model=safety_model,
+        violence_detector=violence_detector,
         metadata_provider=metadata_provider,
         image_index=image_index,
         text_index=text_index,
@@ -795,12 +863,12 @@ def clip_back(
     use_jit=True,
     use_arrow=False,
     provide_safety_model=False,
+    provide_violence_detector=False,
 ):
     """main entry point of clip back, start the endpoints"""
     print("starting boot of clip back")
     if columns_to_return is None:
         columns_to_return = ["url", "image_path", "caption", "NSFW"]
-    print("safety model loaded")
     clip_resources = load_clip_indices(
         indices_paths=indices_paths,
         clip_options=ClipOptions(
@@ -814,6 +882,7 @@ def clip_back(
             use_jit=use_jit,
             use_arrow=use_arrow,
             provide_safety_model=provide_safety_model,
+            provide_violence_detector=provide_violence_detector,
         ),
     )
     print("indices loaded")
