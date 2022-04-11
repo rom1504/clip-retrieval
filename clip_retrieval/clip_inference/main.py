@@ -55,6 +55,9 @@ def main(
             sample_count = len(keys)
         elif input_format == "webdataset":
             sample_count = len(input_dataset) * wds_number_file_per_input_file
+        else:
+            print("Unsupported input_format")
+            return
 
         if sample_count == 0:
             print("no sample found")
