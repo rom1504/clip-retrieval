@@ -90,10 +90,10 @@ def clip_benchmark(img_embeds_file: Path, img_index: Path,
         print("text->img retrieval @5", (img_idxs == img_gt).any(axis=-1).sum() / len(img_idxs))
         print("img->text retrieval @5", (text_idxs == text_gt).any(axis=-1).sum() / len(text_idxs))
 
-        text_sim = (sentence_embs[unique_imgs[img_idxs[:, 0]]] * sentence_embs[unique_imgs]).sum(axis=-1)
+        text_sim = (sentence_embs[unique_imgs[img_idxs]] * sentence_embs[unique_imgs][:, None, :]).sum(axis=-1).max(1)
         print("text->img similarity:", text_sim.mean(), text_sim.std())
 
-        text_sim = (sentence_embs[unique_texts[text_idxs[:, 0]]] * sentence_embs[unique_texts]).sum(axis=-1)
+        text_sim = (sentence_embs[unique_texts[text_idxs]] * sentence_embs[unique_texts][:, None, :]).sum(axis=-1).max(1)
         print("img->text similarity:", text_sim.mean(), text_sim.std())
 
 
@@ -128,10 +128,10 @@ def clip_benchmark(img_embeds_file: Path, img_index: Path,
     print("text->img retrieval @5",(unique_img_idx[img_idxs] == img_gt).any(axis=-1).sum() / len(img_idxs))
     print("img->text retrieval @5",(unique_text_idx[text_idxs] == text_gt).any(axis=-1).sum() / len(text_idxs))
 
-    text_sim = (sentence_embs[unique_imgs[img_idxs[:, 0]]] * sentence_embs[unique_imgs]).sum(axis=-1)
+    text_sim = (sentence_embs[img_idxs[:, 0]] * sentence_embs[unique_imgs]).sum(axis=-1)
     print("text->img similarity:", text_sim.mean(), text_sim.std())
 
-    text_sim = (sentence_embs[unique_texts[text_idxs[:, 0]]] * sentence_embs[unique_texts]).sum(axis=-1)
+    text_sim = (sentence_embs[text_idxs[:, 0]] * sentence_embs[unique_texts]).sum(axis=-1)
     print("img->text similarity:", text_sim.mean(), text_sim.std())
 
 
