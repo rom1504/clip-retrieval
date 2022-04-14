@@ -13,7 +13,7 @@ def test_mapper(model):
         enable_text=False,
         enable_metadata=False,
         use_mclip=False,
-        clip_model="ViT-B/32",
+        clip_model=model,
         use_jit=True,
         mclip_model="",
     )
