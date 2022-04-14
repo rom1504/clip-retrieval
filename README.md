@@ -88,7 +88,7 @@ clip_inference turn a set of text+image into clip embeddings
 * **write_batch_size** Write batch size (default *10**6*)
 * **wds_image_key** Key to use for images in webdataset. (default *jpg*)
 * **wds_caption_key** Key to use for captions in webdataset. (default *txt*)
-* **clip_model** CLIP model to load (default *ViT-B/32*). Specifiy it as `"open_clip:Vit-B/32-quickgelu"` to use the [open_clip](https://github.com/mlfoundations/open_clip) models.
+* **clip_model** CLIP model to load (default *ViT-B/32*). Specifiy it as `"open_clip:ViT-B-32-quickgelu"` to use the [open_clip](https://github.com/mlfoundations/open_clip) models.
 * **mclip_model** MCLIP model to load (default *sentence-transformers/clip-ViT-B-32-multilingual-v1*)
 * **use_mclip** If False it performs the inference using CLIP; MCLIP otherwise (default *False*)
 * **use_jit** uses jit for the clip model (default *True*)
