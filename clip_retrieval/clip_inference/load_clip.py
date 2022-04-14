@@ -19,8 +19,8 @@ def load_open_clip(clip_model, use_jit=True, device="cuda"):
 @lru_cache(maxsize=None)
 def load_clip(clip_model="ViT-B/32", use_jit=True):
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    if clip_model.startswith("openclip:"):
-        clip_model = clip_model[len("openclip:"):]
+    if clip_model.startswith("open_clip:"):
+        clip_model = clip_model[len("open_clip:"):]
         return load_open_clip(clip_model, use_jit, device)
     else:
         model, preprocess = clip.load(clip_model, device=device, jit=use_jit)
