@@ -6,7 +6,7 @@ import clip
 
 
 def load_open_clip(clip_model, use_jit=True, device="cuda"):
-    import open_clip
+    import open_clip # pylint: disable=import-outside-toplevel
     pretrained = dict(open_clip.list_pretrained())
     checkpoint = pretrained[clip_model]
     model, _, preprocess = open_clip.create_model_and_transforms(clip_model,
