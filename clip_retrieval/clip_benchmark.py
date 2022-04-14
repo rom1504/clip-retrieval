@@ -89,30 +89,45 @@ def clip_benchmark(img_embeds_file: Path, img_index: Path,
     # print((img_idxs == img_gt).any(axis=-1).sum() / len(img_idxs))
     # print((text_idxs == text_gt).any(axis=-1).sum() / len(text_idxs))
 
+    if n < 50000:
 
-    print("trying covertree")
-    img_idxs = par_knn_mlpack(query=text_embeds[unique_imgs], embeds=unique_img_embeds, k=5)
-    text_idxs = par_knn_mlpack(query=img_embeds[unique_texts], embeds=unique_text_embeds, k=5)
-    print((img_idxs == img_gt).any(axis=-1).sum() / len(img_idxs))
-    print((text_idxs == text_gt).any(axis=-1).sum() / len(text_idxs))
+        img_brute_index = NearestNeighbors(n_neighbors=5, algorithm='brute').fit(unique_img_embeds)
+        text_brute_index = NearestNeighbors(n_neighbors=5, algorithm='brute').fit(unique_text_embeds)
 
-    text_sim = (sentence_embs[unique_texts[text_idxs[:, 0]]] * sentence_embs[unique_texts]).sum(axis=-1)
-    print("text similarity:", text_sim.mean(), text_sim.std())
+        print("searching brute force")
+
+        img_dists, img_idxs = img_brute_index.kneighbors(text_embeds[unique_imgs], 5)
+        text_dists, text_idxs = text_brute_index.kneighbors(img_embeds[unique_texts], 5)
+
+
+        text_sim = (sentence_embs[unique_texts[text_idxs[:, 0]]] * sentence_embs[unique_texts]).sum(axis=-1)
+        print("text similarity:", text_sim.mean(), text_sim.std())
+
+
+    # print("trying covertree")
+    # img_idxs = par_knn_mlpack(query=text_embeds[unique_imgs], embeds=unique_img_embeds, k=5)
+    # text_idxs = par_knn_mlpack(query=img_embeds[unique_texts], embeds=unique_text_embeds, k=5)
+    # print((img_idxs == img_gt).any(axis=-1).sum() / len(img_idxs))
+    # print((text_idxs == text_gt).any(axis=-1).sum() / len(text_idxs))
+
+    # text_sim = (sentence_embs[unique_texts[text_idxs[:, 0]]] * sentence_embs[unique_texts]).sum(axis=-1)
+    # print("text similarity:", text_sim.mean(), text_sim.std())
 
 
     img_index = faiss.read_index(img_index)
     text_index = faiss.read_index(text_index)
     print(img_index)
 
+
+    img_embeds = np.load(img_embeds_file).astype(np.float32)
+    gt = np.arange(len(img_embeds))[:, None]
+    text_embeds = np.load(text_embeds_file).astype(np.float32)
+
     unique_img_embeds, unique_imgs, unique_img_idx = np.unique(img_embeds, return_index=True, return_inverse=True, axis=0)
     unique_text_embeds, unique_texts, unique_text_idx = np.unique(text_embeds, return_index=True, return_inverse=True, axis=0)
 
     img_gt = gt[:len(unique_img_embeds)]
     text_gt = gt[:len(unique_text_embeds)]
-    img_embeds = np.load(img_embeds_file).astype(np.float32)
-    gt = np.arange(len(img_embeds))[:, None]
-    text_embeds = np.load(text_embeds_file).astype(np.float32)
-
     print("searching faiss")
     img_dists, img_idxs = img_index.search(text_embeds[unique_imgs], 5)
     text_dists, text_idxs = text_index.search(img_embeds[unique_texts], 5)
@@ -124,18 +139,6 @@ def clip_benchmark(img_embeds_file: Path, img_index: Path,
     print("text similarity:", text_sim.mean(), text_sim.std())
 
 
-    print("fitting ball tree")
-    img_ball_index = NearestNeighbors(n_neighbors=5, algorithm='ball_tree').fit(unique_img_embeds)
-    text_ball_index = NearestNeighbors(n_neighbors=5, algorithm='ball_tree').fit(unique_text_embeds)
-
-    print("searching ball")
-
-    img_dists, img_idxs = img_ball_index.kneighbors(text_embeds[unique_imgs], 5)
-    text_dists, text_idxs = text_ball_index.kneighbors(img_embeds[unique_texts], 5)
-
-    print((img_idxs == img_gt).any(axis=-1).sum() / len(img_idxs))
-    print((text_idxs == text_gt).any(axis=-1).sum() / len(text_idxs))
-    print(img_embeds.shape)
 
 if __name__ == "__main__":
     fire.Fire(clip_benchmark)
