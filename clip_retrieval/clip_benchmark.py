@@ -13,25 +13,13 @@ def get_knn(x):
     model, q, k = x
     return knn(query=q, input_model=model, k=k)['neighbors']
 
-def intersect_2d(x, y):
-    _, dim = x.shape
-    print(x.shape, y.shape)
-    # view [_, dim] array as a 1d array with a dim-wide struct
-    dtype = dict(names=[f'f{i}' for i in range(dim)],
-                 formats=dim * [x.dtype])
-
-    inter, idxs, _ = np.intersect1d(x.view(dtype), y.view(dtype),
-                                return_indices=True)
-
-    return idxs
-
 def par_knn_cv(embeds, query, k):
     query = query.astype(np.float64)
     embeds = embeds.astype(np.float64)
     tree = CoverTree.from_matrix(embeds)
-    res = tree.kNearestNeighbours(query, k)
-    print(res.dtype, res.shape)
-    return intersect_2d(embeds, res.reshape(k * query.shape[0], query.shape[-1]))
+    nearest_embeds = tree.kNearestNeighbours(query, k)
+    # todo turn nearest embeds into feature ids again
+
 
 def par_knn_mlpack(embeds, query, k):
     from concurrent.futures import ProcessPoolExecutor
@@ -89,7 +77,7 @@ def clip_benchmark(img_embeds_file: Path, img_index: Path,
     # print((img_idxs == img_gt).any(axis=-1).sum() / len(img_idxs))
     # print((text_idxs == text_gt).any(axis=-1).sum() / len(text_idxs))
 
-    if n < 50000:
+    if n <= 50000:
 
         img_brute_index = NearestNeighbors(n_neighbors=5, algorithm='brute').fit(unique_img_embeds)
         text_brute_index = NearestNeighbors(n_neighbors=5, algorithm='brute').fit(unique_text_embeds)
@@ -99,9 +87,14 @@ def clip_benchmark(img_embeds_file: Path, img_index: Path,
         img_dists, img_idxs = img_brute_index.kneighbors(text_embeds[unique_imgs], 5)
         text_dists, text_idxs = text_brute_index.kneighbors(img_embeds[unique_texts], 5)
 
+        print("text->img retrieval @5", (img_idxs == img_gt).any(axis=-1).sum() / len(img_idxs))
+        print("img->text retrieval @5", (text_idxs == text_gt).any(axis=-1).sum() / len(text_idxs))
+
+        text_sim = (sentence_embs[unique_imgs[img_idxs[:, 0]]] * sentence_embs[unique_imgs]).sum(axis=-1)
+        print("text->img similarity:", text_sim.mean(), text_sim.std())
 
         text_sim = (sentence_embs[unique_texts[text_idxs[:, 0]]] * sentence_embs[unique_texts]).sum(axis=-1)
-        print("text similarity:", text_sim.mean(), text_sim.std())
+        print("img->text similarity:", text_sim.mean(), text_sim.std())
 
 
     # print("trying covertree")
@@ -132,11 +125,14 @@ def clip_benchmark(img_embeds_file: Path, img_index: Path,
     img_dists, img_idxs = img_index.search(text_embeds[unique_imgs], 5)
     text_dists, text_idxs = text_index.search(img_embeds[unique_texts], 5)
 
-    print((unique_img_idx[img_idxs] == img_gt).any(axis=-1).sum() / len(img_idxs))
-    print((unique_text_idx[text_idxs] == text_gt).any(axis=-1).sum() / len(text_idxs))
+    print("text->img retrieval @5",(unique_img_idx[img_idxs] == img_gt).any(axis=-1).sum() / len(img_idxs))
+    print("img->text retrieval @5",(unique_text_idx[text_idxs] == text_gt).any(axis=-1).sum() / len(text_idxs))
 
-    text_sim = (sentence_embs[text_idxs] * sentence_embs[unique_texts]).sum()
-    print("text similarity:", text_sim.mean(), text_sim.std())
+    text_sim = (sentence_embs[unique_imgs[img_idxs[:, 0]]] * sentence_embs[unique_imgs]).sum(axis=-1)
+    print("text->img similarity:", text_sim.mean(), text_sim.std())
+
+    text_sim = (sentence_embs[unique_texts[text_idxs[:, 0]]] * sentence_embs[unique_texts]).sum(axis=-1)
+    print("img->text similarity:", text_sim.mean(), text_sim.std())
 
 
 
