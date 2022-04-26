@@ -12,7 +12,7 @@ flask_cors>=3.0.10,<4
 pandas>=1.1.5,<2
 pyarrow>=6.0.1,<8
 autofaiss>=2.9.6,<3
-webdataset>=0.1.103,<0.2
+webdataset>=0.2.5
 h5py>=3.1.0,<4
 prometheus-client>=0.13.1,<1
 fsspec==2022.1.0
