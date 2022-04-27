@@ -1,17 +1,19 @@
+import pytest
 import pickle
 import os
+
 from clip_retrieval.clip_inference.mapper import ClipMapper
-import os
 
 
-def test_mapper():
+@pytest.mark.parametrize("model", ["ViT-B/32", "open_clip:ViT-B-32-quickgelu"])
+def test_mapper(model):
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
     mapper = ClipMapper(
         enable_image=True,
         enable_text=False,
         enable_metadata=False,
         use_mclip=False,
-        clip_model="ViT-B/32",
+        clip_model=model,
         use_jit=True,
         mclip_model="",
     )

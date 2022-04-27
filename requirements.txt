@@ -18,3 +18,4 @@ prometheus-client>=0.13.1,<1
 fsspec==2022.1.0
 sentence-transformers>=2.2.0,<3
 wandb>=0.12.10,<0.13
+open-clip-torch>=1.0.1,<2.0.0
