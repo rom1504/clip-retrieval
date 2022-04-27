@@ -435,8 +435,8 @@ class KnnService(Resource):
         text_input = json_data.get("text", None)
         image_input = json_data.get("image", None)
         image_url_input = json_data.get("image_url", None)
-        modality = json_data["modality"]
-        num_images = json_data["num_images"]
+        modality = json_data.get("modality", "image")
+        num_images = json_data.get("num_images", 20)
         num_result_ids = json_data.get("num_result_ids", num_images)
         indice_name = json_data["indice_name"]
         use_mclip = json_data.get("use_mclip", False)

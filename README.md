@@ -31,6 +31,7 @@ Also see [laion5B](https://laion.ai/laion-5b-a-new-era-of-open-large-scale-multi
 ## Install
 
 pip install clip-retrieval
+(if clip-retreival command is not recognized, try adding `~/.local/bin` to PATH as pip places the executable file here in certain scenarios. This can be done by doing `export PATH="$HOME/.local/bin:$PATH"`)
 
 ## clip end2end
 

@@ -4,7 +4,9 @@
 import fire
 
 
-def clip_filter(query, output_folder, indice_folder, num_results=100, threshold=None):
+def clip_filter(
+    query, output_folder, indice_folder, metadata_folder=None, clip_model="ViT-B/32", num_results=100, threshold=None
+):
     """Entry point of clip filter"""
 
     import faiss  # pylint: disable=import-outside-toplevel
@@ -16,9 +18,9 @@ def clip_filter(query, output_folder, indice_folder, num_results=100, threshold=
     import clip  # pylint: disable=import-outside-toplevel
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, _ = clip.load("ViT-B/32", device=device, jit=False)
+    model, _ = clip.load(clip_model, device=device, jit=False)
 
-    data_dir = Path(indice_folder + "/metadata")
+    data_dir = Path(indice_folder + "/metadata") if metadata_folder is None else Path(metadata_folder)
     df = pd.concat(pd.read_parquet(parquet_file) for parquet_file in sorted(data_dir.glob("*.parquet")))
 
     url_list = None
