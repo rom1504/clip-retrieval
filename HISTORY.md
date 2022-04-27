@@ -1,3 +1,8 @@
+## 2.30.0
+
+* Log error for unsupported input_format (thanks @dmvaldman)
+* Add open_clip support (thanks @cat-state)
+
 ## 2.29.1
 
 * fix mclip in clip back
