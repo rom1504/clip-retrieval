@@ -476,7 +476,7 @@ class ClipFront extends LitElement {
     return html`
     <figure style="margin:5px;display:table" 
     style=${'margin:1px; ' + (this.blacklist[src] !== undefined ? 'display:none' : 'display:inline')}>
-     ${this.displaySimilarities ? html`<p>${(image['similarity']).toFixed(4)}</p>` : ``}
+     ${this.displaySimilarities ? html`<p>${(image['similarity']).toFixed(4)}</p>` : ``} <p>${(image['watermark']).toFixed(4)}</p>
       ${image['caption'] !== undefined
     ? html`<img src="assets/search.png" class="subTextSearch" @click=${() => { this.text = image['caption']; this.textSearch() }} />` : ``}
      

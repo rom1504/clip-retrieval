@@ -67,6 +67,32 @@ def metric_to_average(metric):
         return metric_name, metric_description, 0, 0.0
     return metric_name, metric_description, metric_count, 1.0 * metric_sum / metric_count
 
+from static_ondisk_kv import OnDiskKV
+import mmh3
+def compute_hash(url, text):
+  if url is None:
+    url = ''
+  if text is None:
+    text = ''
+  total = (url + text).encode("utf-8")
+  return mmh3.hash64(total)[0]
+
+@lru_cache(maxsize=None)
+def get_kv():
+    kv = OnDiskKV(file="/media/nvme/mybigfile", key_format="q", value_format="ee")
+    return kv
+
+def url_text_to_watermark(url, caption):
+    kv = get_kv()
+    try:
+        pwatermark, punsafe = kv[compute_hash(url, caption)]
+    except:
+        return 0.0
+    return pwatermark
+
+
+
+
 
 class Health(Resource):
     def get(self):
@@ -145,6 +171,9 @@ def download_image(url):
         img_stream = io.BytesIO(r.read())
     return img_stream
 
+def add_watermark(meta):
+    meta["watermark"] = url_text_to_watermark(meta["url"], meta["caption"])
+    return meta
 
 class MetadataService(Resource):
     """The metadata service provides metadata given indices"""
@@ -161,7 +190,7 @@ class MetadataService(Resource):
         indice_name = json_data["indice_name"]
         metadata_provider = self.clip_resources[indice_name].metadata_provider
         metas = metadata_provider.get(ids, self.clip_resources[indice_name].columns_to_return)
-        metas_with_ids = [{"id": item_id, "metadata": meta_to_dict(meta)} for item_id, meta in zip(ids, metas)]
+        metas_with_ids = [{"id": item_id, "metadata": add_watermark(meta_to_dict(meta))} for item_id, meta in zip(ids, metas)]
         return metas_with_ids
 
 
@@ -374,7 +403,7 @@ class KnnService(Resource):
                     img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
                     output["image"] = img_str
             if meta is not None:
-                output.update(meta_to_dict(meta))
+                output.update(add_watermark(meta_to_dict(meta)))
             output["id"] = i.item()
             output["similarity"] = d.item()
             results.append(output)
@@ -864,6 +893,7 @@ def clip_back(
     use_arrow=False,
     provide_safety_model=False,
     provide_violence_detector=False,
+    additional_tags=[{"file":"/media/nvme/mybigfile", "tags_format": "ee", "tags":["pwatermark", "punsafe"]}]
 ):
     """main entry point of clip back, start the endpoints"""
     print("starting boot of clip back")
