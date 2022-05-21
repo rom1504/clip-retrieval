@@ -59,6 +59,8 @@ class ClipFront extends LitElement {
     this.imageUrl = imageUrl === null ? undefined : imageUrl
     this.hideDuplicateUrls = true
     this.hideDuplicateImages = true
+    this.aestheticScore = '9'
+    this.aestheticWeight = '0.5'
     this.initIndices()
   }
 
@@ -99,7 +101,9 @@ class ClipFront extends LitElement {
       removeViolence: { type: Boolean },
       hideDuplicateUrls: { type: Boolean },
       hideDuplicateImages: { type: Boolean },
-      useMclip: { type: Boolean }
+      useMclip: { type: Boolean },
+      aestheticWeight: { type: String },
+      aestheticScore: { type: String }
     }
   }
 
@@ -149,7 +153,8 @@ class ClipFront extends LitElement {
       }
     }
     if (_changedProperties.has('useMclip') || _changedProperties.has('modality') || _changedProperties.has('currentIndex') ||
-     _changedProperties.has('hideDuplicateUrls') || _changedProperties.has('hideDuplicateImages') || _changedProperties.has('safeMode') || _changedProperties.has('removeViolence')) {
+     _changedProperties.has('hideDuplicateUrls') || _changedProperties.has('hideDuplicateImages') || _changedProperties.has('safeMode') ||
+     _changedProperties.has('removeViolence') || _changedProperties.has('aestheticScore') || _changedProperties.has('aestheticWeight')) {
       if (this.image !== undefined || this.text !== '' || this.imageUrl !== undefined) {
         this.redoSearch()
       }
@@ -233,7 +238,7 @@ class ClipFront extends LitElement {
     const imageUrl = this.imageUrl === undefined ? null : this.imageUrl
     const count = this.modality === 'image' && this.currentIndex === this.indices[0] ? 10000 : 100
     const results = await this.service.callClipService(text, image, imageUrl, this.modality, count,
-      this.currentIndex, count, this.useMclip, this.hideDuplicateImages, this.safeMode, this.removeViolence)
+      this.currentIndex, count, this.useMclip, this.hideDuplicateImages, this.safeMode, this.removeViolence, this.aestheticScore, this.aestheticWeight)
     downloadFile('clipsubset.json', JSON.stringify(results, null, 2))
   }
 
@@ -244,7 +249,7 @@ class ClipFront extends LitElement {
     this.image = undefined
     this.imageUrl = undefined
     const results = await this.service.callClipService(this.text, null, null, this.modality, this.numImages,
-      this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode, this.removeViolence)
+      this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode, this.removeViolence, this.aestheticScore, this.aestheticWeight)
     console.log(results)
     this.images = results
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
@@ -257,7 +262,7 @@ class ClipFront extends LitElement {
     this.text = ''
     this.imageUrl = undefined
     const results = await this.service.callClipService(null, this.image, null, this.modality, this.numImages,
-      this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode, this.removeViolence)
+      this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode, this.removeViolence, this.aestheticScore, this.aestheticWeight)
     console.log(results)
     this.images = results
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
@@ -270,7 +275,7 @@ class ClipFront extends LitElement {
     this.text = ''
     this.image = undefined
     const results = await this.service.callClipService(null, null, this.imageUrl, this.modality, this.numImages,
-      this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode, this.removeViolence)
+      this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode, this.removeViolence, this.aestheticScore, this.aestheticWeight)
     console.log(results)
     this.images = results
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
@@ -547,6 +552,9 @@ class ClipFront extends LitElement {
       <label>Remove violence<input type="checkbox" ?checked="${this.removeViolence}" @click=${() => { this.removeViolence = !this.removeViolence }} /></label><br />
       <label>Hide duplicate urls<input type="checkbox" ?checked="${this.hideDuplicateUrls}" @click=${() => { this.hideDuplicateUrls = !this.hideDuplicateUrls }} /></label><br />
       <label>Hide (near) duplicate images<input type="checkbox" ?checked="${this.hideDuplicateImages}" @click=${() => { this.hideDuplicateImages = !this.hideDuplicateImages }} /></label><br />
+      <label>Aesthetic score <select @input=${(e) => { this.aestheticScore = e.target.value }}>
+        ${[...Array(10).keys()].map(i => html`<option ?selected="${this.aestheticScore === i.toString()}" value=${i}>${i}</option>`)}</select></label><br />
+      <label>Aesthetic weight<input type="input" value="${this.aestheticWeight}" @input=${(e) => { this.aestheticWeight = e.target.value }} /></label><br />
       <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>
   html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select><br />
       <label>Search with multilingual clip <input type="checkbox" ?checked="${this.useMclip}" @click=${() => { this.useMclip = !this.useMclip }} /></label><br />

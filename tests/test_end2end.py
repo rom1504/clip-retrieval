@@ -83,7 +83,9 @@ def test_end2end():
         f.write('{"example_index": "' + index_folder + '"}')
 
     p = subprocess.Popen(
-        f"clip-retrieval back --port=1239 --indices_paths='{indice_path}'", shell=True, stdout=subprocess.PIPE
+        f"clip-retrieval back --port=1239 --indices_paths='{indice_path}' --enable_mclip_option=False",
+        shell=True,
+        stdout=subprocess.PIPE,
     )
     for i in range(8):
         try:
