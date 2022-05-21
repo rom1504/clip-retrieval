@@ -29,7 +29,7 @@ if __name__ == "__main__":
         packages=find_packages(),
         package_data={"": extra_files},
         include_package_data=True,
-        version="2.31.0",
+        version="2.31.1",
         license="MIT",
         description="Easily computing clip embeddings and building a clip retrieval system with them",
         long_description=long_description,

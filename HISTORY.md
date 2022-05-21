@@ -1,3 +1,7 @@
+## 2.31.1
+
+* add clearer way to disable aesthetic scoring in front
+
 ## 2.31.0
 
 * aesthetic option
