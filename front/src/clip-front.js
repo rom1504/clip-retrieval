@@ -552,8 +552,9 @@ class ClipFront extends LitElement {
       <label>Remove violence<input type="checkbox" ?checked="${this.removeViolence}" @click=${() => { this.removeViolence = !this.removeViolence }} /></label><br />
       <label>Hide duplicate urls<input type="checkbox" ?checked="${this.hideDuplicateUrls}" @click=${() => { this.hideDuplicateUrls = !this.hideDuplicateUrls }} /></label><br />
       <label>Hide (near) duplicate images<input type="checkbox" ?checked="${this.hideDuplicateImages}" @click=${() => { this.hideDuplicateImages = !this.hideDuplicateImages }} /></label><br />
+      <label>Enable aesthetic scoring<input type="checkbox" ?checked="${this.aestheticScore !== ''}" @click=${() => { this.aestheticScore = this.aestheticScore === '' ? '9' : '' }} /></label><br />
       <label>Aesthetic score <select @input=${(e) => { this.aestheticScore = e.target.value }}>
-        ${[...Array(10).keys()].map(i => html`<option ?selected="${this.aestheticScore === i.toString()}" value=${i}>${i}</option>`)}</select></label><br />
+        ${(['', ...Array(10).keys()]).map(i => html`<option ?selected="${this.aestheticScore === i.toString()}" value=${i}>${i}</option>`)}</select></label><br />
       <label>Aesthetic weight<input type="input" value="${this.aestheticWeight}" @input=${(e) => { this.aestheticWeight = e.target.value }} /></label><br />
       <label>Search over <select @input=${e => { this.modality = e.target.value }}>${['image', 'text'].map(modality =>
   html`<option value=${modality} ?selected=${modality === this.modality}>${modality}</option>`)}</select><br />
