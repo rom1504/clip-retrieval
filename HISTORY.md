@@ -1,3 +1,7 @@
+## 2.31.0
+
+* aesthetic option
+
 ## 2.30.0
 
 * Log error for unsupported input_format (thanks @dmvaldman)
