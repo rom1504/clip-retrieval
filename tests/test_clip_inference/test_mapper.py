@@ -14,7 +14,7 @@ def test_mapper(model):
         enable_metadata=False,
         use_mclip=False,
         clip_model=model,
-        use_jit=False,
+        use_jit=True,
         mclip_model="",
     )
     current_dir = os.path.dirname(os.path.abspath(__file__))
