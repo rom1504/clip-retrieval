@@ -806,12 +806,26 @@ def load_clip(clip_model="ViT-B/32", use_jit=True, device="cpu"):
 
 
 @lru_cache(maxsize=None)
-def load_mclip():
-    from sentence_transformers import SentenceTransformer  # pylint: disable=import-outside-toplevel
+def load_mclip(clip_model):
+    """load the mclip model"""
+    from multilingual_clip import pt_multilingual_clip  # pylint: disable=import-outside-toplevel
+    import transformers  # pylint: disable=import-outside-toplevel
+    import torch  # pylint: disable=import-outside-toplevel
 
-    mclip_model = "sentence-transformers/clip-ViT-B-32-multilingual-v1"
-    mclip = SentenceTransformer(mclip_model)
-    model_txt_mclip = mclip.encode
+    if clip_model == "ViT-L/14":
+        model_name = "M-CLIP/XLM-Roberta-Large-Vit-L-14"
+    elif clip_model == "ViT-B/32":
+        model_name = "M-CLIP/XLM-Roberta-Large-Vit-B-32"
+
+    model = pt_multilingual_clip.MultilingualCLIP.from_pretrained(model_name)
+    model.eval()
+    tokenizer = transformers.AutoTokenizer.from_pretrained(model_name)
+
+    def encode_texts(text):
+        with torch.no_grad():
+            return model.forward([text], tokenizer)[0].detach().cpu().numpy()
+
+    model_txt_mclip = encode_texts
     return model_txt_mclip
 
 
@@ -823,7 +837,7 @@ def load_clip_index(clip_options):
     model, preprocess = load_clip(clip_options.clip_model, use_jit=clip_options.use_jit, device=device)
 
     if clip_options.enable_mclip_option:
-        model_txt_mclip = load_mclip()
+        model_txt_mclip = load_mclip(clip_options.clip_model)
     else:
         model_txt_mclip = None
 
