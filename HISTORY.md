@@ -1,3 +1,7 @@
+## 2.32.0
+
+* use better mclip from https://github.com/FreddeFrallan/Multilingual-CLIP
+
 ## 2.31.1
 
 * add clearer way to disable aesthetic scoring in front
