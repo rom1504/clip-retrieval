@@ -13,6 +13,7 @@ Easily compute clip embeddings and build a clip retrieval system with them. 100M
 * clip back hosts the indices with a simple flask service
 * clip front is a simple ui querying the back. Check it out at [clip-retrieval ui](https://rom1504.github.io/clip-retrieval/)
 * clip end2end runs img2dataset, inference, index then back and front to make all of this easier to begin with
+* clip client is a simple python module to access the backend remotely.  [clip-client notebook](/notebook/clip-client-query-api.ipynb)
 
 End to end this make it possible to build a simple semantic search system.
 Interested to learn about semantic search in general ? You can read my [medium post](https://rom1504.medium.com/semantic-search-with-embeddings-index-anything-8fb18556443c) on the topic.
@@ -294,6 +295,56 @@ clip-retrieval-front 3005
 ```
 
 You can also run it with `clip-retrieval front` or back from the python package.
+
+## Clip client
+
+Clip client is a simple python module that allows you to query the backend remotely.
+
+```python
+from clip_retrieval.clip_client import ClipClient, Modality
+
+client = ClipClient(
+    url="https://knn5.laion.ai/knn-service",
+    aesthetic_score=9,
+    aesthetic_weight=0.5,
+    modality=Modality.IMAGE,
+    num_images=40,
+    num_result_ids=3000,
+)
+```
+
+### Query by text
+
+```python
+results = client.query(text="an image of a cat")
+results[0]
+> {'url': 'https://finalmonsoon.files.wordpress.com/2017/10/kitten.jpg?w=404&', 'caption': 'kitten', 'id': 5098117701, 'similarity': 0.9367108941078186}
+```
+
+### Query by image
+
+Images can be searched via local path or url.
+
+```python
+cat_results = client.query(image="cat.jpg")
+dog_results = client.query(image="https://example.com/dog.jpg")
+```
+
+### Query a directory of images
+
+```python
+all_results = [result for result in [client.query(image=image) for image in os.listdir("my-images")]]
+with open("search-results.json", "w") as f:
+    json.dump(all_results, f)
+```
+
+### Create a dataset
+
+You can create a dataset using the saved json results and the tool `img2dataset`.
+
+```sh
+img2datset "search-results.json" --input_format="json" --output_folder="laion-enhanced-images"
+```
 
 ### Development
 
