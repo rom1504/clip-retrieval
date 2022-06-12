@@ -152,7 +152,6 @@ This scripts works for small datasets. For larger ones, please check [notebook/s
 Clip back is a simple knn service backend. If using both hdf5 and faiss memory mapping, it uses only the memory used by clip which is 4GB.
 
 Run (output_folder is the output of clip index)
-
 ```bash
 echo '{"example_index": "output_folder"}' > indices_paths.json
 clip-retrieval back --port 1234 --indices-paths indices_paths.json
@@ -317,6 +316,8 @@ client = ClipClient(
 
 ```python
 results = client.query(text="an image of a cat")
+results[0]
+> {'url': 'https://finalmonsoon.files.wordpress.com/2017/10/kitten.jpg?w=404&', 'caption': 'kitten', 'id': 5098117701, 'similarity': 0.9367108941078186}
 ```
 
 ### Query by image
