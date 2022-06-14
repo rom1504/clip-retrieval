@@ -48,7 +48,7 @@ During initialization you can specify a few parameters:
 * `aesthetic_score`: the aesthetic score as rated by [aesthetic_detector](https://github.com/rom1504/aesthetic_detector). Default is `9`.
 * `use_mclip`: whether to use a multi-lingual version of CLIP. Default is `False`.
 * `aesthetic_weight`: the weight of the aesthetic score. Default is `0.5`
-* `modality`: search over index or text in the index, one of `Multimodal.IMAGE` or `Multimodal.TEXT`. Default is `Multimodal.IMAGE`.
+* `modality`: search over image or text in the index, one of `Multimodal.IMAGE` or `Multimodal.TEXT`. Default is `Multimodal.IMAGE`.
 * `num_images`: the number of images to return from the API. Default is `40`.
 
 For instance, to query the hosted backend for Laion5B with the default parameters:
