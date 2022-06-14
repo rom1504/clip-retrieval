@@ -7,13 +7,13 @@
 
 Easily compute clip embeddings and build a clip retrieval system with them. 100M text+image embeddings can be processed in 20h using a 3080.
 
+* clip client allows remote querying of backend via python. [clip-client notebook](/notebook/clip-client-query-api.ipynb)
 * clip inference allows you to quickly (1500 sample/s on a 3080) compute image and text embeddings
 * clip index builds efficient indices out of the embeddings
 * clip filter allows you to filter out the data using the clip index
 * clip back hosts the indices with a simple flask service
 * clip front is a simple ui querying the back. Check it out at [clip-retrieval ui](https://rom1504.github.io/clip-retrieval/)
 * clip end2end runs img2dataset, inference, index then back and front to make all of this easier to begin with
-* clip client is a simple python module to access the backend remotely.  [clip-client notebook](/notebook/clip-client-query-api.ipynb)
 
 End to end this make it possible to build a simple semantic search system.
 Interested to learn about semantic search in general ? You can read my [medium post](https://rom1504.medium.com/semantic-search-with-embeddings-index-anything-8fb18556443c) on the topic.
@@ -32,6 +32,72 @@ Also see [laion5B](https://laion.ai/laion-5b-a-new-era-of-open-large-scale-multi
 ## Install
 
 pip install clip-retrieval
+
+## Clip client
+
+`ClipClient` allows remote querying of a clip-retrieval backend via python. 
+
+See [`ClipClient` - Getting Started Notebook](/notebook/clip-client-query-api.ipynb) for a jupyter notebook example.
+
+### API Initialization
+
+During initialization you can specify a few parameters:
+
+* `backend_url`: the url of the backend. Default is `https://knn5.laion.ai/knn-service`, a backend for Laion5B.
+* `aesthetic_score`: the aesthetic score as rated by [aesthetic_detector](https://github.com/rom1504/aesthetic_detector). Default is 9.
+* `aesthetic_weight`: the weight of the aesthetic score. Default is 0.5.
+* `modality`: query your input over image embeds or text embeds, one of `image` or `text`. Default is `image`.
+* `num_images`: the number of images to return from the API. Default is 40.
+
+```python
+from clip_retrieval.clip_client import ClipClient, Modality
+
+client = ClipClient(
+    url="https://knn5.laion.ai/knn-service",
+    aesthetic_score=9,
+    aesthetic_weight=0.5,
+    modality=Modality.IMAGE,
+    num_images=40,
+    num_result_ids=3000,
+)
+```
+
+### Query by text
+
+You can find captioned images by text.
+
+```python
+results = client.query(text="an image of a cat")
+results[0]
+> {'url': 'https://example.com/kitten.jpg', 'caption': 'an image of a kitten', 'id': 14, 'similarity': 0.2367108941078186}
+```
+
+### Query by image
+
+Captioned images can be searched via local path or url of an image.
+
+```python
+cat_results = client.query(image="cat.jpg")
+dog_results = client.query(image="https://example.com/dog.jpg")
+```
+
+### Query a directory of images
+
+To enhance an existing dataset with similar text/image pairs, you can query a directory of images and combine the results.
+
+```python
+all_results = [result for result in [client.query(image=image) for image in os.listdir("my-images")]]
+with open("search-results.json", "w") as f:
+    json.dump(all_results, f)
+```
+
+### Create a dataset
+
+You can create a dataset using the saved json results and the tool `img2dataset`.
+
+```sh
+img2datset "search-results.json" --input_format="json" --output_folder="laion-enhanced-images"
+```
 
 ## clip end2end
 
@@ -295,56 +361,6 @@ clip-retrieval-front 3005
 ```
 
 You can also run it with `clip-retrieval front` or back from the python package.
-
-## Clip client
-
-Clip client is a simple python module that allows you to query the backend remotely.
-
-```python
-from clip_retrieval.clip_client import ClipClient, Modality
-
-client = ClipClient(
-    url="https://knn5.laion.ai/knn-service",
-    aesthetic_score=9,
-    aesthetic_weight=0.5,
-    modality=Modality.IMAGE,
-    num_images=40,
-    num_result_ids=3000,
-)
-```
-
-### Query by text
-
-```python
-results = client.query(text="an image of a cat")
-results[0]
-> {'url': 'https://finalmonsoon.files.wordpress.com/2017/10/kitten.jpg?w=404&', 'caption': 'kitten', 'id': 5098117701, 'similarity': 0.9367108941078186}
-```
-
-### Query by image
-
-Images can be searched via local path or url.
-
-```python
-cat_results = client.query(image="cat.jpg")
-dog_results = client.query(image="https://example.com/dog.jpg")
-```
-
-### Query a directory of images
-
-```python
-all_results = [result for result in [client.query(image=image) for image in os.listdir("my-images")]]
-with open("search-results.json", "w") as f:
-    json.dump(all_results, f)
-```
-
-### Create a dataset
-
-You can create a dataset using the saved json results and the tool `img2dataset`.
-
-```sh
-img2datset "search-results.json" --input_format="json" --output_folder="laion-enhanced-images"
-```
 
 ### Development
 
