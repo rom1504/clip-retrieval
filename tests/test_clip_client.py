@@ -2,8 +2,6 @@
 import logging
 LOGGER = logging.getLogger(__name__)
 LOGGER.info("Test ClipClient.query()")
-from pathlib import Path
-import tempfile
 from clip_retrieval.clip_client import ClipClient, Modality
 
 test_url = "https://placekitten.com/400/600"
@@ -28,7 +26,6 @@ def test_query():
         aesthetic_weight=0.5,
         modality=Modality.IMAGE,
         num_images=40,
-        num_result_ids=3000,
     )
 
     # test search via text
