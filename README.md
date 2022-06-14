@@ -45,26 +45,21 @@ During initialization you can specify a few parameters:
 
 * `backend_url`: the url of the backend. Default is `https://knn5.laion.ai/knn-service`, a backend for Laion5B.
 * `aesthetic_score`: the aesthetic score as rated by [aesthetic_detector](https://github.com/rom1504/aesthetic_detector). Default is 9.
-* `aesthetic_weight`: the weight of the aesthetic score. Default is 0.5.
-* `modality`: query your input over image embeds or text embeds, one of `image` or `text`. Default is `image`.
-* `num_images`: the number of images to return from the API. Default is 40.
+* `use_mclip`: whether to use a multi-lingual version of CLIP. Default is `False`.
+* `aesthetic_weight`: the weight of the aesthetic score. Default is `0.5`
+* `modality`: query your input over image embeds or text embeds, one of `Multimodal.IMAGE` or `Multimodal.TEXT`. Default is `Multimodal.IMAGE`.
+* `num_images`: the number of images to return from the API. Default is `40`.
 
+For instance, to query the hosted backend for Laion5B with the default parameters:
 ```python
 from clip_retrieval.clip_client import ClipClient, Modality
 
-client = ClipClient(
-    url="https://knn5.laion.ai/knn-service",
-    aesthetic_score=9,
-    aesthetic_weight=0.5,
-    modality=Modality.IMAGE,
-    num_images=40,
-    num_result_ids=3000,
-)
+client = ClipClient(url="https://knn5.laion.ai/knn-service", indice_name="laion5B")
 ```
 
 ### Query by text
 
-You can find captioned images by text.
+You can find captioned images similar to the text you provide.
 
 ```python
 results = client.query(text="an image of a cat")
@@ -74,7 +69,7 @@ results[0]
 
 ### Query by image
 
-Captioned images can be searched via local path or url of an image.
+You can also find captioned images similar to the image you provide.  Images can be passed via local path or url.
 
 ```python
 cat_results = client.query(image="cat.jpg")
