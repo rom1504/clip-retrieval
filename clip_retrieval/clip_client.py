@@ -20,22 +20,21 @@ class ClipClient:
     def __init__(
         self,
         url: str,
-        indice_name: str = "laion5B",
+        indice_name: str,
         use_mclip: bool = False,
         aesthetic_score: int = 9,
         aesthetic_weight: float = 0.5,
         modality: Modality = Modality.IMAGE,
         num_images: int = 40,
-        num_result_ids: int = 3000,
     ):
         """
-        modality: which "modality" to search over, text or image, defaults to image.
-        num_images: number of images to return (may be less).
-        indice_name: which indice to search over, laion5B or laion_400m.
-        num_result_ids: number of result ids to be returned.
-        use_mclip: whether to use mclip, a multilingual version of clip.
-        aesthetic_score: ranking score for aesthetic, higher is prettier.
-        aesthetic_weight: weight of the aesthetic score, between 0 and 1.
+        url: (required) URL of the backend.
+        indice_name: (required) which indice to search over e.g. "laion5B" or "laion_400m".
+        use_mclip: (optional) whether to use mclip, a multilingual version of clip. Default is False.
+        aesthetic_score: (optional) ranking score for aesthetic, higher is prettier. Default is 9.
+        aesthetic_weight: (optional) weight of the aesthetic score, between 0 and 1. Default is 0.5.
+        modality: (optional) Search modality. One of Modality.IMAGE or Modality.TEXT. Default is Modality.IMAGE.
+        num_images: (optional) Number of images to return. Default is 40.
         """
         self.url = url
         self.indice_name = indice_name
@@ -44,7 +43,6 @@ class ClipClient:
         self.aesthetic_weight = aesthetic_weight
         self.modality = modality.value
         self.num_images = num_images
-        self.num_result_ids = num_result_ids
 
     def query(
         self,
@@ -59,7 +57,16 @@ class ClipClient:
             image: base64 string of image to be searched semantically
 
         Returns:
-            List of dictionaries containing the results.
+            List of dictionaries containing the results in the form of:
+            [
+                {
+                    "id": 42,
+                    "similarity": 0.323424523424,
+                    "url": "https://example.com/image.jpg",
+                    "caption": "This is a caption",
+                },
+                ...
+            ]
         """
         if text and image:
             raise ValueError("Only one of text or image can be provided.")
@@ -87,9 +94,20 @@ class ClipClient:
         Args:
             text: text to be searched semantically.
             image: base64 string of image to be searched semantically.
+            image_url: url of the image to be searched semantically.
 
         Returns:
-            List of dictionaries containing the results.
+            List of dictionaries containing the results in the form of:
+            [
+                {
+                    "id": 42,
+                    "similarity": 0.323424523424,
+                    "url": "https://example.com/image.jpg",
+                    "caption": "This is a caption",
+                },
+                ...
+            ]
+
         """
         if image:
             # Convert image to base64 string
@@ -112,9 +130,8 @@ class ClipClient:
                     "aesthetic_weight": self.aesthetic_weight,
                     "modality": self.modality,
                     "num_images": self.num_images,
-                    "num_result_ids": self.num_result_ids,
+                    # num_results_ids is hardcoded to the num_images parameter.
+                    "num_result_ids": self.num_images,
                 }
             ),
-        ).json()[
-            0 : self.num_images
-        ]  # The "last half" is used for formatting on the website.
+        ).json()
