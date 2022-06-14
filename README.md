@@ -92,7 +92,11 @@ with open("search-results.json", "w") as f:
 You can create a dataset using the saved json results and the tool `img2dataset`.
 
 ```sh
-img2datset "search-results.json" --input_format="json" --output_folder="laion-enhanced-images"
+img2dataset "search-results.json" \
+    --input_format="json" \
+    --output_folder="knn_search_dataset" \
+    --caption_col="caption"
+```
 ```
 
 ## clip end2end
