@@ -1,3 +1,7 @@
+## 2.33.0
+
+* add clip-client module for querying backend remotely (thanks @afiaka87 )
+
 ## 2.32.0
 
 * use better mclip from https://github.com/FreddeFrallan/Multilingual-CLIP
