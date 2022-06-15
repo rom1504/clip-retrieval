@@ -7,7 +7,7 @@
 
 Easily compute clip embeddings and build a clip retrieval system with them. 100M text+image embeddings can be processed in 20h using a 3080.
 
-* clip client allows remote querying of backend via python. [clip-client notebook](/notebook/clip-client-query-api.ipynb)
+* clip client allows remote querying of backend via python. [clip-client notebook](https://colab.research.google.com/github/rom1504/clip-retrieval/blob/master/notebook/clip-client-query-api.ipynb)
 * clip inference allows you to quickly (1500 sample/s on a 3080) compute image and text embeddings
 * clip index builds efficient indices out of the embeddings
 * clip filter allows you to filter out the data using the clip index
