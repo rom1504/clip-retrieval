@@ -7,6 +7,7 @@
 
 Easily compute clip embeddings and build a clip retrieval system with them. 100M text+image embeddings can be processed in 20h using a 3080.
 
+* clip client allows remote querying of backend via python. [clip-client notebook](/notebook/clip-client-query-api.ipynb)
 * clip inference allows you to quickly (1500 sample/s on a 3080) compute image and text embeddings
 * clip index builds efficient indices out of the embeddings
 * clip filter allows you to filter out the data using the clip index
@@ -31,6 +32,72 @@ Also see [laion5B](https://laion.ai/laion-5b-a-new-era-of-open-large-scale-multi
 ## Install
 
 pip install clip-retrieval
+
+## Clip client
+
+`ClipClient` allows remote querying of a clip-retrieval backend via python. 
+
+See [`ClipClient` - Getting Started Notebook](/notebook/clip-client-query-api.ipynb) for a jupyter notebook example.
+
+### API Initialization
+
+During initialization you can specify a few parameters:
+
+* `backend_url`: the url of the backend. (required)
+* `indice_name`: specify the name of the index you want to use. (required)
+* `aesthetic_score`: the aesthetic score as rated by [aesthetic_detector](https://github.com/rom1504/aesthetic_detector). Default is `9`.
+* `use_mclip`: whether to use a multi-lingual version of CLIP. Default is `False`.
+* `aesthetic_weight`: the weight of the aesthetic score. Default is `0.5`
+* `modality`: search over image or text in the index, one of `Multimodal.IMAGE` or `Multimodal.TEXT`. Default is `Multimodal.IMAGE`.
+* `num_images`: the number of images to return from the API. Default is `40`.
+
+For instance, to query the hosted backend for Laion5B with the default parameters:
+```python
+from clip_retrieval.clip_client import ClipClient, Modality
+
+client = ClipClient(url="https://knn5.laion.ai/knn-service", indice_name="laion5B")
+```
+
+### Query by text
+
+You can find captioned images similar to the text you provide.
+
+```python
+results = client.query(text="an image of a cat")
+results[0]
+> {'url': 'https://example.com/kitten.jpg', 'caption': 'an image of a kitten', 'id': 14, 'similarity': 0.2367108941078186}
+```
+
+### Query by image
+
+You can also find captioned images similar to the image you provide.  Images can be passed via local path or url.
+
+```python
+cat_results = client.query(image="cat.jpg")
+dog_results = client.query(image="https://example.com/dog.jpg")
+```
+
+### Query a directory of images
+
+To enhance an existing dataset with similar text/image pairs, you can query a directory of images and combine the results.
+
+```python
+all_results = [result for result in [client.query(image=image) for image in os.listdir("my-images")]]
+with open("search-results.json", "w") as f:
+    json.dump(all_results, f)
+```
+
+### Create a dataset
+
+You can create a dataset using the saved json results and the tool `img2dataset`.
+
+```sh
+img2dataset "search-results.json" \
+    --input_format="json" \
+    --output_folder="knn_search_dataset" \
+    --caption_col="caption"
+```
+```
 
 ## clip end2end
 
