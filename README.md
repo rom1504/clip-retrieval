@@ -50,6 +50,9 @@ During initialization you can specify a few parameters:
 * `aesthetic_weight`: the weight of the aesthetic score. Default is `0.5`
 * `modality`: search over image or text in the index, one of `Multimodal.IMAGE` or `Multimodal.TEXT`. Default is `Multimodal.IMAGE`.
 * `num_images`: the number of images to return from the API. Default is `40`.
+* `deduplicate`: Whether to deduplicate the result by image embedding. Default is true.
+* `use_safety_model`: Whether to remove unsafe images. Default is true.
+* `use_violence_detector`: Whether to remove images with violence. Default is true.
 
 For instance, to query the hosted backend for Laion5B with the default parameters:
 ```python
@@ -75,6 +78,14 @@ You can also find captioned images similar to the image you provide.  Images can
 ```python
 cat_results = client.query(image="cat.jpg")
 dog_results = client.query(image="https://example.com/dog.jpg")
+```
+
+### Query by embedding
+
+You can also find captioned images similar to a clip embedding you provide.
+
+```python
+cat_results = client.query(embedding=cat_embedding)
 ```
 
 ### Query a directory of images

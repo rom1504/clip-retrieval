@@ -181,13 +181,21 @@ class KnnService(Resource):
         self.clip_resources = kwargs["clip_resources"]
 
     def compute_query(
-        self, clip_resource, text_input, image_input, image_url_input, use_mclip, aesthetic_score, aesthetic_weight
+        self,
+        clip_resource,
+        text_input,
+        image_input,
+        image_url_input,
+        embedding_input,
+        use_mclip,
+        aesthetic_score,
+        aesthetic_weight,
     ):
         """compute the query embedding"""
         import torch  # pylint: disable=import-outside-toplevel
         import clip  # pylint: disable=import-outside-toplevel
 
-        if text_input is not None:
+        if text_input is not None and text_input != "":
             if use_mclip:
                 with TEXT_CLIP_INFERENCE_TIME.time():
                     query = normalized(clip_resource.model_txt_mclip(text_input))
@@ -199,7 +207,7 @@ class KnnService(Resource):
                         text_features = clip_resource.model.encode_text(text)
                     text_features /= text_features.norm(dim=-1, keepdim=True)
                     query = text_features.cpu().detach().numpy().astype("float32")
-        if image_input is not None or image_url_input is not None:
+        elif image_input is not None or image_url_input is not None:
             if image_input is not None:
                 binary_data = base64.b64decode(image_input)
                 img_data = BytesIO(binary_data)
@@ -213,6 +221,8 @@ class KnnService(Resource):
                     image_features = clip_resource.model.encode_image(prepro)
                 image_features /= image_features.norm(dim=-1, keepdim=True)
                 query = image_features.cpu().detach().numpy().astype("float32")
+        elif embedding_input is not None:
+            query = np.expand_dims(np.array(embedding_input).astype("float32"), 0)
 
         if clip_resource.aesthetic_embeddings is not None and aesthetic_score is not None:
             aesthetic_embedding = clip_resource.aesthetic_embeddings[aesthetic_score]
@@ -395,6 +405,7 @@ class KnnService(Resource):
         text_input=None,
         image_input=None,
         image_url_input=None,
+        embedding_input=None,
         modality="image",
         num_images=100,
         num_result_ids=100,
@@ -408,7 +419,7 @@ class KnnService(Resource):
     ):
         """implement the querying functionality of the knn service: from text and image to nearest neighbors"""
 
-        if text_input is None and image_input is None and image_url_input is None:
+        if text_input is None and image_input is None and image_url_input is None and embedding_input is None:
             raise ValueError("must fill one of text, image and image url input")
         if indice_name is None:
             indice_name = next(iter(self.clip_resources.keys()))
@@ -420,6 +431,7 @@ class KnnService(Resource):
             text_input=text_input,
             image_input=image_input,
             image_url_input=image_url_input,
+            embedding_input=embedding_input,
             use_mclip=use_mclip,
             aesthetic_score=aesthetic_score,
             aesthetic_weight=aesthetic_weight,
@@ -448,6 +460,7 @@ class KnnService(Resource):
         text_input = json_data.get("text", None)
         image_input = json_data.get("image", None)
         image_url_input = json_data.get("image_url", None)
+        embedding_input = json_data.get("embedding_input", None)
         modality = json_data["modality"]
         num_images = json_data["num_images"]
         num_result_ids = json_data.get("num_result_ids", num_images)
@@ -464,6 +477,7 @@ class KnnService(Resource):
             text_input,
             image_input,
             image_url_input,
+            embedding_input,
             modality,
             num_images,
             num_result_ids,
