@@ -1,3 +1,7 @@
+## 2.34.0
+
+* Make it possible to use an embedding as query of the back
+
 ## 2.33.0
 
 * add clip-client module for querying backend remotely (thanks @afiaka87 )
