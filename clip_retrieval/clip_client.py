@@ -26,6 +26,9 @@ class ClipClient:
         aesthetic_weight: float = 0.5,
         modality: Modality = Modality.IMAGE,
         num_images: int = 40,
+        deduplicate: bool = True,
+        use_safety_model: bool = True,
+        use_violence_detector: bool = True,
     ):
         """
         url: (required) URL of the backend.
@@ -35,6 +38,9 @@ class ClipClient:
         aesthetic_weight: (optional) weight of the aesthetic score, between 0 and 1. Default is 0.5.
         modality: (optional) Search modality. One of Modality.IMAGE or Modality.TEXT. Default is Modality.IMAGE.
         num_images: (optional) Number of images to return. Default is 40.
+        deduplicate: (optional) Whether to deduplicate the result by image embedding. Default is true.
+        use_safety_model: (optional) Whether to remove unsafe images. Default is true.
+        use_violence_detector: (optional) Whether to remove images with violence. Default is true.
         """
         self.url = url
         self.indice_name = indice_name
@@ -43,11 +49,15 @@ class ClipClient:
         self.aesthetic_weight = aesthetic_weight
         self.modality = modality.value
         self.num_images = num_images
+        self.deduplicate = deduplicate
+        self.use_safety_model = use_safety_model
+        self.use_violence_detector = use_violence_detector
 
     def query(
         self,
         text: str = None,
         image: str = None,
+        embedding_input: list = None,
     ) -> List[Dict]:
         """
         Given text or image/s, search for other captions/images that are semantically similar.
@@ -78,6 +88,8 @@ class ClipClient:
             else:
                 assert Path(image).exists(), f"{image} does not exist."
                 return self.__search_knn_api__(image=image)
+        elif embedding_input:
+            return self.__search_knn_api__(embedding_input=embedding_input)
         else:
             raise ValueError("Either text or image must be provided.")
 
@@ -86,6 +98,7 @@ class ClipClient:
         text: str = None,
         image: str = None,
         image_url: str = None,
+        embedding_input: list = None,
     ) -> List:
         """
         This function is used to send the request to the knn service.
@@ -95,6 +108,7 @@ class ClipClient:
             text: text to be searched semantically.
             image: base64 string of image to be searched semantically.
             image_url: url of the image to be searched semantically.
+            embedding_input: embedding input
 
         Returns:
             List of dictionaries containing the results in the form of:
@@ -121,9 +135,10 @@ class ClipClient:
                     "text": text,
                     "image": image,
                     "image_url": image_url,
-                    "deduplicate": True,
-                    "use_safety_model": True,
-                    "use_violence_detector": True,
+                    "embedding_input": embedding_input,
+                    "deduplicate": self.deduplicate,
+                    "use_safety_model": self.use_safety_model,
+                    "use_violence_detector": self.use_violence_detector,
                     "indice_name": self.indice_name,
                     "use_mclip": self.use_mclip,
                     "aesthetic_score": self.aesthetic_score,

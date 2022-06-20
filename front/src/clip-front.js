@@ -220,6 +220,16 @@ class ClipFront extends LitElement {
     this.onGoingMetadataFetch = false
   }
 
+  callClip (overrideCount = null) {
+    const text = this.text === undefined ? null : this.text
+    const image = this.image === undefined ? null : this.image
+    const imageUrl = this.imageUrl === undefined ? null : this.imageUrl
+    const numImages = overrideCount === null ? this.numImages : overrideCount
+    const numResultIds = overrideCount === null ? this.numResultIds : overrideCount
+    return this.service.callClipService(text, image, imageUrl, null, this.modality, numImages,
+      this.currentIndex, numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode, this.removeViolence, this.aestheticScore, this.aestheticWeight)
+  }
+
   async download () {
     function downloadFile (filename, text) {
       var element = document.createElement('a')
@@ -233,12 +243,8 @@ class ClipFront extends LitElement {
 
       document.body.removeChild(element)
     }
-    const text = this.text === undefined ? null : this.text
-    const image = this.image === undefined ? null : this.image
-    const imageUrl = this.imageUrl === undefined ? null : this.imageUrl
     const count = this.modality === 'image' && this.currentIndex === this.indices[0] ? 10000 : 100
-    const results = await this.service.callClipService(text, image, imageUrl, this.modality, count,
-      this.currentIndex, count, this.useMclip, this.hideDuplicateImages, this.safeMode, this.removeViolence, this.aestheticScore, this.aestheticWeight)
+    const results = await this.callClip(count)
     downloadFile('clipsubset.json', JSON.stringify(results, null, 2))
   }
 
@@ -248,8 +254,7 @@ class ClipFront extends LitElement {
     }
     this.image = undefined
     this.imageUrl = undefined
-    const results = await this.service.callClipService(this.text, null, null, this.modality, this.numImages,
-      this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode, this.removeViolence, this.aestheticScore, this.aestheticWeight)
+    const results = await this.callClip()
     console.log(results)
     this.images = results
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
@@ -261,8 +266,7 @@ class ClipFront extends LitElement {
   async imageSearch () {
     this.text = ''
     this.imageUrl = undefined
-    const results = await this.service.callClipService(null, this.image, null, this.modality, this.numImages,
-      this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode, this.removeViolence, this.aestheticScore, this.aestheticWeight)
+    const results = await this.callClip()
     console.log(results)
     this.images = results
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
@@ -274,8 +278,7 @@ class ClipFront extends LitElement {
   async imageUrlSearch () {
     this.text = ''
     this.image = undefined
-    const results = await this.service.callClipService(null, null, this.imageUrl, this.modality, this.numImages,
-      this.currentIndex, this.numResultIds, this.useMclip, this.hideDuplicateImages, this.safeMode, this.removeViolence, this.aestheticScore, this.aestheticWeight)
+    const results = await this.callClip()
     console.log(results)
     this.images = results
     this.lastMetadataId = Math.min(this.numImages, results.length) - 1
