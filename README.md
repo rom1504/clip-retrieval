@@ -108,7 +108,6 @@ img2dataset "search-results.json" \
     --output_folder="knn_search_dataset" \
     --caption_col="caption"
 ```
-```
 
 ## clip end2end
 
