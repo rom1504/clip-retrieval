@@ -70,15 +70,15 @@ def get_image_dataset():
             self.enable_text = enable_text
             self.enable_image = enable_image
             self.enable_metadata = enable_metadata
-            
+
             def get_files_dict(files, keys, filetype):
-                files_dict = dict()
+                files_dict = {}
                 for k, v in tqdm(files.items(), desc=f'Reading {filetype} Files', leave=False):
-                    if k in self.keys:
+                    if k in keys:
                         files_dict[k] = v
 
                 return files_dict
-                        
+
             if self.enable_text:
                 self.tokenizer = lambda text: clip.tokenize([text], truncate=True)[0]
                 self.text_files = get_files_dict(text_files, self.keys, 'Text')
