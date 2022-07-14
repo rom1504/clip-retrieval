@@ -196,12 +196,14 @@ To run this on multiple nodes (and multiple gpus), see tutorial at [docs/distrib
 
 Clip index takes as input the output of clip inference and makes an index out of it using [autofaiss](https://github.com/criteo/autofaiss)
 
-`clip-retrieval index --input_folder embeddings_folder --output_folder index_folder`
+`clip-retrieval index --embeddings_folder embeddings_folder --index_folder index_folder`
 
-* `--max_index_memory_usage "16G"` option allow configuring the amount of ram the index will consume. More ram, better knn recall.
-* `--current_memory_available 24G` allows controlling how much ram is used during the creation process.
-* `--copy_metadata True` makes it possible to choose whether to copy metadata or not at the end of the process.
-* `--nb_cores 8` allows controlling the number of threads 
+* `--max_index_memory_usage "16G"` option allow configuring the amount of ram the index will consume. More ram, better knn recall (Default `4G`).
+* `--current_memory_available 24G` allows controlling how much ram is used during the creation process (Default `16G`).
+* `--image_subfolder "img_emb"` allows to specify a subfolder for the image embeddings which is concatenated to the `--embeddings_folder` option (Default `img_emb`).
+* `--text_subfolder "text_emb"` allows to specify a subfolder for the text embeddings which is concatenated to the `--embeddings_folder` option (Default `text_emb`).
+* `--copy_metadata True` makes it possible to choose whether to copy metadata or not at the end of the process (Default `True`).
+* `--nb_cores 8` allows controlling the number of threads (Default `None`, which will use all cores).
 
 The output is a folder containing:
 * image.index containing a faiss index for images
