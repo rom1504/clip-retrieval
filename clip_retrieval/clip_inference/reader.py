@@ -69,14 +69,15 @@ def get_image_dataset():
             self.enable_text = enable_text
             self.enable_image = enable_image
             self.enable_metadata = enable_metadata
+            keys_set = set(self.keys)
             if self.enable_text:
                 self.tokenizer = lambda text: clip.tokenize([text], truncate=True)[0]
-                self.text_files = {k: v for k, v in text_files.items() if k in self.keys}
+                self.text_files = {k: v for k, v in text_files.items() if k in keys_set}
             if self.enable_image:
-                self.image_files = {k: v for k, v in image_files.items() if k in self.keys}
+                self.image_files = {k: v for k, v in image_files.items() if k in keys_set}
                 self.image_transform = preprocess
             if self.enable_metadata:
-                self.metadata_files = {k: v for k, v in metadata_files.items() if k in self.keys}
+                self.metadata_files = {k: v for k, v in metadata_files.items() if k in keys_set}
 
         def __len__(self):
             return len(self.keys)
