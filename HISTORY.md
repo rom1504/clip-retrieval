@@ -1,3 +1,7 @@
+## 2.34.1
+
+* Makes file image reader in clip inference fast
+
 ## 2.34.0
 
 * Make it possible to use an embedding as query of the back
