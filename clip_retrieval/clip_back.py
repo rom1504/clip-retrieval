@@ -163,6 +163,15 @@ class MetadataService(Resource):
         indice_name = json_data["indice_name"]
         metadata_provider = self.clip_resources[indice_name].metadata_provider
         metas = metadata_provider.get(ids, self.clip_resources[indice_name].columns_to_return)
+        for meta in metas:
+            if meta is not None and "image_path" in meta:
+                path = meta["image_path"]
+                if os.path.exists(path):
+                    img = Image.open(path)
+                    buffered = BytesIO()
+                    img.save(buffered, format="JPEG")
+                    img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+                    meta["image"] = img_str
         metas_with_ids = [{"id": item_id, "metadata": meta_to_dict(meta)} for item_id, meta in zip(ids, metas)]
         return metas_with_ids
 
