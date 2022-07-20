@@ -1,3 +1,7 @@
+## 2.34.2
+
+* Read image data from path in case "image_path" is present
+
 ## 2.34.1
 
 * Makes file image reader in clip inference fast
