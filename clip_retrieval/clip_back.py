@@ -70,6 +70,22 @@ def metric_to_average(metric):
     return metric_name, metric_description, metric_count, 1.0 * metric_sum / metric_count
 
 
+def convert_metadata_to_base64(meta):
+    """
+    Converts the image at a path to the Base64 representation and sets the Base64 string to the `image`
+    key in the metadata dictionary.
+    If there is no `image_path` key present in the metadata dictionary, the function will have no effect.
+    """
+    if meta is not None and "image_path" in meta:
+        path = meta["image_path"]
+        if os.path.exists(path):
+            img = Image.open(path)
+            buffered = BytesIO()
+            img.save(buffered, format="JPEG")
+            img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+            meta["image"] = img_str
+
+
 class Health(Resource):
     def get(self):
         return "ok"
@@ -156,6 +172,7 @@ class MetadataService(Resource):
         self.clip_resources = kwargs["clip_resources"]
 
     def post(self):
+        """Post the metadata"""
         json_data = request.get_json(force=True)
         ids = json_data["ids"]
         if len(ids) == 0:
@@ -163,6 +180,10 @@ class MetadataService(Resource):
         indice_name = json_data["indice_name"]
         metadata_provider = self.clip_resources[indice_name].metadata_provider
         metas = metadata_provider.get(ids, self.clip_resources[indice_name].columns_to_return)
+
+        for meta in metas:
+            convert_metadata_to_base64(meta)
+
         metas_with_ids = [{"id": item_id, "metadata": meta_to_dict(meta)} for item_id, meta in zip(ids, metas)]
         return metas_with_ids
 
@@ -384,14 +405,7 @@ class KnnService(Resource):
         for key, (d, i) in enumerate(zip(distances, indices)):
             output = {}
             meta = None if key + 1 > len(metas) else metas[key]
-            if meta is not None and "image_path" in meta:
-                path = meta["image_path"]
-                if os.path.exists(path):
-                    img = Image.open(path)
-                    buffered = BytesIO()
-                    img.save(buffered, format="JPEG")
-                    img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
-                    output["image"] = img_str
+            convert_metadata_to_base64(meta)
             if meta is not None:
                 output.update(meta_to_dict(meta))
             output["id"] = i.item()
