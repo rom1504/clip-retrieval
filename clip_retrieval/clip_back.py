@@ -180,10 +180,8 @@ class MetadataService(Resource):
         indice_name = json_data["indice_name"]
         metadata_provider = self.clip_resources[indice_name].metadata_provider
         metas = metadata_provider.get(ids, self.clip_resources[indice_name].columns_to_return)
-
         for meta in metas:
             convert_metadata_to_base64(meta)
-
         metas_with_ids = [{"id": item_id, "metadata": meta_to_dict(meta)} for item_id, meta in zip(ids, metas)]
         return metas_with_ids
 
