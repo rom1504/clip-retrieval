@@ -77,7 +77,9 @@ class ClipFront extends LitElement {
       }
     }).catch(e => {
       console.error(e)
-      this.setBackendToDefault()
+      if (!forceChange) {
+        this.setBackendToDefault()
+      }
     })
   }
 
