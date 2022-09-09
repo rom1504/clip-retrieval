@@ -186,7 +186,7 @@ Example of hdfs query using webdataset format:
 
 ### Loading/writing files on s3
 
-`clip_inference --input_dataset "pipe:aws s3 cp --quiet s3://myfolder/webdataset/{00000..00010}.tar" --output_folder "s3://myfolder/embeddings" --input_format webdataset
+`clip_inference --input_dataset "pipe:aws s3 cp --quiet s3://myfolder/webdataset/{00000..00010}.tar -" --output_folder "s3://myfolder/embeddings" --input_format webdataset
 
 ### Distributed inference
 
