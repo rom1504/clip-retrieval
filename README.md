@@ -35,7 +35,7 @@ pip install clip-retrieval
 
 ## Clip client
 
-`ClipClient` allows remote querying of a clip-retrieval backend via python. 
+`ClipClient` allows remote querying of a clip-retrieval backend via python.
 
 See [`ClipClient` - Getting Started Notebook](/notebook/clip-client-query-api.ipynb) for a jupyter notebook example.
 
@@ -290,7 +290,7 @@ clip-retrieval back --port 1234 --indices-paths indices_paths.json
 
 Options:
 * `--use_jit True` uses jit for the clip model
-* `--clip_model "ViT-B/32"` allows choosing the clip model to use. Prefix with `"open_clip:"` to use an [open_clip](https://github.com/mlfoundations/open_clip) model. 
+* `--clip_model "ViT-B/32"` allows choosing the clip model to use. Prefix with `"open_clip:"` to use an [open_clip](https://github.com/mlfoundations/open_clip) model.
 * `--enable_mclip_option True` loads the mclip model, making it possible to search in any language.
 * `--columns_to_return='["url", "image_path", "caption", "NSFW"]` allows you to specify which columns should be fetched from the metadata and returned by the backend. It's useful to specify less in case of hdf5 caching to speed up the queries.
 * `--enable_faiss_memory_mapping=True` option can be passed to use an index with memory mapping.
@@ -401,7 +401,7 @@ It can be seen on this dashboard that the slowest part of any call is fetching t
 For text queries or image queries, the latency is about 50ms.
 Here is an example of output in the metrics summary:
 ```
-Among 20.0 calls to the knn end point with an average latency of 0.1889s per request, the step costs are (in order): 
+Among 20.0 calls to the knn end point with an average latency of 0.1889s per request, the step costs are (in order):
                         name                               description  calls  average proportion
 0              download_time             Time spent downloading an url      6  0.3215s     170.2%
 1          metadata_get_time            Time spent retrieving metadata     20  0.0415s      21.9%
@@ -445,7 +445,7 @@ to run tests:
 ```
 pip install -r requirements-test.txt
 ```
-then 
+then
 ```
 make lint
 make test
