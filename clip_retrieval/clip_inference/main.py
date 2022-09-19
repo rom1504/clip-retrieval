@@ -1,18 +1,66 @@
 """main module combines distributor, runner, reader, mapper, writer to produce clip embeddings"""
 
-from braceexpand import braceexpand
 import fire
-from clip_retrieval.clip_inference.load_clip import load_clip
-from clip_retrieval.clip_inference.logger import LoggerReader, LoggerWriter
+from braceexpand import braceexpand
+
+from clip_retrieval.clip_inference.logger import LoggerReader
 from clip_retrieval.clip_inference.reader import folder_to_keys
-
-from clip_retrieval.clip_inference.mapper import ClipMapper
-from clip_retrieval.clip_inference.reader import FilesReader, WebdatasetReader
-from clip_retrieval.clip_inference.writer import NumpyWriter
 from clip_retrieval.clip_inference.distributor import PysparkDistributor, SequentialDistributor
-from clip_retrieval.clip_inference.runner import Runner
 
 
+def calculate_partition_count(
+    input_format,
+    input_dataset,
+    enable_image,
+    enable_text,
+    enable_metadata,
+    write_batch_size,
+    wds_number_file_per_input_file,
+):
+    """
+    Calculate the partition count needed to store the resulting embeddings.
+    """
+
+    sample_count = 0
+
+    if input_format == "files":
+        keys, text_files, image_files, metadata_files = folder_to_keys(
+            input_dataset,
+            enable_text=enable_text,
+            enable_image=enable_image,
+            enable_metadata=enable_metadata,
+        )
+        if text_files is None or len(text_files) == 0:
+            enable_text = False
+        if image_files is None or len(image_files) == 0:
+            enable_image = False
+        if metadata_files is None or len(metadata_files) == 0:
+            enable_metadata = False
+        keys, text_files, image_files, metadata_files = folder_to_keys(
+            input_dataset,
+            enable_text=enable_text,
+            enable_image=enable_image,
+            enable_metadata=enable_metadata,
+        )
+        sample_count = len(keys)
+    elif input_format == "webdataset":
+        sample_count = len(input_dataset) * wds_number_file_per_input_file
+    else:
+        print("Unsupported input_format")
+        return None
+
+    if sample_count == 0:
+        print("no sample found")
+        return None
+    else:
+        print(f"The number of samples has been estimated to be {sample_count}")
+
+    output_partition_count = int(sample_count / write_batch_size) + 1
+
+    return output_partition_count
+
+
+# pylint: disable=unused-argument
 def main(
     input_dataset,
     output_folder,
@@ -37,113 +85,48 @@ def main(
     enable_wandb=False,
     clip_cache_path=None,
 ):
+
     if input_format == "webdataset":
         input_dataset = list(braceexpand(input_dataset))
+
+    # compute this now for the distributors to use
     if output_partition_count is None:
-        if input_format == "files":
-            keys, text_files, image_files, metadata_files = folder_to_keys(
-                input_dataset, enable_text=enable_text, enable_image=enable_image, enable_metadata=enable_metadata
-            )
-            if text_files is None or len(text_files) == 0:
-                enable_text = False
-            if image_files is None or len(image_files) == 0:
-                enable_image = False
-            if metadata_files is None or len(metadata_files) == 0:
-                enable_metadata = False
-            keys, text_files, image_files, metadata_files = folder_to_keys(
-                input_dataset, enable_text=enable_text, enable_image=enable_image, enable_metadata=enable_metadata
-            )
-            sample_count = len(keys)
-        elif input_format == "webdataset":
-            sample_count = len(input_dataset) * wds_number_file_per_input_file
-        else:
-            print("Unsupported input_format")
-            return
-
-        if sample_count == 0:
-            print("no sample found")
-            return
-        else:
-            print(f"The number of samples has been estimated to be {sample_count}")
-
-        output_partition_count = int(sample_count / write_batch_size) + 1
-
-    def reader_builder(sampler):
-        _, preprocess = load_clip(clip_model, use_jit, batch_size, clip_cache_path)
-        if input_format == "files":
-            return FilesReader(
-                sampler,
-                preprocess,
-                input_dataset,
-                batch_size,
-                num_prepro_workers,
-                enable_text=enable_text,
-                enable_image=enable_image,
-                enable_metadata=enable_metadata,
-            )
-        elif input_format == "webdataset":
-            return WebdatasetReader(
-                sampler,
-                preprocess,
-                input_dataset,
-                batch_size,
-                num_prepro_workers,
-                enable_text=enable_text,
-                enable_image=enable_image,
-                enable_metadata=enable_metadata,
-                wds_image_key=wds_image_key,
-                wds_caption_key=wds_caption_key,
-                cache_path=cache_path,
-            )
-        else:
-            raise ValueError(f"Unknown input_format: {input_format}")
-
-    def mapper_builder():
-        return ClipMapper(
+        output_partition_count = calculate_partition_count(
+            input_format=input_format,
+            input_dataset=input_dataset,
             enable_image=enable_image,
             enable_text=enable_text,
             enable_metadata=enable_metadata,
-            use_mclip=use_mclip,
-            clip_model=clip_model,
-            use_jit=use_jit,
-            mclip_model=mclip_model,
-            warmup_batch_size=batch_size,
-            clip_cache_path=clip_cache_path,
+            write_batch_size=write_batch_size,
+            wds_number_file_per_input_file=wds_number_file_per_input_file,
         )
 
-    def writer_builder(i):
-        return NumpyWriter(
-            partition_id=i,
-            output_folder=output_folder,
-            enable_text=enable_text,
-            enable_image=enable_image,
-            enable_metadata=enable_metadata,
-            output_partition_count=output_partition_count,
-        )
+    # package arguments to pass on to the distributor
+    local_args = locals()
+    local_args.pop("wds_number_file_per_input_file")
+    local_args.pop("write_batch_size")
+    local_args.pop("distribution_strategy")
+    local_args.pop("wandb_project")
+    local_args.pop("enable_wandb")
 
-    def logger_builder(i):
-        return LoggerWriter(
-            partition_id=i,
-            stats_folder=output_folder + "/stats",
-        )
-
-    runner = Runner(
-        reader_builder=reader_builder,
-        mapper_builder=mapper_builder,
-        writer_builder=writer_builder,
-        logger_builder=logger_builder,
-        output_partition_count=output_partition_count,
-    )
-
-    logger_reader = LoggerReader(
-        stats_folder=output_folder + "/stats", wandb_project=wandb_project, enable_wandb=enable_wandb
-    )
-    logger_reader.start()
+    tasks = list(range(output_partition_count))
+    worker_args = dict(local_args.items())
 
     if distribution_strategy == "sequential":
-        distributor = SequentialDistributor(runner, output_partition_count)
+        distributor = SequentialDistributor(tasks=tasks, worker_args=worker_args)
     elif distribution_strategy == "pyspark":
-        distributor = PysparkDistributor(runner, output_partition_count)
+        distributor = PysparkDistributor(tasks=tasks, worker_args=worker_args)
+    else:
+        print(f"The {distribution_strategy} strategy is not implemented. Please choose from: [sequential, pyspark]")
+
+    logger_reader = LoggerReader(
+        stats_folder=output_folder + "/stats",
+        wandb_project=wandb_project,
+        enable_wandb=enable_wandb,
+    )
+
+    logger_reader.start()
+
     distributor()
 
     logger_reader.end()

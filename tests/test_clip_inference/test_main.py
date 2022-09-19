@@ -8,7 +8,7 @@ from clip_retrieval.clip_inference.main import main
 def test_main():
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
     current_folder = os.path.dirname(__file__)
-    input_dataset = current_folder + "/test_images"
+    input_dataset = os.path.join(current_folder, "test_images")
 
     with tempfile.TemporaryDirectory() as tmpdir:
         from pyspark.sql import SparkSession  # pylint: disable=import-outside-toplevel
@@ -45,6 +45,7 @@ def test_main():
         with open(tmpdir + "/img_emb/img_emb_0.npy", "rb") as f:
             image_embs = np.load(f)
             assert image_embs.shape[0] == 4
+
         with open(tmpdir + "/img_emb/img_emb_1.npy", "rb") as f:
             image_embs = np.load(f)
             assert image_embs.shape[0] == 3

@@ -176,6 +176,33 @@ clip_inference turn a set of text+image into clip embeddings
 * **enable_wandb** whether to use wandb (default *False*)
 * **clip_cache_path** cache path for clip (default *None*)
 
+### Inference Worker
+
+If you wish to have more control over how inference is run, you can create and call workers directly using `clip-retrieval inference.worker`
+
+Example Usage:
+
+```bash
+clip-retrieval inference.worker \
+--tasks="[0]" \
+--input_dataset="pipe:aws s3 cp --quiet s3://s-datasets/laion5b/laion2B-data/{000000..000010}.tar -" \
+--output_folder="s3://my-data/worker-test" \
+--input_format="webdataset" \
+--output_partition_count="1"
+```
+
+Doing so will invoke a single worker that can be instructed to focus on a specific subset of the `input_dataset`. That worker will sequentially process the `tasks` passed to it. Here, `tasks` is a lists of `partition_id`'s that this worker will be responsible for.
+
+The API is very similar to `clip-retrieval inference` with some minor changes:
+
+> ***Note***: The worker does not accept the following arguments
+> * **write_batch_size** Write batch size (default *10**6*)
+> * **distribution_strategy** choose how to distribute the job, see distribution section for details (default *sequential*)
+> * **wds_number_file_per_input_file** estimation of the number of sample per tar if using wds and not specifying output_partition_count (default *10000*)
+
+
+
+
 
 ### Loading/writing files on hdfs
 
