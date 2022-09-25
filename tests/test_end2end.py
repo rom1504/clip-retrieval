@@ -1,6 +1,7 @@
 import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
 from img2dataset import download
 from clip_retrieval import clip_inference
 from clip_retrieval import clip_index

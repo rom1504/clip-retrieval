@@ -40,7 +40,7 @@ class ClipMapper:
             if self.enable_image:
                 image_features = self.model_img(item["image_tensor"].to(self.device))
                 image_features /= image_features.norm(dim=-1, keepdim=True)
-                image_embs = image_features.cpu().numpy()
+                image_embs = image_features.cpu().to(torch.float16).numpy()
                 image_filename = item["image_filename"]
             if self.enable_text:
                 if self.use_mclip:
@@ -48,7 +48,7 @@ class ClipMapper:
                 else:
                     text_features = self.model_txt(item["text_tokens"].to(self.device))
                     text_features /= text_features.norm(dim=-1, keepdim=True)
-                    text_embs = text_features.cpu().numpy()
+                    text_embs = text_features.cpu().to(torch.float16).numpy()
                 text = item["text"]
             if self.enable_metadata:
                 metadata = item["metadata"]
