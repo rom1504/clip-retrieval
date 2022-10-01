@@ -1,12 +1,12 @@
 import os
 import numpy as np
 
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
 import tempfile
 from clip_retrieval.clip_inference.main import main
 
 
 def test_main():
+    os.environ["CUDA_VISIBLE_DEVICES"] = ""
     current_folder = os.path.dirname(__file__)
     input_dataset = current_folder + "/test_images"
 

@@ -1,6 +1,7 @@
 import pytest
 import pickle
 import os
+import numpy as np
 
 from clip_retrieval.clip_inference.mapper import ClipMapper
 
@@ -24,4 +25,5 @@ def test_mapper(model):
             tensor = pickle.load(f)
             sample = mapper(tensor)
             assert sample["image_embs"].shape[0] == tensor["image_tensor"].shape[0]
+            assert sample["image_embs"].dtype == np.dtype("float16")
         pass
