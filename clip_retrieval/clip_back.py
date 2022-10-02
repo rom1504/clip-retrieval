@@ -671,6 +671,8 @@ def get_aesthetic_embedding(model_type):
         model_type = "vit_b_32"
     elif model_type == "ViT-L/14":
         model_type = "vit_l_14"
+    else:
+        raise ValueError(f"Aesthetic embedding for {model_type} not available.")
 
     fs, _ = fsspec.core.url_to_fs(
         f"https://github.com/LAION-AI/aesthetic-predictor/blob/main/{model_type}_embeddings/rating0.npy?raw=true"
@@ -703,7 +705,7 @@ def load_violence_detector(clip_model):
     elif clip_model == "ViT-B/32":
         name = "violence_detection_vit_b_32.npy"
     else:
-        raise ValueError("Unknown clip model")
+        raise ValueError(f"Violence detector for {clip_model} not available.")
 
     url_model = root_url + "/" + name
     prompt_file = cache_folder + "/" + name
@@ -730,7 +732,7 @@ def load_safety_model(clip_model):
         model_dir = cache_folder + "/clip_autokeras_nsfw_b32"
         dim = 512
     else:
-        raise ValueError("Unknown clip model")
+        raise ValueError(f"Safety model for {clip_model} not available.")
     if not os.path.exists(model_dir):
         os.makedirs(cache_folder, exist_ok=True)
 
@@ -824,14 +826,6 @@ def dict_to_clip_options(d, clip_options):
 
 
 @lru_cache(maxsize=None)
-def load_clip(clip_model="ViT-B/32", use_jit=True, device="cpu"):
-    import clip  # pylint: disable=import-outside-toplevel
-
-    model, preprocess = clip.load(clip_model, device=device, jit=use_jit)
-    return model, preprocess
-
-
-@lru_cache(maxsize=None)
 def load_mclip(clip_model):
     """load the mclip model"""
     from multilingual_clip import pt_multilingual_clip  # pylint: disable=import-outside-toplevel
@@ -842,6 +836,8 @@ def load_mclip(clip_model):
         model_name = "M-CLIP/XLM-Roberta-Large-Vit-L-14"
     elif clip_model == "ViT-B/32":
         model_name = "M-CLIP/XLM-Roberta-Large-Vit-B-32"
+    else:
+        raise ValueError(f"Multi-lingual version of {clip_model} not available.")
 
     model = pt_multilingual_clip.MultilingualCLIP.from_pretrained(model_name)
     model.eval()
@@ -858,6 +854,7 @@ def load_mclip(clip_model):
 def load_clip_index(clip_options):
     """load the clip index"""
     import torch  # pylint: disable=import-outside-toplevel
+    from .clip_inference.load_clip import load_clip  # pylint: disable=import-outside-toplevel
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = load_clip(clip_options.clip_model, use_jit=clip_options.use_jit, device=device)
