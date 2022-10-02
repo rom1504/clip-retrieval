@@ -31,6 +31,7 @@ class Runner:
         logger.start()
         iterator = reader.__iter__()
         while True:
+            begin_time = time.time()
             start_time = time.perf_counter()
             try:
                 batch = iterator.__next__()
@@ -43,13 +44,15 @@ class Runner:
             start_time = time.perf_counter()
             writer(embeddings)
             write_duration = time.perf_counter() - start_time
-            total_duration = read_duration + inference_duration + write_duration
+            end_time = time.time()
             logger(
                 {
+                    "start_time": begin_time,
+                    "end_time": end_time,
                     "read_duration": read_duration,
                     "inference_duration": inference_duration,
                     "write_duration": write_duration,
-                    "total_duration": total_duration,
+                    "total_duration": end_time - begin_time,
                     "sample_count": batch["image_tensor"].shape[0]
                     if "image_tensor" in batch
                     else batch["text_tokens"].shape[0],

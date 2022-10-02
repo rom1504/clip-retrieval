@@ -64,7 +64,7 @@ def test_end2end():
         input_format="webdataset",
         enable_metadata=True,
         write_batch_size=100000,
-        batch_size=512,
+        batch_size=8,
         cache_path=None,
     )
 

@@ -17,14 +17,14 @@ def test_distributor(distributor_kind):
 
     output_partition_count = 2
     num_prepro_workers = 8
-    batch_size = 2
+    batch_size = 8
     current_folder = os.path.dirname(__file__)
     folder = current_folder + "/test_images"
 
     with tempfile.TemporaryDirectory() as tmpdir:
 
         def reader_builder(sampler):
-            _, preprocess = load_clip()
+            _, preprocess = load_clip(warmup_batch_size=batch_size)
             return FilesReader(
                 sampler,
                 preprocess,
@@ -45,6 +45,7 @@ def test_distributor(distributor_kind):
                 clip_model="ViT-B/32",
                 use_jit=True,
                 mclip_model="",
+                warmup_batch_size=batch_size,
             )
 
         def logger_builder(i):

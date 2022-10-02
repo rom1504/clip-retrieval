@@ -1,5 +1,6 @@
 """Test the ClipClient class."""
 import logging
+
 LOGGER = logging.getLogger(__name__)
 LOGGER.info("Test ClipClient.query()")
 from clip_retrieval.clip_client import ClipClient, Modality
