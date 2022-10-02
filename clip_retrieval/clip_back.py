@@ -225,7 +225,7 @@ class KnnService(Resource):
                     with torch.no_grad():
                         text_features = clip_resource.model.encode_text(text)
                     text_features /= text_features.norm(dim=-1, keepdim=True)
-                    query = text_features.cpu().detach().numpy().astype("float32")
+                    query = text_features.cpu().to(torch.float32).detach().numpy()
         elif image_input is not None or image_url_input is not None:
             if image_input is not None:
                 binary_data = base64.b64decode(image_input)
@@ -239,7 +239,7 @@ class KnnService(Resource):
                 with torch.no_grad():
                     image_features = clip_resource.model.encode_image(prepro)
                 image_features /= image_features.norm(dim=-1, keepdim=True)
-                query = image_features.cpu().detach().numpy().astype("float32")
+                query = image_features.cpu().to(torch.float32).detach().numpy()
         elif embedding_input is not None:
             query = np.expand_dims(np.array(embedding_input).astype("float32"), 0)
 
