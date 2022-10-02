@@ -4,6 +4,7 @@ from functools import lru_cache
 from torch import autocast, nn
 import torch
 import clip
+from PIL import Image
 
 
 class OpenClipWrapper(nn.Module):
@@ -36,6 +37,7 @@ class OpenClipWrapper(nn.Module):
         return self.inner_model(*args, **kwargs)
 
 
+@lru_cache(maxsize=None)
 def load_open_clip(clip_model, use_jit=True, device="cuda"):
     """load open clip"""
 
@@ -53,11 +55,27 @@ def load_open_clip(clip_model, use_jit=True, device="cuda"):
 
 
 @lru_cache(maxsize=None)
-def load_clip(clip_model="ViT-B/32", use_jit=True):
+def load_clip(clip_model="ViT-B/32", use_jit=True, warmup_batch_size=1):
+    """Load clip then warmup"""
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if clip_model.startswith("open_clip:"):
         clip_model = clip_model[len("open_clip:") :]
-        return load_open_clip(clip_model, use_jit, device)
+        model, preprocess = load_open_clip(clip_model, use_jit, device)
     else:
         model, preprocess = clip.load(clip_model, device=device, jit=use_jit)
+
+    print("warming up with batch size", warmup_batch_size)
+    warmup(warmup_batch_size, device, preprocess, model)
+    print("done warming up")
     return model, preprocess
+
+
+def warmup(batch_size, device, preprocess, model):
+    fake_img = Image.new("RGB", (224, 224), color="red")
+    fake_text = ["fake"] * batch_size
+    image_tensor = torch.cat([torch.unsqueeze(preprocess(fake_img).to(device), 0)] * batch_size)
+    text_tokens = clip.tokenize(fake_text).to(device)
+    for _ in range(2):
+        with torch.no_grad():
+            model.encode_image(image_tensor)
+            model.encode_text(text_tokens)

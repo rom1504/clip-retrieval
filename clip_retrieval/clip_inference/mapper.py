@@ -16,13 +16,23 @@ def normalized(a, axis=-1, order=2):
 class ClipMapper:
     """transforms images and texts into clip embeddings"""
 
-    def __init__(self, enable_image, enable_text, enable_metadata, use_mclip, clip_model, use_jit, mclip_model):
+    def __init__(
+        self,
+        enable_image,
+        enable_text,
+        enable_metadata,
+        use_mclip,
+        clip_model,
+        use_jit,
+        mclip_model,
+        warmup_batch_size=1,
+    ):
         self.enable_image = enable_image
         self.enable_text = enable_text
         self.enable_metadata = enable_metadata
         self.use_mclip = use_mclip
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        model, _ = load_clip(clip_model, use_jit)
+        model, _ = load_clip(clip_model, use_jit, warmup_batch_size)
         self.model_img = model.encode_image
         self.model_txt = model.encode_text
         if use_mclip:

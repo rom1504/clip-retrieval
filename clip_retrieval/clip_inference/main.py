@@ -68,7 +68,7 @@ def main(
         output_partition_count = int(sample_count / write_batch_size) + 1
 
     def reader_builder(sampler):
-        _, preprocess = load_clip(clip_model=clip_model, use_jit=use_jit)
+        _, preprocess = load_clip(clip_model, use_jit, batch_size)
         if input_format == "files":
             return FilesReader(
                 sampler,
@@ -106,6 +106,7 @@ def main(
             clip_model=clip_model,
             use_jit=use_jit,
             mclip_model=mclip_model,
+            warmup_batch_size=batch_size,
         )
 
     def writer_builder(i):

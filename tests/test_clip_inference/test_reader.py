@@ -17,7 +17,7 @@ def test_reader(file_format):
         input_dataset = [tar_folder + "/image1.tar", tar_folder + "/image2.tar"]
     batch_size = 2
     num_prepro_workers = 2
-    _, preprocess = load_clip()
+    _, preprocess = load_clip(warmup_batch_size=batch_size)
 
     output_partition_count = 2
     actual_values = []

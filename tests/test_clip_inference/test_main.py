@@ -25,7 +25,7 @@ def test_main():
             output_folder=tmpdir,
             input_format="files",
             cache_path=None,
-            batch_size=256,
+            batch_size=8,
             num_prepro_workers=8,
             enable_text=False,
             enable_image=True,
