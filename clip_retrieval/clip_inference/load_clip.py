@@ -5,23 +5,23 @@ import torch
 import clip
 
 
-def load_open_clip(clip_model, use_jit=True, device="cuda"):
+def load_open_clip(clip_model, use_jit=True, device="cuda", cache=None):
     import open_clip  # pylint: disable=import-outside-toplevel
 
     pretrained = dict(open_clip.list_pretrained())
     checkpoint = pretrained[clip_model]
     model, _, preprocess = open_clip.create_model_and_transforms(
-        clip_model, pretrained=checkpoint, device=device, jit=use_jit
+        clip_model, pretrained=checkpoint, device=device, jit=use_jit, cache_dir=cache
     )
     return model, preprocess
 
 
 @lru_cache(maxsize=None)
-def load_clip(clip_model="ViT-B/32", use_jit=True):
+def load_clip(clip_model="ViT-B/32", use_jit=True, cache=None):
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if clip_model.startswith("open_clip:"):
         clip_model = clip_model[len("open_clip:") :]
-        return load_open_clip(clip_model, use_jit, device)
+        return load_open_clip(clip_model, use_jit, device, cache=cache)
     else:
-        model, preprocess = clip.load(clip_model, device=device, jit=use_jit)
+        model, preprocess = clip.load(clip_model, device=device, jit=use_jit, download_root=cache)
     return model, preprocess

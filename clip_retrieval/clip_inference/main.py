@@ -17,7 +17,8 @@ def main(
     input_dataset,
     output_folder,
     input_format="files",
-    cache_path=None,
+    wds_cache=None,
+    clip_cache=None,
     batch_size=256,
     num_prepro_workers=8,
     enable_text=True,
@@ -68,7 +69,7 @@ def main(
         output_partition_count = int(sample_count / write_batch_size) + 1
 
     def reader_builder(sampler):
-        _, preprocess = load_clip(clip_model=clip_model, use_jit=use_jit)
+        _, preprocess = load_clip(clip_model=clip_model, use_jit=use_jit, cache=clip_cache)
         if input_format == "files":
             return FilesReader(
                 sampler,
@@ -92,7 +93,7 @@ def main(
                 enable_metadata=enable_metadata,
                 wds_image_key=wds_image_key,
                 wds_caption_key=wds_caption_key,
-                cache_path=cache_path,
+                cache_path=wds_cache,
             )
         else:
             raise ValueError(f"Unknown input_format: {input_format}")
@@ -106,6 +107,7 @@ def main(
             clip_model=clip_model,
             use_jit=use_jit,
             mclip_model=mclip_model,
+            cache=clip_cache,
         )
 
     def writer_builder(i):
