@@ -174,6 +174,7 @@ clip_inference turn a set of text+image into clip embeddings
 * **output_partition_count** number of output partitions (default *None*)
 * **wandb_project** wandb project to use (default *clip_retrieval*)
 * **enable_wandb** whether to use wandb (default *False*)
+* **clip_cache_path** cache path for clip (default *None*)
 
 
 ### Loading/writing files on hdfs
