@@ -1,7 +1,7 @@
 """mapper module transform images and text to embeddings"""
 
 import torch
-from .load_clip import load_clip
+from clip_retrieval.load_clip import load_clip
 from sentence_transformers import SentenceTransformer
 
 
