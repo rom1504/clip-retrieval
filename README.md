@@ -185,8 +185,8 @@ Example Usage:
 ```bash
 clip-retrieval inference.worker \
 --tasks="[0]" \
---input_dataset="pipe:aws s3 cp --quiet s3://s-datasets/laion5b/laion2B-data/{000000..000010}.tar -" \
---output_folder="s3://my-data/worker-test" \
+--input_dataset="input/folder/{000000..000100}.tar" \
+--output_folder="example/path" \
 --input_format="webdataset" \
 --output_partition_count="1"
 ```
