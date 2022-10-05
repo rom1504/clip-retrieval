@@ -65,9 +65,10 @@ def load_clip_without_warmup(clip_model, use_jit, device, clip_cache_path):
 
 
 @lru_cache(maxsize=None)
-def load_clip(clip_model="ViT-B/32", use_jit=True, warmup_batch_size=1, clip_cache_path=None):
+def load_clip(clip_model="ViT-B/32", use_jit=True, warmup_batch_size=1, clip_cache_path=None, device=None):
     """Load clip then warmup"""
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = load_clip_without_warmup(clip_model, use_jit, device, clip_cache_path)
 
     print(f"warming up with batch size {warmup_batch_size} on {device}")

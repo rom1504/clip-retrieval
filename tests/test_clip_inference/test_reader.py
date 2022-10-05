@@ -3,7 +3,7 @@ from clip_retrieval.clip_inference.reader import FilesReader, WebdatasetReader
 from clip_retrieval.clip_inference.runner import Sampler
 import os
 
-from clip_retrieval.clip_inference.load_clip import load_clip
+from clip_retrieval.load_clip import load_clip
 
 
 @pytest.mark.parametrize("file_format", ["files", "webdataset"])
