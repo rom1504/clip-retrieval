@@ -9,6 +9,7 @@ from clip_retrieval.clip_inference.mapper import ClipMapper
 @pytest.mark.parametrize("model", ["ViT-B/32", "open_clip:ViT-B-32-quickgelu"])
 def test_mapper(model):
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
     mapper = ClipMapper(
         enable_image=True,
         enable_text=False,
@@ -18,8 +19,10 @@ def test_mapper(model):
         use_jit=True,
         mclip_model="",
     )
+
     current_dir = os.path.dirname(os.path.abspath(__file__))
     tensor_files = [i for i in os.listdir(current_dir + "/test_tensors")]
+
     for tensor_file in tensor_files:
         with open(current_dir + "/test_tensors/{}".format(tensor_file), "rb") as f:
             tensor = pickle.load(f)

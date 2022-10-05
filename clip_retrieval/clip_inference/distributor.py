@@ -2,27 +2,38 @@
 
 import os
 
+from .worker import worker
+
 
 class SequentialDistributor:
-    def __init__(self, runner, output_partition_count):
-        self.runner = runner
-        self.output_partition_count = output_partition_count
+    def __init__(self, tasks, worker_args):
+        self.tasks = tasks
+        self.worker_args = worker_args
 
     def __call__(self):
-        for i in range(self.output_partition_count):
-            self.runner(i)
+        """
+        call a single `worker(...)` and pass it everything.
+        """
+        worker(
+            tasks=self.tasks,
+            **self.worker_args,
+        )
 
 
 class PysparkDistributor:
     """the pyspark distributor uses pyspark for distribution"""
 
-    def __init__(self, runner, output_partition_count):
-        self.runner = runner
-        self.output_partition_count = output_partition_count
+    def __init__(self, tasks, worker_args):
+        self.tasks = tasks
+        self.worker_args = worker_args
 
     def __call__(self):
-        from pyspark.sql import SparkSession  # pylint: disable=import-outside-toplevel
+        """
+        Parallelize work and call `worker(...)`
+        """
+
         import pyspark  # pylint: disable=import-outside-toplevel
+        from pyspark.sql import SparkSession  # pylint: disable=import-outside-toplevel
 
         spark = SparkSession.getActiveSession()
 
@@ -35,14 +46,14 @@ class PysparkDistributor:
                 .getOrCreate()
             )
 
-        df = list(range(self.output_partition_count))
-        rdd = spark.sparkContext.parallelize(df, len(df))
+        rdd = spark.sparkContext.parallelize(c=self.tasks, numSlices=len(self.tasks))
 
-        def run(i):
+        def run(partition_id):
             context = pyspark.TaskContext.get()
             if "gpu" in context.resources():
                 gpu = context.resources()["gpu"].addresses[0]
                 os.environ["CUDA_VISIBLE_DEVICES"] = gpu
-            self.runner(i)
+
+            worker(tasks=[partition_id], **self.worker_args)
 
         rdd.foreach(run)

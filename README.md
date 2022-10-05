@@ -176,6 +176,56 @@ clip_inference turn a set of text+image into clip embeddings
 * **enable_wandb** whether to use wandb (default *False*)
 * **clip_cache_path** cache path for clip (default *None*)
 
+### Inference Worker
+
+If you wish to have more control over how inference is run, you can create and call workers directly using `clip-retrieval inference.worker`
+
+Example Usage:
+
+```bash
+clip-retrieval inference.worker \
+--tasks="[0]" \
+--input_dataset="input/folder/{000000..000100}.tar" \
+--output_folder="example/path" \
+--input_format="webdataset" \
+--output_partition_count="1"
+```
+
+Doing so will invoke a single worker that can be instructed to focus on a specific subset of the `input_dataset`. That worker will sequentially process the `tasks` passed to it. Here, `tasks` is a lists of `partition_id`'s that this worker will be responsible for.
+
+To manually compute the number of tasks, use the following formula: `number_samples / wds_number_file_per_input_file`.
+
+The API is very similar to `clip-retrieval inference` with some minor changes:
+
+* **tasks** A list of integers representing the `partition_id`'s that this worker is responsible for computing. (*required*)
+* **input_dataset** Path to input dataset. Folder if input_format is files. Bash brace pattern such as "{000..150}.tar" (see https://pypi.org/project/braceexpand/) if webdataset (*required*)
+* **output_folder** Folder where the clip embeddings will be saved, as well as metadata (*required*)
+* **output_partition_count** number of output partitions (*required*)
+* **input_format** files or webdataset (default *files*)
+* **cache_path** cache path for webdataset (default *None*)
+* **batch_size** Number of items to do the inference on at once (default *256*)
+* **num_prepro_workers** Number of processes to do the preprocessing (default *8*)
+* **enable_text** Enable text processing (default *True*)
+* **enable_image** Enable image processing (default *True*)
+* **enable_metadata** Enable metadata processing (default *False*)
+* **wds_image_key** Key to use for images in webdataset. (default *jpg*)
+* **wds_caption_key** Key to use for captions in webdataset. (default *txt*)
+* **clip_model** CLIP model to load (default *ViT-B/32*). Specify it as `"open_clip:ViT-B-32-quickgelu"` to use the [open_clip](https://github.com/mlfoundations/open_clip).
+* **mclip_model** MCLIP model to load (default *sentence-transformers/clip-ViT-B-32-multilingual-v1*)
+* **use_mclip** If False it performs the inference using CLIP; MCLIP otherwise (default *False*)
+* **use_jit** uses jit for the clip model (default *True*)
+* **wandb_project** wandb project to use (default *clip_retrieval*)
+* **enable_wandb** whether to use wandb (default *False*)
+* **clip_cache_path** cache path for clip (default *None*)
+
+> ***Note***: The worker does not accept the following arguments
+> * **write_batch_size** Write batch size (default *10**6*)
+> * **distribution_strategy** choose how to distribute the job, see distribution section for details (default *sequential*)
+> * **wds_number_file_per_input_file** estimation of the number of sample per tar if using wds and not specifying output_partition_count (default *10000*)
+
+
+
+
 
 ### Loading/writing files on hdfs
 
