@@ -16,7 +16,7 @@ from clip_retrieval.clip_inference.mapper import ClipMapper
 from clip_retrieval.clip_inference.writer import NumpyWriter
 from clip_retrieval.clip_inference.logger import LoggerWriter
 from clip_retrieval.clip_inference.reader import FilesReader, WebdatasetReader
-from clip_retrieval.load_clip import load_clip
+from clip_retrieval.load_clip import load_clip_without_warmup
 
 
 def worker(
@@ -46,8 +46,8 @@ def worker(
         input_dataset = braceexpand(input_dataset)
 
     def reader_builder(sampler):
-        _, preprocess = load_clip(
-            clip_model=clip_model, use_jit=use_jit, warmup_batch_size=batch_size, clip_cache_path=clip_cache_path
+        _, preprocess = load_clip_without_warmup(
+            clip_model=clip_model, use_jit=use_jit, clip_cache_path=clip_cache_path, device="cpu"
         )
         if input_format == "files":
             return FilesReader(
