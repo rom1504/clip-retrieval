@@ -12,23 +12,24 @@ class SlurmDistributor:
     def __init__(self, tasks, worker_args, slurm_args):
         self.worker_args = worker_args
         self.slurm_args = slurm_args
+        self.nodes = self.slurm_args.pop("nodes")
 
         self.job_timeout = slurm_args.pop("job_timeout")
 
         # calculate world info for distributing work, assume 1 GPU/node
         self.tasks = tasks
         self.num_tasks = len(self.tasks)
-        self.tasks_per_node = self.num_tasks // self.slurm_args["nodes"]
+        self.tasks_per_node = self.num_tasks // self.nodes
 
         if self.tasks_per_node <= 0:
             print("There are more nodes than tasks...reducing the number of requested nodes.")
 
             while self.tasks_per_node <= 0:
                 # reduce the number of nodes by one until we no longer have an excess
-                self.slurm_args["nodes"] -= 1
-                self.tasks_per_node = self.num_tasks // self.slurm_args["nodes"]
+                self.nodes -= 1
+                self.tasks_per_node = self.num_tasks // self.nodes
 
-            new_worker_count = self.slurm_args["nodes"]
+            new_worker_count = self.nodes
             print(f"Now using only: {new_worker_count} workers")
 
     def __call__(self):
@@ -41,7 +42,7 @@ class SlurmDistributor:
         if not os.path.exists(cache_path):
             os.makedirs(cache_path, exist_ok=True)
 
-        task_assignments = {node_id: self._get_worker_tasks(node_id) for node_id in range(self.slurm_args["nodes"])}
+        task_assignments = {node_id: self._get_worker_tasks(node_id) for node_id in range(self.nodes)}
 
         # create the sbatch files to run
         sbatch_files = []
@@ -61,11 +62,11 @@ class SlurmDistributor:
 
         # create a thread group to manage all the jobs we are about to start
         all_results = {}
-        with ThreadPool(self.slurm_args["nodes"]) as p:
+        with ThreadPool(self.nodes) as p:
             # create a surrogate function for the task of running jobs
             run_worker = lambda node_id: self._run_job(sbatch_files[node_id])
 
-            for result in p.imap_unordered(run_worker, range(self.slurm_args["nodes"])):
+            for result in p.imap_unordered(run_worker, range(self.nodes)):
                 all_results.update(result)
 
         print(all_results)
@@ -151,20 +152,11 @@ class SlurmDistributor:
         arguments = []
 
         for key, value in self.worker_args.items():
-            # the input_dataset list of strings need special attention
-            if key == "input_dataset":
-                # wrap inner values with strings
-                escaped_values = ", ".join([f'\\"{i}\\"' for i in value])
-                value = f"[{escaped_values}]"
-
-            # add arguments
             arguments.append(f'--{key}="{value}"')
 
         return " ".join(arguments)
 
-    def _generate_sbatch(
-        self, tasks, output_file, cache_folder, job_name, partition, nodes, job_comment, nodelist, exclude
-    ):
+    def _generate_sbatch(self, tasks, output_file, cache_folder, job_name, partition, job_comment, nodelist, exclude):
         """
         Generate sbatch for a worker.
 
@@ -174,8 +166,6 @@ class SlurmDistributor:
         gres: for specifying the resources used in a node
             - https://slurm.schedmd.com/gres.html
         """
-        ntasks_per_node = 1
-        gres = "gpu:1"
         venv = os.environ["VIRTUAL_ENV"]
         scomment = ("--comment " + job_comment) if job_comment is not None else ""
         sbatch_scomment = ("#SBATCH --comment " + job_comment) if job_comment is not None else ""
@@ -185,17 +175,17 @@ class SlurmDistributor:
         return f"""#!/bin/bash
 #SBATCH --partition={partition}
 #SBATCH --job-name={job_name}
-#SBATCH --nodes {nodes}
-#SBATCH --ntasks-per-node {ntasks_per_node}
-#SBATCH --gres={gres}
 #SBATCH --output={output_file}
-#SBATCH --exclusive
+#SBATCH --nodes 1
+#SBATCH --gpus=1
+#SBATCH --gpus-per-task=1
+#SBATCH --cpus-per-task=6
 {sbatch_scomment}
 {nodelist}
 {exclude}
 {self._get_slurm_boilerplate(cache_folder=cache_folder)}
 source {venv}/bin/activate
-/opt/slurm/sbin/srun {scomment} --cpu_bind=v --accel-bind=gn clip-retrieval inference.worker --tasks="{tasks}" {self._get_formated_worker_args()}
+/opt/slurm/sbin/srun {scomment} clip-retrieval inference.worker --tasks="{tasks}" {self._get_formated_worker_args()}
 """
 
     def _get_slurm_boilerplate(self, cache_folder):

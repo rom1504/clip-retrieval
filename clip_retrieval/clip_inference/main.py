@@ -94,15 +94,16 @@ def main(
     slurm_job_timeout=None,
     slurm_cache_path=None,
 ):
+    # package arguments to pass on to the distributor
+    local_args = dict(locals())
 
-    if input_format == "webdataset":
-        input_dataset = list(braceexpand(input_dataset))
+    expanded_dataset = list(braceexpand(input_dataset)) if input_format == "webdataset" else input_dataset
 
     # compute this now for the distributors to use
     if output_partition_count is None:
         output_partition_count = calculate_partition_count(
             input_format=input_format,
-            input_dataset=input_dataset,
+            input_dataset=expanded_dataset,
             enable_image=enable_image,
             enable_text=enable_text,
             enable_metadata=enable_metadata,
@@ -110,8 +111,8 @@ def main(
             wds_number_file_per_input_file=wds_number_file_per_input_file,
         )
 
-    # package arguments to pass on to the distributor
-    local_args = locals()
+        local_args["output_partition_count"] = output_partition_count
+
     local_args.pop("wds_number_file_per_input_file")
     local_args.pop("write_batch_size")
     local_args.pop("distribution_strategy")
