@@ -175,6 +175,14 @@ clip_inference turn a set of text+image into clip embeddings
 * **wandb_project** wandb project to use (default *clip_retrieval*)
 * **enable_wandb** whether to use wandb (default *False*)
 * **clip_cache_path** cache path for clip (default *None*)
+* **slurm_job_name**, the job name to use in slurm. (default *None*)
+* **slurm_partition** (default *None*), the slurm partition to create a job in.
+* **slurm_jobs**, the number of jobs to create in slurm. (default *None*)
+* **slurm_job_comment**, the job comment to use. (default *None*)
+* **slurm_nodelist**), a list of specific nodes to use .(default *None*
+* **slurm_exclude**, a list of nodes to exclude when creating jobs. (default *None*)
+* **slurm_job_timeout**, if not supplied it will default to 30 minutes to allow you time to calculate samples/s. (default *None*)
+* **slurm_cache_path**, cache path to use for slurm-related tasks. (default *None*)
 
 ### Inference Worker
 
@@ -222,6 +230,7 @@ The API is very similar to `clip-retrieval inference` with some minor changes:
 > * **write_batch_size** Write batch size (default *10**6*)
 > * **distribution_strategy** choose how to distribute the job, see distribution section for details (default *sequential*)
 > * **wds_number_file_per_input_file** estimation of the number of sample per tar if using wds and not specifying output_partition_count (default *10000*)
+> * **any of the SLURM arguments**
 
 
 
