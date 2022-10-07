@@ -87,7 +87,7 @@ def main(
     clip_cache_path=None,
     slurm_job_name=None,
     slurm_partition=None,
-    slurm_nodes=None,
+    slurm_jobs=None,
     slurm_job_comment=None,
     slurm_nodelist=None,
     slurm_exclude=None,

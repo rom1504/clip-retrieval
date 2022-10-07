@@ -7,29 +7,29 @@ from multiprocessing.pool import ThreadPool
 
 
 class SlurmDistributor:
-    """distribute work across a collection of slurm nodes"""
+    """distribute work across a collection of slurm jobs"""
 
     def __init__(self, tasks, worker_args, slurm_args):
         self.worker_args = worker_args
         self.slurm_args = slurm_args
-        self.nodes = self.slurm_args.pop("nodes")
+        self.jobs = self.slurm_args.pop("jobs")
 
         self.job_timeout = slurm_args.pop("job_timeout")
 
         # calculate world info for distributing work, assume 1 GPU/node
         self.tasks = tasks
         self.num_tasks = len(self.tasks)
-        self.tasks_per_node = self.num_tasks // self.nodes
+        self.tasks_per_node = self.num_tasks // self.jobs
 
         if self.tasks_per_node <= 0:
-            print("There are more nodes than tasks...reducing the number of requested nodes.")
+            print("There are more jobs than tasks...reducing the number of requested jobs.")
 
             while self.tasks_per_node <= 0:
-                # reduce the number of nodes by one until we no longer have an excess
-                self.nodes -= 1
-                self.tasks_per_node = self.num_tasks // self.nodes
+                # reduce the number of jobs by one until we no longer have an excess
+                self.jobs -= 1
+                self.tasks_per_node = self.num_tasks // self.jobs
 
-            new_worker_count = self.nodes
+            new_worker_count = self.jobs
             print(f"Now using only: {new_worker_count} workers")
 
     def __call__(self):
@@ -42,7 +42,7 @@ class SlurmDistributor:
         if not os.path.exists(cache_path):
             os.makedirs(cache_path, exist_ok=True)
 
-        task_assignments = {node_id: self._get_worker_tasks(node_id) for node_id in range(self.nodes)}
+        task_assignments = {node_id: self._get_worker_tasks(node_id) for node_id in range(self.jobs)}
 
         # create the sbatch files to run
         sbatch_files = []
@@ -62,11 +62,11 @@ class SlurmDistributor:
 
         # create a thread group to manage all the jobs we are about to start
         all_results = {}
-        with ThreadPool(self.nodes) as p:
+        with ThreadPool(self.jobs) as p:
             # create a surrogate function for the task of running jobs
             run_worker = lambda node_id: self._run_job(sbatch_files[node_id])
 
-            for result in p.imap_unordered(run_worker, range(self.nodes)):
+            for result in p.imap_unordered(run_worker, range(self.jobs)):
                 all_results.update(result)
 
         print(all_results)
@@ -176,7 +176,7 @@ class SlurmDistributor:
 #SBATCH --partition={partition}
 #SBATCH --job-name={job_name}
 #SBATCH --output={output_file}
-#SBATCH --nodes 1
+#SBATCH --nodes=1
 #SBATCH --gpus=1
 #SBATCH --gpus-per-task=1
 #SBATCH --cpus-per-task=6
