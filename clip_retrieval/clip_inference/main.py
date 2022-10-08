@@ -1,6 +1,7 @@
 """main module combines distributor, runner, reader, mapper, writer to produce clip embeddings"""
 
 import fire
+import math
 from braceexpand import braceexpand
 
 from clip_retrieval.clip_inference.logger import LoggerReader
@@ -56,7 +57,7 @@ def calculate_partition_count(
     else:
         print(f"The number of samples has been estimated to be {sample_count}")
 
-    output_partition_count = int(sample_count / write_batch_size) + 1
+    output_partition_count = math.ceil(sample_count / write_batch_size)
 
     return output_partition_count
 
