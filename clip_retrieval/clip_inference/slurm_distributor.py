@@ -75,30 +75,34 @@ class SlurmDistributor:
         """
         Run a job and wait for it to finish
         """
+        try:
+            job_id = self._start_job(sbatch_file)
 
-        job_id = self._start_job(sbatch_file)
+            print(f"waiting for job {job_id}")
 
-        print(f"waiting for job {job_id}")
+            timeout = self.job_timeout
 
-        timeout = self.job_timeout
+            if timeout is None:
+                print("You have not specified a timeout, defaulting to 24 hours.")
+                timeout = 60 * 60 * 24
 
-        if timeout is None:
-            print("You have not specified a timeout, defaulting to 24 hours.")
-            timeout = 60 * 60 * 24
+            status = self._wait_for_job_to_finish(job_id=job_id, timeout=timeout)
 
-        status = self._wait_for_job_to_finish(job_id=job_id, timeout=timeout)
+            if not status:
+                print(f"canceling {job_id}")
+                subprocess.check_output(["scancel", job_id]).decode("utf8")
+                status = self._wait_for_job_to_finish(job_id)
+                print("job cancelled")
 
-        if not status:
-            print(f"canceling {job_id}")
-            subprocess.check_output(["scancel", job_id]).decode("utf8")
-            status = self._wait_for_job_to_finish(job_id)
-            print("job cancelled")
+                # TODO: better reporting
+                return {job_id: "failed"}
+            else:
+                print("job succeeded")
+                return {job_id: "success"}
+        except Exception as e:  # pylint: disable=broad-except
+            print(e)
 
-            # TODO: better reporting
-            return {job_id: "failed"}
-        else:
-            print("job succeeded")
-            return {job_id: "success"}
+            return {"unknown": e}
 
     def _wait_for_job_to_finish(self, job_id, timeout=30):
         t = time.time()
