@@ -88,12 +88,13 @@ def main(
     clip_cache_path=None,
     slurm_job_name=None,
     slurm_partition=None,
-    slurm_jobs=None,
+    slurm_nodes=None,
     slurm_job_comment=None,
     slurm_nodelist=None,
     slurm_exclude=None,
     slurm_job_timeout=None,
     slurm_cache_path=None,
+    slurm_verbose_wait=False,
 ):
     # package arguments to pass on to the distributor
     local_args = dict(locals())
