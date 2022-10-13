@@ -2,78 +2,58 @@
 
 import os
 import time
+import json
 import subprocess
-from multiprocessing.pool import ThreadPool
+from datetime import datetime
+
+TIMESTAMP = datetime.now().timestamp()
 
 
 class SlurmDistributor:
     """distribute work across a collection of slurm jobs"""
 
     def __init__(self, tasks, worker_args, slurm_args):
+        self.num_tasks = len(tasks)
         self.worker_args = worker_args
         self.slurm_args = slurm_args
-        self.jobs = self.slurm_args.pop("jobs")
 
         self.job_timeout = slurm_args.pop("job_timeout")
-
-        # calculate world info for distributing work, assume 1 GPU/node
-        self.tasks = tasks
-        self.num_tasks = len(self.tasks)
-        self.tasks_per_node = self.num_tasks // self.jobs
-
-        if self.tasks_per_node <= 0:
-            print("There are more jobs than tasks...reducing the number of requested jobs.")
-
-            while self.tasks_per_node <= 0:
-                # reduce the number of jobs by one until we no longer have an excess
-                self.jobs -= 1
-                self.tasks_per_node = self.num_tasks // self.jobs
-
-            new_worker_count = self.jobs
-            print(f"Now using only: {new_worker_count} workers")
+        self.verbose_wait = slurm_args.pop("verbose_wait")
 
     def __call__(self):
         """
-        Distribute task amongst multiple workers that will be started with sbatch.
+        Create a sbatch file, submit it to slurm, and wait for it to finish.
         """
+        # create the cache path if it doesn't exist, pop the cache path from the slurm args to remove it
         cache_path = self.slurm_args.pop("cache_path")
-        if cache_path is None:
-            cache_path = os.path.expanduser("~/.cache")
-        if not os.path.exists(cache_path):
-            os.makedirs(cache_path, exist_ok=True)
+        os.makedirs(cache_path, exist_ok=True)
 
-        task_assignments = {node_id: self._get_worker_tasks(node_id) for node_id in range(self.jobs)}
+        # make the filenames unique using the current timestamp
+        sbatch_script_path = os.path.join(cache_path, f"sbatch_script_{TIMESTAMP}.sh")
 
-        # create the sbatch files to run
-        sbatch_files = []
-        for node_id, tasks in task_assignments.items():
-            # save the sbatch file to the cache
-            sbatch_script_path = os.path.join(cache_path, f"sbatch_{node_id}.script")
-            sbatch_output_path = os.path.join(cache_path, f"sbatch_{node_id}.out")
+        # save the file to the cache path
+        with open(sbatch_script_path, "w", encoding="utf-8") as sbatch_file:
+            sbatch_file.write(
+                self._generate_sbatch(cache_path=cache_path, slurm_args=self.slurm_args, worker_args=self.worker_args)
+            )
 
-            with open(sbatch_script_path, "w", encoding="utf-8") as sbatch_file:
-                sbatch_file.write(
-                    self._generate_sbatch(
-                        tasks=tasks, output_file=sbatch_output_path, cache_folder=cache_path, **self.slurm_args
-                    )
-                )
+        # now we need to run the job
+        status = self._run_job(sbatch_script_path)
 
-            sbatch_files.append(sbatch_script_path)
-
-        # create a thread group to manage all the jobs we are about to start
-        all_results = {}
-        with ThreadPool(self.jobs) as p:
-            # create a surrogate function for the task of running jobs
-            run_worker = lambda node_id: self._run_job(sbatch_files[node_id])
-
-            for result in p.imap_unordered(run_worker, range(self.jobs)):
-                all_results.update(result)
-
-        print(all_results)
+        # interpret the results
+        if status == "success":
+            print("job succeeded")
+            return True
+        elif status == "failed":
+            print("job failed")
+            return False
+        else:
+            print("exception occurred")
+            return False
 
     def _run_job(self, sbatch_file):
         """
-        Run a job and wait for it to finish
+        Run a job and wait for it to finish.
         """
         try:
             job_id = self._start_job(sbatch_file)
@@ -93,16 +73,13 @@ class SlurmDistributor:
                 subprocess.check_output(["scancel", job_id]).decode("utf8")
                 status = self._wait_for_job_to_finish(job_id)
                 print("job cancelled")
-
-                # TODO: better reporting
-                return {job_id: "failed"}
+                return "failed"
             else:
                 print("job succeeded")
-                return {job_id: "success"}
+                return "success"
         except Exception as e:  # pylint: disable=broad-except
             print(e)
-
-            return {"unknown": e}
+            return "exception occurred"
 
     def _wait_for_job_to_finish(self, job_id, timeout=30):
         t = time.time()
@@ -115,7 +92,10 @@ class SlurmDistributor:
 
     def _is_job_finished(self, job_id):
         status = subprocess.check_output(["squeue", "-j", job_id]).decode("utf8")
-        print(f"job status is {status}")
+
+        if self.verbose_wait:
+            print(f"job status is {status}")
+
         return status == "slurm_load_jobs error: Invalid job id specified" or len(status.split("\n")) == 2
 
     def _start_job(self, sbatch_file):
@@ -133,67 +113,50 @@ class SlurmDistributor:
         job_id = parsed_sbatch[3].strip()
         return job_id
 
-    def _get_worker_tasks(self, node_id):
-        """
-        Return a list of the tasks this worker is responsible for.
-        """
-        # calculate this node's distribution of work
-        start_index = self.tasks_per_node * node_id
+    def _write_json_worker_args(self, worker_args, cache_path):
+        """write the worker args to a json file"""
+        worker_args_path = os.path.join(cache_path, f"worker_args_{TIMESTAMP}.json")
+        with open(worker_args_path, "w", encoding="utf-8") as worker_args_file:
+            json.dump(worker_args, worker_args_file, indent=4)
+        return worker_args_path
 
-        # account for uneven work distribution
-        stop_index = min(start_index + self.tasks_per_node, self.num_tasks)
-
-        return self.tasks[start_index:stop_index]
-
-    def _get_formated_worker_args(self):
-        """
-        Format the worker arguments to be used for a CLI command.
-
-        Fire is sensitive to argument parsing:
-            - more reading here: https://google.github.io/python-fire/guide/#argument-parsing
-        """
-
-        arguments = []
-
-        for key, value in self.worker_args.items():
-            arguments.append(f'--{key}="{value}"')
-
-        return " ".join(arguments)
-
-    def _generate_sbatch(self, tasks, output_file, cache_folder, job_name, partition, job_comment, nodelist, exclude):
+    def _generate_sbatch(self, cache_path, slurm_args, worker_args):
         """
         Generate sbatch for a worker.
 
-        Resources:
         sbatch: allows you to specify a configuration and task in a file
             - https://slurm.schedmd.com/sbatch.html
-        gres: for specifying the resources used in a node
-            - https://slurm.schedmd.com/gres.html
         """
+        # write the worker args to a file
+        worker_args_path = self._write_json_worker_args(worker_args, cache_path)
+
         venv = os.environ["VIRTUAL_ENV"]
-        scomment = ("--comment " + job_comment) if job_comment is not None else ""
-        sbatch_scomment = ("#SBATCH --comment " + job_comment) if job_comment is not None else ""
-        nodelist = ("#SBATCH --nodelist " + nodelist) if nodelist is not None else ""
-        exclude = ("#SBATCH --exclude " + exclude) if exclude is not None else ""
+        scomment = ("--comment " + slurm_args["job_comment"]) if ["job_comment"] is not None else ""
+        sbatch_scomment = (
+            ("#SBATCH --comment " + slurm_args["job_comment"]) if slurm_args["job_comment"] is not None else ""
+        )
+        nodelist = ("#SBATCH --nodelist " + slurm_args["nodelist"]) if slurm_args["nodelist"] is not None else ""
+        exclude = ("#SBATCH --exclude " + slurm_args["exclude"]) if slurm_args["exclude"] is not None else ""
 
         return f"""#!/bin/bash
-#SBATCH --partition={partition}
-#SBATCH --job-name={job_name}
-#SBATCH --output={output_file}
-#SBATCH --nodes=1
-#SBATCH --gpus=1
-#SBATCH --gpus-per-task=1
-#SBATCH --cpus-per-task=6
+# Define sbatch config, use exclusive to capture all resources in each node
+#SBATCH --partition={slurm_args["partition"]}
+#SBATCH --job-name={slurm_args["job_name"]}
+#SBATCH --output={cache_path}/slurm-%x_%j.out
+#SBATCH --nodes={slurm_args["nodes"]}
+#SBATCH --ntasks-per-node=8
+#SBATCH --exclusive
+
 {sbatch_scomment}
 {nodelist}
 {exclude}
-{self._get_slurm_boilerplate(cache_folder=cache_folder)}
-source {venv}/bin/activate
-/opt/slurm/sbin/srun {scomment} clip-retrieval inference.worker --tasks="{tasks}" {self._get_formated_worker_args()}
-"""
 
-    def _get_slurm_boilerplate(self, cache_folder):
-        return f"""
-export HF_HOME="{cache_folder}/hf_home"
-export WANDB_CACHE_DIR="{cache_folder}/wandb_cache"
+# Environment variables for the inner script
+export NUM_TASKS={self.num_tasks}
+export WORLD_SIZE={slurm_args["nodes"] * 8} # 8 gpus per node
+export WORKER_ARGS_PATH={worker_args_path}
+
+# Run the internal script
+source {venv}/bin/activate
+srun {scomment} clip-retrieval inference.slurm_worker
 """
