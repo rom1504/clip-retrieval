@@ -145,6 +145,9 @@ class SlurmDistributor:
 #SBATCH --output={cache_path}/slurm-%x_%j.out
 #SBATCH --nodes={slurm_args["nodes"]}
 #SBATCH --ntasks-per-node=8
+#SBATCH --cpus-per-gpu=6
+#SBATCH --gres=gpu:8
+#SBATCH --mem-per-gpu=40G
 #SBATCH --exclusive
 
 {sbatch_scomment}
@@ -155,6 +158,7 @@ class SlurmDistributor:
 export NUM_TASKS={self.num_tasks}
 export WORLD_SIZE={slurm_args["nodes"] * 8} # 8 gpus per node
 export WORKER_ARGS_PATH={worker_args_path}
+export CUDA_LAUNCH_BLOCKING=1
 
 # Run the internal script
 source {venv}/bin/activate
