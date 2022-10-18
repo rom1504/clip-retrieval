@@ -24,8 +24,13 @@ class SlurmDistributor:
         """
         Create a sbatch file, submit it to slurm, and wait for it to finish.
         """
-        # create the cache path if it doesn't exist, pop the cache path from the slurm args to remove it
+        # pop the cache path from the slurm args to remove it
         cache_path = self.slurm_args.pop("cache_path")
+
+        # create the cache path if it doesn't exist
+        if cache_path is None:
+            cache_path = os.path.expanduser("~/.cache")
+
         os.makedirs(cache_path, exist_ok=True)
 
         # make the filenames unique using the current timestamp
