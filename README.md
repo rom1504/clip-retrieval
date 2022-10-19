@@ -179,11 +179,11 @@ clip_inference turn a set of text+image into clip embeddings
 * **slurm_partition** (default *None*), the slurm partition to create a job in.
 * **slurm_jobs**, the number of jobs to create in slurm. (default *None*)
 * **slurm_job_comment**, the job comment to use. (default *None*)
-* **slurm_nodelist**), a list of specific nodes to use .(default *None*
+* **slurm_nodelist**, a list of specific nodes to use .(default *None*
 * **slurm_exclude**, a list of nodes to exclude when creating jobs. (default *None*)
-* **slurm_job_timeout**, if not supplied it will default to 30 minutes to allow you time to calculate samples/s. (default *None*)
+* **slurm_job_timeout**, if not supplied it will default to 2 weeks. (default *None*)
 * **slurm_cache_path**, cache path to use for slurm-related tasks. (default *None*)
-* **slurm_verbose_wait=False**, wether to print the status of your slurm job
+* **slurm_verbose_wait=False**, wether to print the status of your slurm job (default *False*)
 
 ### Inference Worker
 

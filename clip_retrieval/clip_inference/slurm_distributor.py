@@ -68,8 +68,8 @@ class SlurmDistributor:
             timeout = self.job_timeout
 
             if timeout is None:
-                print("You have not specified a timeout, defaulting to 24 hours.")
-                timeout = 60 * 60 * 24
+                print("You have not specified a timeout, defaulting to 2 weeks.")
+                timeout = 1.21e6
 
             status = self._wait_for_job_to_finish(job_id=job_id, timeout=timeout)
 
