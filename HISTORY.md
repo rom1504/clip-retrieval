@@ -1,3 +1,9 @@
+## 2.35.0
+
+* Slurm distributor (thanks @nousr)
+* Autocast for openclip
+* support openclip in clip back
+
 ## 2.34.2
 
 * Read image data from path in case "image_path" is present
