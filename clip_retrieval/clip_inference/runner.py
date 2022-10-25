@@ -11,12 +11,6 @@ class Sampler:
         self.output_partition_count = output_partition_count
 
     def __call__(self, l):
-        print(
-            f"sampler; output_partition_id={self.output_partition_id}"
-            + f"; output_partition_count={self.output_partition_count}",
-            flush=True,
-        )
-        print(f"sampler; number partition is {len(l)}", flush=True)
         return [e for i, e in enumerate(l) if i % self.output_partition_count == self.output_partition_id]
 
 
