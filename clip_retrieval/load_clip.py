@@ -4,6 +4,7 @@ from torch import autocast, nn
 import torch
 import clip
 from PIL import Image
+import time
 
 
 class OpenClipWrapper(nn.Module):
@@ -71,9 +72,11 @@ def load_clip(clip_model="ViT-B/32", use_jit=True, warmup_batch_size=1, clip_cac
         device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = load_clip_without_warmup(clip_model, use_jit, device, clip_cache_path)
 
-    print(f"warming up with batch size {warmup_batch_size} on {device}")
+    start = time.time()
+    print(f"warming up with batch size {warmup_batch_size} on {device}", flush=True)
     warmup(warmup_batch_size, device, preprocess, model)
-    print("done warming up")
+    duration = time.time() - start
+    print(f"done warming up in {duration}s", flush=True)
     return model, preprocess
 
 

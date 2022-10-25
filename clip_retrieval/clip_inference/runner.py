@@ -4,6 +4,8 @@ import time
 
 
 class Sampler:
+    """Sampler"""
+
     def __init__(self, output_partition_id, output_partition_count):
         self.output_partition_id = output_partition_id
         self.output_partition_count = output_partition_count

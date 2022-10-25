@@ -35,7 +35,7 @@ pip install clip-retrieval
 
 ## Clip client
 
-`ClipClient` allows remote querying of a clip-retrieval backend via python. 
+`ClipClient` allows remote querying of a clip-retrieval backend via python.
 
 See [`ClipClient` - Getting Started Notebook](/notebook/clip-client-query-api.ipynb) for a jupyter notebook example.
 
@@ -175,6 +175,15 @@ clip_inference turn a set of text+image into clip embeddings
 * **wandb_project** wandb project to use (default *clip_retrieval*)
 * **enable_wandb** whether to use wandb (default *False*)
 * **clip_cache_path** cache path for clip (default *None*)
+* **slurm_job_name**, the job name to use in slurm. (default *None*)
+* **slurm_partition** (default *None*), the slurm partition to create a job in.
+* **slurm_jobs**, the number of jobs to create in slurm. (default *None*)
+* **slurm_job_comment**, the job comment to use. (default *None*)
+* **slurm_nodelist**, a list of specific nodes to use .(default *None*
+* **slurm_exclude**, a list of nodes to exclude when creating jobs. (default *None*)
+* **slurm_job_timeout**, if not supplied it will default to 2 weeks. (default *None*)
+* **slurm_cache_path**, cache path to use for slurm-related tasks. (default *None*)
+* **slurm_verbose_wait=False**, wether to print the status of your slurm job (default *False*)
 
 ### Inference Worker
 
@@ -222,6 +231,7 @@ The API is very similar to `clip-retrieval inference` with some minor changes:
 > * **write_batch_size** Write batch size (default *10**6*)
 > * **distribution_strategy** choose how to distribute the job, see distribution section for details (default *sequential*)
 > * **wds_number_file_per_input_file** estimation of the number of sample per tar if using wds and not specifying output_partition_count (default *10000*)
+> * **any of the SLURM arguments**
 
 
 
@@ -290,7 +300,7 @@ clip-retrieval back --port 1234 --indices-paths indices_paths.json
 
 Options:
 * `--use_jit True` uses jit for the clip model
-* `--clip_model "ViT-B/32"` allows choosing the clip model to use. Prefix with `"open_clip:"` to use an [open_clip](https://github.com/mlfoundations/open_clip) model. 
+* `--clip_model "ViT-B/32"` allows choosing the clip model to use. Prefix with `"open_clip:"` to use an [open_clip](https://github.com/mlfoundations/open_clip) model.
 * `--enable_mclip_option True` loads the mclip model, making it possible to search in any language.
 * `--columns_to_return='["url", "image_path", "caption", "NSFW"]` allows you to specify which columns should be fetched from the metadata and returned by the backend. It's useful to specify less in case of hdf5 caching to speed up the queries.
 * `--enable_faiss_memory_mapping=True` option can be passed to use an index with memory mapping.
@@ -401,7 +411,7 @@ It can be seen on this dashboard that the slowest part of any call is fetching t
 For text queries or image queries, the latency is about 50ms.
 Here is an example of output in the metrics summary:
 ```
-Among 20.0 calls to the knn end point with an average latency of 0.1889s per request, the step costs are (in order): 
+Among 20.0 calls to the knn end point with an average latency of 0.1889s per request, the step costs are (in order):
                         name                               description  calls  average proportion
 0              download_time             Time spent downloading an url      6  0.3215s     170.2%
 1          metadata_get_time            Time spent retrieving metadata     20  0.0415s      21.9%
@@ -445,7 +455,7 @@ to run tests:
 ```
 pip install -r requirements-test.txt
 ```
-then 
+then
 ```
 make lint
 make test

@@ -13,7 +13,7 @@ def test_worker():
     with tempfile.TemporaryDirectory() as tmpdir:
 
         worker(
-            tasks=[0,1],
+            tasks=[0, 1],
             input_dataset=input_dataset,
             output_folder=tmpdir,
             input_format="files",

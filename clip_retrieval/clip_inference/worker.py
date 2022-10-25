@@ -40,10 +40,13 @@ def worker(
     clip_cache_path=None,
 ):
     """Start a worker"""
+    print("Starting the worker", flush=True)
 
     # check for brace expansion
     if input_format == "webdataset" and not isinstance(input_dataset, list):
-        input_dataset = braceexpand(input_dataset)
+        input_dataset = list(braceexpand(input_dataset))
+
+    print(f"dataset is {len(input_dataset)}", flush=True)
 
     def reader_builder(sampler):
         _, preprocess = load_clip(
@@ -115,6 +118,7 @@ def worker(
     )
 
     for task in tasks:
+        print(f"Starting work on task {task}", flush=True)
         runner(task)
 
 

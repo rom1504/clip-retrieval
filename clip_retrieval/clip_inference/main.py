@@ -1,10 +1,12 @@
 """main module combines distributor, runner, reader, mapper, writer to produce clip embeddings"""
 
 import fire
+import math
 from braceexpand import braceexpand
 
 from clip_retrieval.clip_inference.logger import LoggerReader
 from clip_retrieval.clip_inference.reader import folder_to_keys
+from clip_retrieval.clip_inference.slurm_distributor import SlurmDistributor
 from clip_retrieval.clip_inference.distributor import PysparkDistributor, SequentialDistributor
 
 
@@ -55,7 +57,7 @@ def calculate_partition_count(
     else:
         print(f"The number of samples has been estimated to be {sample_count}")
 
-    output_partition_count = int(sample_count / write_batch_size) + 1
+    output_partition_count = math.ceil(sample_count / write_batch_size)
 
     return output_partition_count
 
@@ -84,16 +86,26 @@ def main(
     wandb_project="clip_retrieval",
     enable_wandb=False,
     clip_cache_path=None,
+    slurm_job_name=None,
+    slurm_partition=None,
+    slurm_nodes=None,
+    slurm_job_comment=None,
+    slurm_nodelist=None,
+    slurm_exclude=None,
+    slurm_job_timeout=None,
+    slurm_cache_path=None,
+    slurm_verbose_wait=False,
 ):
+    # package arguments to pass on to the distributor
+    local_args = dict(locals())
 
-    if input_format == "webdataset":
-        input_dataset = list(braceexpand(input_dataset))
+    expanded_dataset = list(braceexpand(input_dataset)) if input_format == "webdataset" else input_dataset
 
     # compute this now for the distributors to use
     if output_partition_count is None:
         output_partition_count = calculate_partition_count(
             input_format=input_format,
-            input_dataset=input_dataset,
+            input_dataset=expanded_dataset,
             enable_image=enable_image,
             enable_text=enable_text,
             enable_metadata=enable_metadata,
@@ -101,8 +113,8 @@ def main(
             wds_number_file_per_input_file=wds_number_file_per_input_file,
         )
 
-    # package arguments to pass on to the distributor
-    local_args = locals()
+        local_args["output_partition_count"] = output_partition_count
+
     local_args.pop("wds_number_file_per_input_file")
     local_args.pop("write_batch_size")
     local_args.pop("distribution_strategy")
@@ -110,14 +122,19 @@ def main(
     local_args.pop("enable_wandb")
 
     tasks = list(range(output_partition_count))
-    worker_args = dict(local_args.items())
+    worker_args = {k: v for k, v in local_args.items() if not k.startswith("slurm_")}
 
     if distribution_strategy == "sequential":
         distributor = SequentialDistributor(tasks=tasks, worker_args=worker_args)
     elif distribution_strategy == "pyspark":
         distributor = PysparkDistributor(tasks=tasks, worker_args=worker_args)
+    elif distribution_strategy == "slurm":
+        slurm_args = {k.lstrip("slurm_"): v for k, v in local_args.items() if k.startswith("slurm_")}
+        distributor = SlurmDistributor(tasks=tasks, worker_args=worker_args, slurm_args=slurm_args)
     else:
-        print(f"The {distribution_strategy} strategy is not implemented. Please choose from: [sequential, pyspark]")
+        print(
+            f"The {distribution_strategy} strategy is not implemented. Please choose from: [sequential, pyspark, slurm]"
+        )
 
     logger_reader = LoggerReader(
         stats_folder=output_folder + "/stats",
