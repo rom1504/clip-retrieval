@@ -124,9 +124,7 @@ def create_webdataset(
     import clip  # pylint: disable=import-outside-toplevel
     import webdataset as wds  # pylint: disable=import-outside-toplevel
 
-    print(f"before sample {len(urls)}", flush=True)
     urls = input_sampler(urls)
-    print(f"after sample {len(urls)}", flush=True)
 
     dataset = wds.WebDataset(urls, cache_dir=cache_path, cache_size=10**10, handler=wds.handlers.warn_and_continue)
     tokenizer = lambda text: clip.tokenize([text], truncate=True)[0]
