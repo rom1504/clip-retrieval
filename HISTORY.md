@@ -1,3 +1,7 @@
+## 2.35.1
+
+* update key toggles in inf.main (thanks @nousr)
+
 ## 2.35.0
 
 * Slurm distributor (thanks @nousr)
