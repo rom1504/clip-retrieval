@@ -410,7 +410,7 @@ class KnnService(Resource):
                 output.update(meta_to_dict(meta))
             output["id"] = i.item()
             output["similarity"] = d.item()
-            output["image_embedding"] = e
+            output["image_embedding"] = e.tolist()
             results.append(output)
 
         return results
