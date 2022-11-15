@@ -372,6 +372,7 @@ class KnnService(Resource):
         result_indices = results[:nb_results]
         result_distances = distances[0][:nb_results]
         result_embeddings = embeddings[0][:nb_results]
+        result_image_embeddings = result_embeddings
         result_embeddings = normalized(result_embeddings)
         local_indices_to_remove = self.post_filter(
             clip_resource.safety_model,
@@ -386,21 +387,24 @@ class KnnService(Resource):
             indices_to_remove.add(result_indices[local_index])
         indices = []
         distances = []
-        for ind, distance in zip(result_indices, result_distances):
+        image_embeddings =[]
+        for ind, distance, image_embedding in zip(result_indices, result_distances, result_image_embeddings):
             if ind not in indices_to_remove:
                 indices_to_remove.add(ind)
                 indices.append(ind)
                 distances.append(distance)
+                image_embeddings.append(image_embedding)
+                
 
-        return distances, indices
+        return distances, indices, image_embeddings
 
-    def map_to_metadata(self, indices, distances, num_images, metadata_provider, columns_to_return):
+    def map_to_metadata(self, indices, distances, image_embeddings, num_images, metadata_provider, columns_to_return):
         """map the indices to the metadata"""
 
         results = []
         with METADATA_GET_TIME.time():
             metas = metadata_provider.get(indices[:num_images], columns_to_return)
-        for key, (d, i) in enumerate(zip(distances, indices)):
+        for key, (d, i, e) in enumerate(zip(distances, indices, image_embeddings)):
             output = {}
             meta = None if key + 1 > len(metas) else metas[key]
             convert_metadata_to_base64(meta)
@@ -408,6 +412,8 @@ class KnnService(Resource):
                 output.update(meta_to_dict(meta))
             output["id"] = i.item()
             output["similarity"] = d.item()
+            output["image_embedding"] = e.item()
+            
             results.append(output)
 
         return results
@@ -448,7 +454,7 @@ class KnnService(Resource):
             aesthetic_score=aesthetic_score,
             aesthetic_weight=aesthetic_weight,
         )
-        distances, indices = self.knn_search(
+        distances, indices, image_embeddings = self.knn_search(
             query,
             modality=modality,
             num_result_ids=num_result_ids,
@@ -460,7 +466,7 @@ class KnnService(Resource):
         if len(distances) == 0:
             return []
         results = self.map_to_metadata(
-            indices, distances, num_images, clip_resource.metadata_provider, clip_resource.columns_to_return
+            indices, distances, image_embeddings, num_images, clip_resource.metadata_provider, clip_resource.columns_to_return
         )
 
         return results
