@@ -394,8 +394,6 @@ class KnnService(Resource):
                 indices.append(ind)
                 distances.append(distance)
                 image_embeddings.append(image_embedding)
-                
-
         return distances, indices, image_embeddings
 
     def map_to_metadata(self, indices, distances, image_embeddings, num_images, metadata_provider, columns_to_return):
@@ -413,7 +411,6 @@ class KnnService(Resource):
             output["id"] = i.item()
             output["similarity"] = d.item()
             output["image_embedding"] = e.item()
-            
             results.append(output)
 
         return results
@@ -466,9 +463,13 @@ class KnnService(Resource):
         if len(distances) == 0:
             return []
         results = self.map_to_metadata(
-            indices, distances, image_embeddings, num_images, clip_resource.metadata_provider, clip_resource.columns_to_return
+            indices, 
+            distances, 
+            image_embeddings, 
+            num_images, 
+            clip_resource.metadata_provider, 
+            clip_resource.columns_to_return,
         )
-
         return results
 
     @FULL_KNN_REQUEST_TIME.time()
