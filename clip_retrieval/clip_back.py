@@ -463,11 +463,11 @@ class KnnService(Resource):
         if len(distances) == 0:
             return []
         results = self.map_to_metadata(
-            indices, 
-            distances, 
-            image_embeddings, 
-            num_images, 
-            clip_resource.metadata_provider, 
+            indices,
+            distances,
+            image_embeddings,
+            num_images,
+            clip_resource.metadata_provider,
             clip_resource.columns_to_return,
         )
         return results
