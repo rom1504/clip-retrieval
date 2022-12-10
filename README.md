@@ -291,23 +291,26 @@ This scripts works for small datasets. For larger ones, please check [notebook/s
 
 Clip back is a simple knn service backend. If using both hdf5 and faiss memory mapping, it uses only the memory used by clip which is 4GB.
 
-Run (output_folder is the output of clip index)
+To use out of the box, first download the index from [HuggingFace](https://huggingface.co/datasets/laion/laion5B-index) to a local folder (called for eg. `output_folder`). Ensure that all the files are downloaded to their corresponding subdirectories as on HuggingFace.
+
+Run -
 ```bash
 echo '{"example_index": "output_folder"}' > indices_paths.json
 clip-retrieval back --port 1234 --indices-paths indices_paths.json
 ```
 
+`example_index` is the value provided to the `indice_ name` argument in ClipClient when querying the local service. 
 
 Options:
 * `--use_jit True` uses jit for the clip model
-* `--clip_model "ViT-B/32"` allows choosing the clip model to use. Prefix with `"open_clip:"` to use an [open_clip](https://github.com/mlfoundations/open_clip) model.
+* `--clip_model "ViT-B/32"` allows choosing the clip model to use. Prefix with `"open_clip:"` to use an [open_clip](https://github.com/mlfoundations/open_clip) model. If using the index files from HuggingFace, set this to `ViT-L/14`.
 * `--enable_mclip_option True` loads the mclip model, making it possible to search in any language.
 * `--columns_to_return='["url", "image_path", "caption", "NSFW"]` allows you to specify which columns should be fetched from the metadata and returned by the backend. It's useful to specify less in case of hdf5 caching to speed up the queries.
 * `--enable_faiss_memory_mapping=True` option can be passed to use an index with memory mapping.
 That decreases the memory usage to zero.
 * `--enable_hdf5 True` option can be passed to enable hdf5 caching for the metadata.
 HDF5 caching makes it possible to use the metadata with almost no memory usage.
-* `--use_arrow True` allows using arrow instead of hdf5. Should be used along with [clip_back_prepro](clip_back_prepro) for very large datasets (billions)
+* `--use_arrow True` allows using arrow instead of hdf5. Should be used along with [clip_back_prepro](clip_back_prepro) for very large datasets (billions). If using the index files from HuggingFace, set this to `True`
 * `--reorder_metadata_by_ivf_index True` option takes advantage of the data locality property of results of a knn ivf indices: it orders the metadata collection in order of the IVF clusters. That makes it possible to have much faster metadata retrieval as the reads are then accessing a few mostly sequential parts of the metadata instead of many non sequential parts. In practice that means being able to retrieve 1M items in 1s whereas only 1000 items can be retrieved in 1s without this method. This will order the metadata using the first image index.
 * `--provide_safety_model True` will automatically download and load a [safety model](https://github.com/LAION-AI/CLIP-based-NSFW-Detector). You need to `pip install autokeras` optional dependency for this to work.
 * `--provide_violence_detector True` will load a [violence detector](https://github.com/ml-research/OffImgDetectionCLIP), [paper](https://arxiv.org/abs/2202.06675.pdf)
