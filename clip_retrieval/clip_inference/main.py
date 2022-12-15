@@ -82,7 +82,7 @@ def main(
     clip_model="ViT-B/32",
     mclip_model="sentence-transformers/clip-ViT-B-32-multilingual-v1",
     use_mclip=False,
-    use_jit=True,
+    use_jit=False,
     distribution_strategy="sequential",
     wds_number_file_per_input_file=10000,
     output_partition_count=None,
