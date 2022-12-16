@@ -6,8 +6,9 @@ Second step,
 ```bash
 python3 -m venv .env
 source .env/bin/activate
-pip install clip-retrieval
+pip install clip-retrieval autokeras
 ```
+(autokeras is optional and needed only for safety filtering)
 
 Then put this
 ```json
