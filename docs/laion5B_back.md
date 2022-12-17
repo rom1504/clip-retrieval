@@ -6,7 +6,7 @@ Second step,
 ```bash
 python3 -m venv .env
 source .env/bin/activate
-pip install clip-retrieval autokeras
+pip install clip-retrieval autokeras==1.0.18
 ```
 (autokeras is optional and needed only for safety filtering)
 
