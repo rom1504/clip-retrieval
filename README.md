@@ -33,6 +33,8 @@ Also see [laion5B](https://laion.ai/laion-5b-a-new-era-of-open-large-scale-multi
 
 pip install clip-retrieval
 
+If your interest it to run the laion5B index, see [this doc](docs/laion5B_back.md)
+
 ## Clip client
 
 `ClipClient` allows remote querying of a clip-retrieval backend via python.
