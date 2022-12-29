@@ -468,6 +468,30 @@ class ClipFront extends LitElement {
     }
   }
 
+  captionWordCounts (images) {
+    // console.log({images});
+    if (images.length === 0) return []
+    const captions = images.filter(image => image.caption).map(image =>
+      image.caption.toLowerCase().replace(/[(),_\-.:]/g, '')
+        .trim().split(/\s+/g))
+    const wordCounts = captions.map(words => words.reduce((wordCounts, word) => {
+      wordCounts[word] = (wordCounts[word] || 0) + 1
+      return wordCounts
+    }, {})).reduce((finalWordCounts, wordCounts) => {
+      Object.keys(wordCounts).forEach((key) => {
+        finalWordCounts[key] = (finalWordCounts[key] || 0) + 1
+      })
+      return finalWordCounts
+    }, {})
+    const sortedCounts = []
+    Object.keys(wordCounts).forEach((k) => sortedCounts.push({ word: k, count: wordCounts[k] }))
+    sortedCounts.sort((a, b) => b.count - a.count)
+    return sortedCounts.filter(wc =>
+      !['for', 'at', 'to', 'with', 'how', 'and',
+        '&amp;', 'the', 'a', 'of', 'by', 'in', 'on'].includes(wc.word) &&
+        wc.word.length > 1)
+  }
+
   renderImage (image) {
     let src
     if (image['image'] !== undefined) {
@@ -566,6 +590,17 @@ class ClipFront extends LitElement {
       <label>Search with multilingual clip <input type="checkbox" ?checked="${this.useMclip}" @click=${() => { this.useMclip = !this.useMclip }} /></label><br />
         <p>This UI may contain results with nudity and is best used by adults. The images are under their own copyright.</p>
         <p>Are you seeing near duplicates ? KNN search are good at spotting those, especially so in large datasets.</p>
+        <div>
+        <table style="background: rgba(255, 255, 255, 0.9); table-layout: fixed; width: 200px;"><thead><strong>Caption Word Counts</strong></thead>
+        <tbody>
+        ${this.captionWordCounts(this.images).map((wc) => {
+    return html`
+            <tr>
+            <td>${wc.word}</td>
+            <td>${wc.count}</td>
+            </tr>
+            `
+  })}</tbody></table></div>
      </div>
 
     <div id="products">
