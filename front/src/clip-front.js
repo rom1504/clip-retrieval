@@ -472,19 +472,41 @@ class ClipFront extends LitElement {
     // console.log({images});
     if (images.length === 0) return []
     const captions = images.filter(image => image.caption).map(image =>
-      image.caption.toLowerCase().replace(/[(),_\-.:]/g, '')
-        .trim().split(/\s+/g))
-    const wordCounts = captions.map(words => words.reduce((wordCounts, word) => {
-      wordCounts[word] = (wordCounts[word] || 0) + 1
-      return wordCounts
-    }, {})).reduce((finalWordCounts, wordCounts) => {
-      Object.keys(wordCounts).forEach((key) => {
-        finalWordCounts[key] = (finalWordCounts[key] || 0) + 1
+      image.caption.toLowerCase().replace(/["(),_\-.:!/]/g, '')
+        .trim().split(/\s+/g)).map((words) => {
+      const counts = {}
+      for (let i = 0; i < words.length; i++) {
+        const word = words[i]
+        if (!counts[word]) {
+          counts[word] = 1
+        } else {
+          counts[word]++
+        }
+
+        if (i < words.length - 1) {
+          const nextWord = words[i + 1]
+          const pair = `${word} ${nextWord}`
+          if (!counts[pair]) {
+            counts[pair] = 1
+          } else {
+            counts[pair]++
+          }
+        }
+        return counts
+      }
+    }).reduce((accumulator, curr) => {
+      Object.keys(curr).forEach((k) => {
+        if (!accumulator[k]) {
+          accumulator[k] = 1
+        } else {
+          accumulator[k]++
+        }
       })
-      return finalWordCounts
-    }, {})
+      return accumulator
+    })
+
     const sortedCounts = []
-    Object.keys(wordCounts).forEach((k) => sortedCounts.push({ word: k, count: wordCounts[k] }))
+    Object.keys(captions).forEach((k) => sortedCounts.push({ word: k, count: captions[k] }))
     sortedCounts.sort((a, b) => b.count - a.count)
     return sortedCounts.filter(wc =>
       !['for', 'at', 'to', 'with', 'how', 'and',
