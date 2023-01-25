@@ -87,7 +87,7 @@ dog_results = client.query(image="https://example.com/dog.jpg")
 You can also find captioned images similar to a clip embedding you provide.
 
 ```python
-cat_results = client.query(embedding=cat_embedding)
+cat_results = client.query(embedding_input=cat_embedding)
 ```
 
 ### Query a directory of images
