@@ -10,7 +10,7 @@ from torch import nn
 class H14_NSFW_Detector(nn.Module):
     """An NSFW detector for H14 CLIP embeds"""
 
-    def __init__(self, input_size=1024, cache_folder=os.path.expanduser("~/.cache")):
+    def __init__(self, input_size=1024, cache_folder=os.path.expanduser("~/.cache/clip_retrieval")):
         super().__init__()
         self.input_size = input_size
         self.layers = nn.Sequential(
