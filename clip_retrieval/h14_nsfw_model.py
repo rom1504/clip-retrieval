@@ -40,6 +40,7 @@ class H14_NSFW_Detector(nn.Module):
         """Forward pass of the model"""
         return self.layers(x)
 
+    # pylint: disable=unused-argument
     def predict(self, x, batch_size):
         """autokeras interface"""
         x = torch.from_numpy(x)
