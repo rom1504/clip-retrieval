@@ -722,6 +722,7 @@ def load_safety_model(clip_model):
     """load the safety model"""
     import autokeras as ak  # pylint: disable=import-outside-toplevel
     from tensorflow.keras.models import load_model  # pylint: disable=import-outside-toplevel
+    from clip_retrieval.h14_nsfw_model import H14_NSFW_Detector  # pylint: disable=import-outside-toplevel
 
     cache_folder = get_cache_folder(clip_model)
 
@@ -731,6 +732,8 @@ def load_safety_model(clip_model):
     elif clip_model == "ViT-B/32":
         model_dir = cache_folder + "/clip_autokeras_nsfw_b32"
         dim = 512
+    elif clip_model == "open_clip:ViT-H-14":
+        return H14_NSFW_Detector()
     else:
         raise ValueError(f"Safety model for {clip_model} not available.")
     if not os.path.exists(model_dir):
