@@ -35,6 +35,7 @@ class H14_NSFW_Detector(nn.Module):
 
         # Load the model from the cache folder
         self.load_state_dict(self.load_state(cache_folder))
+        self.eval()
 
     def forward(self, x):
         """Forward pass of the model"""
@@ -43,9 +44,10 @@ class H14_NSFW_Detector(nn.Module):
     # pylint: disable=unused-argument
     def predict(self, x, batch_size):
         """autokeras interface"""
-        x = torch.from_numpy(x)
-        y = self.layers(x)
-        return y.detach().cpu().numpy()
+        with torch.no_grad():
+            x = torch.from_numpy(x)
+            y = self.layers(x)
+            return y.detach().cpu().numpy()
 
     def load_state(self, cache_folder: str):
         """
