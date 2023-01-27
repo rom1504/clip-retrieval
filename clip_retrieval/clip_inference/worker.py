@@ -16,7 +16,7 @@ from clip_retrieval.clip_inference.mapper import ClipMapper
 from clip_retrieval.clip_inference.writer import NumpyWriter
 from clip_retrieval.clip_inference.logger import LoggerWriter
 from clip_retrieval.clip_inference.reader import FilesReader, WebdatasetReader
-from clip_retrieval.load_clip import load_clip
+from clip_retrieval.load_clip import load_clip, get_tokenizer
 
 
 def worker(
@@ -52,10 +52,12 @@ def worker(
         _, preprocess = load_clip(
             clip_model=clip_model, use_jit=use_jit, warmup_batch_size=batch_size, clip_cache_path=clip_cache_path
         )
+        tokenizer = get_tokenizer(clip_model)
         if input_format == "files":
             return FilesReader(
                 sampler,
                 preprocess,
+                tokenizer,
                 input_dataset,
                 batch_size,
                 num_prepro_workers,
@@ -67,6 +69,7 @@ def worker(
             return WebdatasetReader(
                 sampler,
                 preprocess,
+                tokenizer,
                 input_dataset,
                 batch_size,
                 num_prepro_workers,

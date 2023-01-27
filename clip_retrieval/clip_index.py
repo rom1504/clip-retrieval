@@ -2,7 +2,7 @@
 
 import fire
 import os
-from distutils.dir_util import copy_tree
+import shutil
 import logging
 
 
@@ -63,7 +63,7 @@ def clip_index(
         nb_cores,
     )
     if copy_metadata:
-        copy_tree(embeddings_folder + "/metadata", index_folder + "/metadata")
+        shutil.copytree(embeddings_folder + "/metadata", index_folder + "/metadata")
 
 
 if __name__ == "__main__":
