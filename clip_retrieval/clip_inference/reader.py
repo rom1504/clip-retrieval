@@ -71,7 +71,7 @@ def get_image_dataset():
             self.enable_metadata = enable_metadata
             keys_set = set(self.keys)
             if self.enable_text:
-                self.tokenizer = lambda text: tokenizer([text], truncate=True)[0]
+                self.tokenizer = lambda text: tokenizer([text])[0]
                 self.text_files = {k: v for k, v in text_files.items() if k in keys_set}
             if self.enable_image:
                 self.image_files = {k: v for k, v in image_files.items() if k in keys_set}
@@ -127,7 +127,7 @@ def create_webdataset(
     urls = input_sampler(urls)
 
     dataset = wds.WebDataset(urls, cache_dir=cache_path, cache_size=10**10, handler=wds.handlers.warn_and_continue)
-    tokenizer = lambda text: tokenizer([text], truncate=True)[0]
+    tokenizer = lambda text: tokenizer([text])[0]
 
     def filter_dataset(item):
         if enable_text and caption_key not in item:
