@@ -21,7 +21,7 @@ def test_query():
     # Create a client
     client = ClipClient(
         url=knn_service_url,
-        indice_name="laion5B",
+        indice_name="laion5B-L-14",
         use_mclip=False,
         aesthetic_score=9,
         aesthetic_weight=0.5,
