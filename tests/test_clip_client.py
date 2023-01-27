@@ -10,7 +10,7 @@ test_caption = "an image of a cat"
 test_image_1 = "tests/test_clip_inference/test_images/123_456.jpg"
 test_image_2 = "tests/test_clip_inference/test_images/416_264.jpg"
 
-knn_service_url = "https://knn5.laion.ai/knn-service"
+knn_service_url = "https://knn.laion.ai/knn-service"
 
 
 # NOTE: This test may fail if the backend is down.
