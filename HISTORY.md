@@ -1,3 +1,7 @@
+## 2.36.1
+
+* Fix truncate
+
 ## 2.36.0
 
 * Make jit=False the default in clip inference
