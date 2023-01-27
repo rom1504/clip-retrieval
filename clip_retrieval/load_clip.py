@@ -63,7 +63,7 @@ def get_tokenizer(clip_model):
         clip_model = clip_model[len("open_clip:") :]
         return open_clip.get_tokenizer(clip_model)
     else:
-        return clip.tokenize
+        return lambda t: clip.tokenize(t, truncate=True)
 
 
 @lru_cache(maxsize=None)

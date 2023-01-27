@@ -219,7 +219,7 @@ class KnnService(Resource):
                     query = normalized(clip_resource.model_txt_mclip(text_input))
             else:
                 with TEXT_PREPRO_TIME.time():
-                    text = clip_resource.tokenizer([text_input], truncate=True).to(clip_resource.device)
+                    text = clip_resource.tokenizer([text_input]).to(clip_resource.device)
                 with TEXT_CLIP_INFERENCE_TIME.time():
                     with torch.no_grad():
                         text_features = clip_resource.model.encode_text(text)
