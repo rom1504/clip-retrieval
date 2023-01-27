@@ -1,3 +1,11 @@
+## 2.36.0
+
+* Make jit=False the default in clip inference
+* update webdataset and fsspec
+* Add H14 NSFW detector
+* Support get tokenizer in clip back  (thanks @nousr)
+* enable filtering by image with clip-retrieval filter
+
 ## 2.35.1
 
 * update key toggles in inf.main (thanks @nousr)
