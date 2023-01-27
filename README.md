@@ -60,7 +60,7 @@ For instance, to query the hosted backend for Laion5B with the default parameter
 ```python
 from clip_retrieval.clip_client import ClipClient, Modality
 
-client = ClipClient(url="https://knn5.laion.ai/knn-service", indice_name="laion5B")
+client = ClipClient(url="https://knn.laion.ai/knn-service", indice_name="laion5B-L-14")
 ```
 
 ### Query by text
