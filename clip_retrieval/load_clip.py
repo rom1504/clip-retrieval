@@ -55,6 +55,18 @@ def load_open_clip(clip_model, use_jit=True, device="cuda", clip_cache_path=None
 
 
 @lru_cache(maxsize=None)
+def get_tokenizer(clip_model):
+    """Load clip"""
+    if clip_model.startswith("open_clip:"):
+        import open_clip  # pylint: disable=import-outside-toplevel
+
+        clip_model = clip_model[len("open_clip:") :]
+        return open_clip.get_tokenizer(clip_model)
+    else:
+        return clip.tokenize
+
+
+@lru_cache(maxsize=None)
 def load_clip_without_warmup(clip_model, use_jit, device, clip_cache_path):
     """Load clip"""
     if clip_model.startswith("open_clip:"):
