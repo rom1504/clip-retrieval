@@ -212,7 +212,6 @@ class KnnService(Resource):
     ):
         """compute the query embedding"""
         import torch  # pylint: disable=import-outside-toplevel
-        import clip  # pylint: disable=import-outside-toplevel
 
         if text_input is not None and text_input != "":
             if use_mclip:
@@ -220,7 +219,7 @@ class KnnService(Resource):
                     query = normalized(clip_resource.model_txt_mclip(text_input))
             else:
                 with TEXT_PREPRO_TIME.time():
-                    text = clip.tokenize([text_input], truncate=True).to(clip_resource.device)
+                    text = clip_resource.tokenizer([text_input]).to(clip_resource.device)
                 with TEXT_CLIP_INFERENCE_TIME.time():
                     with torch.no_grad():
                         text_features = clip_resource.model.encode_text(text)
@@ -722,6 +721,7 @@ def load_safety_model(clip_model):
     """load the safety model"""
     import autokeras as ak  # pylint: disable=import-outside-toplevel
     from tensorflow.keras.models import load_model  # pylint: disable=import-outside-toplevel
+    from clip_retrieval.h14_nsfw_model import H14_NSFW_Detector  # pylint: disable=import-outside-toplevel
 
     cache_folder = get_cache_folder(clip_model)
 
@@ -731,6 +731,8 @@ def load_safety_model(clip_model):
     elif clip_model == "ViT-B/32":
         model_dir = cache_folder + "/clip_autokeras_nsfw_b32"
         dim = 512
+    elif clip_model == "open_clip:ViT-H-14":
+        return H14_NSFW_Detector()
     else:
         raise ValueError(f"Safety model for {clip_model} not available.")
     if not os.path.exists(model_dir):
@@ -766,6 +768,7 @@ class ClipResource:
     device: str
     model: Any
     preprocess: Callable
+    tokenizer: Callable
     model_txt_mclip: Any
     safety_model: Any
     violence_detector: Any
@@ -854,10 +857,12 @@ def load_mclip(clip_model):
 def load_clip_index(clip_options):
     """load the clip index"""
     import torch  # pylint: disable=import-outside-toplevel
-    from clip_retrieval.load_clip import load_clip  # pylint: disable=import-outside-toplevel
+    from clip_retrieval.load_clip import load_clip, get_tokenizer  # pylint: disable=import-outside-toplevel
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = load_clip(clip_options.clip_model, use_jit=clip_options.use_jit, device=device)
+
+    tokenizer = get_tokenizer(clip_options.clip_model)
 
     if clip_options.enable_mclip_option:
         model_txt_mclip = load_mclip(clip_options.clip_model)
@@ -902,6 +907,7 @@ def load_clip_index(clip_options):
         device=device,
         model=model,
         preprocess=preprocess,
+        tokenizer=tokenizer,
         model_txt_mclip=model_txt_mclip,
         safety_model=safety_model,
         violence_detector=violence_detector,
