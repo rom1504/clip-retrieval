@@ -1,42 +1,52 @@
 # How to setup clip-back with an H/14 index of Laion5B
 
 1. Create a python virtual environment & install huggingface-cli & clip-retrieval
-    - `pip install huggingface-cli clip-retrieval`
-2. Install git-lfs on your system
-    - https://docs.github.com/en/repositories/working-with-files/managing-large-files/installing-git-large-file-storage
-3. run `git-lfs install`
-4. Navigate to your large storage
-    - `cd /somehwere/with/lots/of/space`
-5. Clone the repository 
-    - `git clone https://huggingface.co/datasets/laion/laion5b-h14-index`
-6. cd into repository
-    - `cd laion5b-h14-index`
-7. Download the index files with git-lfs
-    - `git-lfs fetch -I index-parts` <- *this will take quite a while*
-    - `git-lfs checkout index-parts/*` <- *this will take quite a while*
-8. Combine the index parts using the following command
-    - `clip_retrieval index_combiner --input_folder "the/indices" --output_folder "output"`
+   - `pip install huggingface-cli clip-retrieval`
+2. Install `aria2` on your system
+   https://github.com/aria2/aria2
+3. Navigate to your large storage
+   - `cd /somehwere/with/lots/of/space`
+4. Download the index parts from the hugging-face repository
+   - `mkdir index-parts && cd index-parts`
+   - `for i in {00..79}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion5b-h14-index/tree/main/index-parts/{$i}.index; done`
+   - `cd ..`
+5. Combine the index parts using the following command
+   - `clip_retrieval index_combiner --input_folder "index-parts" --output_folder "combined-indices"`
+6. Now download the metadata parts from the following metadata repos
 
-9. Now repeat steps 5-7 with the following metadata repos
-    - https://huggingface.co/datasets/laion/laion2b-multi-vit-h-14-embeddings
-    - https://huggingface.co/datasets/laion/laion2b-en-vit-h-14-embeddings
-    - https://huggingface.co/datasets/laion/laion1b-nolang-vit-h-14-embeddings
-    - > NOTE: you will simply be replacing the target folder for each of the git-lfs commands
-    - `Example: cd <meta-repo> && git-lfs fetch -I metadata/`
+   - ***multi embeddings***
+        - `mkdir multi-embeddings && cd multi-embeddings`
+        - `for i in {0000..2268}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion2b-multi-vit-h-14-embeddings/tree/main/metadata/$i_metadata.parquet; done`
+        - `cd ..`
+   - ***english embeddings***
+        - `mkdir en-embeddings && cd en-embeddings`
+        - `for i in {0000..2314}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion2b-en-vit-h-14-embeddings/tree/main/metadata/$i_metadata.parquet; done`
+        - `cd ..`
+   - ***nolang embeddings***
+        - `mkdir nolang-embeddings && nolang en-embeddings`
+        - `for i in {0000..1273}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion1b-nolang-vit-h-14-embeddings/tree/main/metadata/$i_metadata.parquet; done`
+        - `cd ..`
 
-10. Now run the metadata combiner for each of the metadata folders
-    - `clip-retrieval parquet_to_arrow --parquet_folder "/" --output_arrow_folder "/media/nvme/large_index/metadata/2B-en"\ --columns_to_return='["url", "caption"]'`
+7. Now run the metadata combiner for each of the metadata folders
 
-11. Create a parent directory to hold all of the index information
-    - `mkdir Laion5B_H14 && mkdir Laion5B_H14/metadata && mkdir Laion5B_H14/image.index`
-12. Move all of the metadata `arrow files` to the metadata subfolder of our new parent folder
-    - NOTE: in order to maintain the proper ordering, it is recommended to use the following file names
-    - 0_en.arrow
-    - 1_multi.arrow
-    - 2_nolang.arrow
-13. Move the files generated from the index combination step into the `image.index` subfolder
-15. Create an indices.json file with the following (edit as necessary, more info on parameters in the [Main README](https://github.com/rom1504/clip-retrieval#clip-back))
-16. # TODO: safety model
+   - ***multi embeddings***
+        - `clip-retrieval parquet_to_arrow --parquet_folder="multi-embeddings" --output_arrow_folder="multi-combined" --columns_to_return='["url", "caption"]'`
+   - ***english embeddings***
+        - `clip-retrieval parquet_to_arrow --parquet_folder="en-embeddings" --output_arrow_folder="en-combined" --columns_to_return='["url", "caption"]'`
+   - ***nolang embeddings***
+        - `clip-retrieval parquet_to_arrow --parquet_folder="nolang-embeddings" --output_arrow_folder="nolang-combined" --columns_to_return='["url", "caption"]'`
+
+8. Create a parent directory to hold all of the index information
+   - `mkdir Laion5B_H14 && mkdir Laion5B_H14/metadata && mkdir Laion5B_H14/image.index`
+9. Move all of the metadata `arrow files` to the metadata subfolder of our new parent folder
+   > **NOTE: in order to maintain the proper ordering, it is important to use the following file names**
+   - `mv en-embeddings/0.arrow Laion5B_H14/metadata/0_en.arrow`
+   - `mv multi-embeddings/0.arrow Laion5B_H14/metadata/1_multi.arrow`
+   - `mv nolang-embeddings/0.arrow Laion5B_H14/metadata/2_nolang.arrow`
+10. Move the files generated from the index combination step into the `image.index` subfolder
+    - `mv combined-indices/* Laion5B_H14/image.index/*`
+11. Create an indices.json file with the following (edit as necessary, more info on parameters in the [Main README](https://github.com/rom1504/clip-retrieval#clip-back))
+
 ```
 {
         "laion5B-H-14": {
@@ -52,4 +62,3 @@
         }
 }
 ```
-
