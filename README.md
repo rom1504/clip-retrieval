@@ -475,3 +475,18 @@ npm run build
 cd ..
 pip install -e .
 ```
+
+## Citation
+
+```
+@misc{beaumont-2022-clip-retrieval
+  author = {Romain Beaumont},
+  title = {Clip Retrieval: Easily compute clip embeddings and build a clip retrieval system with them},
+  year = {2022},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/rom1504/clip-retrieval}}
+}
+```
+
+
