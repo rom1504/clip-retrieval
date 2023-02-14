@@ -155,6 +155,7 @@ class IndicesList(Resource):
 
 @DOWNLOAD_TIME.time()
 def download_image(url):
+    """Download an image from a url and return a byte stream"""
     urllib_request = urllib.request.Request(
         url,
         data=None,
