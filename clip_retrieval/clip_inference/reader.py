@@ -14,8 +14,12 @@ def folder_to_keys(folder, enable_text=True, enable_image=True, enable_metadata=
     metadata_files = None
     image_files = None
     if enable_text:
-        text_files = [*path.glob("**/*.txt")]
-        text_files = {text_file.stem: text_file for text_file in text_files}
+        if path.is_file():
+            text_files = {text: text for text in path.read_text().split("\n") if text}
+            print(f"dataset is {len(text_files)}", flush=True)
+        else:
+            text_files = [*path.glob("**/*.txt")]
+            text_files = {text_file.stem: text_file for text_file in text_files}
     if enable_image:
         image_files = [
             *path.glob("**/*.png"),
@@ -94,7 +98,10 @@ def get_image_dataset():
 
             if self.enable_text:
                 text_file = self.text_files[key]
-                caption = text_file.read_text()
+                if isinstance(text_file, Path):
+                    caption = text_file.read_text()
+                else:
+                    caption = text_file
                 tokenized_text = self.tokenizer(caption)
                 output["text_tokens"] = tokenized_text
                 output["text"] = caption

@@ -46,7 +46,8 @@ def worker(
     if input_format == "webdataset" and not isinstance(input_dataset, list):
         input_dataset = list(braceexpand(input_dataset))
 
-    print(f"dataset is {len(input_dataset)}", flush=True)
+    if not isinstance(input_dataset, str):
+        print(f"dataset is {len(input_dataset)}", flush=True)
 
     def reader_builder(sampler):
         _, preprocess = load_clip(
