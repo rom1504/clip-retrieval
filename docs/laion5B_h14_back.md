@@ -8,7 +8,7 @@
    - `cd /somehwere/with/lots/of/space`
 4. Download the index parts from the hugging-face repository
    - `mkdir index-parts && cd index-parts`
-   - `for i in {00..79}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion5b-h14-index/resolve/main/index-parts/79.index; done`
+   - `for i in {00..79}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion5b-h14-index/resolve/main/index-parts/$i.index; done`
    - `cd ..`
 5. Combine the index parts using the following command
    - `clip_retrieval index_combiner --input_folder "index-parts" --output_folder "combined-indices"`
