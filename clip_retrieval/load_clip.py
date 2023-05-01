@@ -64,7 +64,7 @@ def load_hf_clip(clip_model, device="cuda", clip_cache_path=None):
     preprocess = CLIPProcessor.from_pretrained(clip_model)
     model = HFClipWrapper(inner_model=model, device=device)
     model.to(device=device)
-    return model, preprocess
+    return model, preprocess.image_processor
 
 
 def load_open_clip(clip_model, use_jit=True, device="cuda", clip_cache_path=None):
