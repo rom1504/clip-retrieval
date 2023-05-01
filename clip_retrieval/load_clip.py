@@ -24,6 +24,11 @@ class HFClipWrapper(nn.Module):
             return self.inner_model.get_image_features(image.squeeze(1))
         with autocast(device_type=self.device.type, dtype=self.dtype):
             return self.inner_model.get_image_features(image.squeeze(1))
+    def encode_text(self, text):
+        if self.device.type == "cpu":
+            return self.inner_model.get_text_features(text)
+        with autocast(device_type=self.device.type, dtype=self.dtype):
+            return self.inner_model.get_text_features(text)
         
 class OpenClipWrapper(nn.Module):
     """
