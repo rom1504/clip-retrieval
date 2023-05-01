@@ -7,6 +7,25 @@ from PIL import Image
 import time
 
 
+class HFClipWrapper(nn.Module):
+    """
+    Wrap Huggingface ClipModel
+    """
+    def __init__(self, inner_model, device):
+        super().__init__()
+        self.inner_model = inner_model
+        self.device = torch.device(device=device)
+        if self.device.type == "cpu":
+            self.dtype = torch.float32
+        else:
+            self.dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+
+    def encode_image(self, image):
+        if self.device.type == "cpu":
+            return self.inner_model.get_image_features(image)
+        with autocast(device_type=self.device.type, dtype=self.dtype):
+            return self.inner_model.get_image_features(image)
+        
 class OpenClipWrapper(nn.Module):
     """
     Wrap OpenClip for managing input types
@@ -35,6 +54,17 @@ class OpenClipWrapper(nn.Module):
 
     def forward(self, *args, **kwargs):
         return self.inner_model(*args, **kwargs)
+    
+
+def load_hf_clip(clip_model, device="cuda", clip_cache_path=None):
+    """load hf clip"""
+    from transformers import CLIPProcessor, CLIPModel  # pylint: disable=import-outside-toplevel
+
+    model = CLIPModel.from_pretrained(clip_model, cache_dir=clip_cache_path)
+    preprocess = CLIPProcessor.from_pretrained(clip_model)
+    model = HFClipWrapper(inner_model=model, device=device)
+    model.to(device=device)
+    return model, preprocess
 
 
 def load_open_clip(clip_model, use_jit=True, device="cuda", clip_cache_path=None):
@@ -90,6 +120,12 @@ def load_clip(clip_model="ViT-B/32", use_jit=True, warmup_batch_size=1, clip_cac
     duration = time.time() - start
     print(f"done warming up in {duration}s", flush=True)
     return model, preprocess
+
+@lru_cache(maxsize=None)
+def load_clip_safetensor(clip_model, use_jit, device, clip_cache_path):
+    """Load clip model from safetensor file"""
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def warmup(batch_size, device, preprocess, model):
