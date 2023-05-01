@@ -56,15 +56,15 @@ class OpenClipWrapper(nn.Module):
         return self.inner_model(*args, **kwargs)
     
 
-def load_hf_clip(clip_model, device="cuda", clip_cache_path=None):
+def load_hf_clip(clip_model, device="cuda"):
     """load hf clip"""
     from transformers import CLIPProcessor, CLIPModel  # pylint: disable=import-outside-toplevel
 
-    model = CLIPModel.from_pretrained(clip_model, cache_dir=clip_cache_path)
-    preprocess = CLIPProcessor.from_pretrained(clip_model)
+    model = CLIPModel.from_pretrained(clip_model)
+    preprocess = CLIPProcessor.from_pretrained(clip_model).image_processor
     model = HFClipWrapper(inner_model=model, device=device)
     model.to(device=device)
-    return model, preprocess.image_processor
+    return model, lambda x: preprocess(x, return_tensors='pt').pixel_values
 
 
 def load_open_clip(clip_model, use_jit=True, device="cuda", clip_cache_path=None):
