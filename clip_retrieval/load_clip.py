@@ -19,12 +19,11 @@ class HFClipWrapper(nn.Module):
             self.dtype = torch.float32
         else:
             self.dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-
     def encode_image(self, image):
         if self.device.type == "cpu":
-            return self.inner_model.get_image_features(image)
+            return self.inner_model.get_image_features(image.squeeze(1))
         with autocast(device_type=self.device.type, dtype=self.dtype):
-            return self.inner_model.get_image_features(image)
+            return self.inner_model.get_image_features(image.squeeze(1))
         
 class OpenClipWrapper(nn.Module):
     """
@@ -59,7 +58,6 @@ class OpenClipWrapper(nn.Module):
 def load_hf_clip(clip_model, device="cuda", clip_cache_path=None):
     """load hf clip"""
     from transformers import CLIPProcessor, CLIPModel  # pylint: disable=import-outside-toplevel
-
     model = CLIPModel.from_pretrained(clip_model)
     preprocess = CLIPProcessor.from_pretrained(clip_model).image_processor
     model = HFClipWrapper(inner_model=model, device=device)
