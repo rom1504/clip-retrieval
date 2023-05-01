@@ -102,6 +102,9 @@ def load_clip_without_warmup(clip_model, use_jit, device, clip_cache_path):
     if clip_model.startswith("open_clip:"):
         clip_model = clip_model[len("open_clip:") :]
         model, preprocess = load_open_clip(clip_model, use_jit, device, clip_cache_path)
+    elif clip_model.startswith("hf_clip:"):
+        clip_model = clip_model[len("hf_clip:") :]
+        model, preprocess = load_hf_clip(clip_model, device, clip_cache_path)
     else:
         model, preprocess = clip.load(clip_model, device=device, jit=use_jit, download_root=clip_cache_path)
     return model, preprocess
@@ -120,12 +123,6 @@ def load_clip(clip_model="ViT-B/32", use_jit=True, warmup_batch_size=1, clip_cac
     duration = time.time() - start
     print(f"done warming up in {duration}s", flush=True)
     return model, preprocess
-
-@lru_cache(maxsize=None)
-def load_clip_safetensor(clip_model, use_jit, device, clip_cache_path):
-    """Load clip model from safetensor file"""
-    if device is None:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def warmup(batch_size, device, preprocess, model):
