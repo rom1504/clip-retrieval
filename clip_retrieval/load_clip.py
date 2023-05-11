@@ -29,7 +29,7 @@ class HFClipWrapper(nn.Module):
             return self.inner_model.get_text_features(text)
         with autocast(device_type=self.device.type, dtype=self.dtype):
             return self.inner_model.get_text_features(text)
-        
+
 class OpenClipWrapper(nn.Module):
     """
     Wrap OpenClip for managing input types
@@ -58,9 +58,9 @@ class OpenClipWrapper(nn.Module):
 
     def forward(self, *args, **kwargs):
         return self.inner_model(*args, **kwargs)
-    
 
-def load_hf_clip(clip_model, device="cuda", clip_cache_path=None):
+
+def load_hf_clip(clip_model, device="cuda"):
     """load hf clip"""
     from transformers import CLIPProcessor, CLIPModel  # pylint: disable=import-outside-toplevel
     model = CLIPModel.from_pretrained(clip_model)
@@ -107,7 +107,7 @@ def load_clip_without_warmup(clip_model, use_jit, device, clip_cache_path):
         model, preprocess = load_open_clip(clip_model, use_jit, device, clip_cache_path)
     elif clip_model.startswith("hf_clip:"):
         clip_model = clip_model[len("hf_clip:") :]
-        model, preprocess = load_hf_clip(clip_model, device, clip_cache_path)
+        model, preprocess = load_hf_clip(clip_model, device)
     else:
         model, preprocess = clip.load(clip_model, device=device, jit=use_jit, download_root=clip_cache_path)
     return model, preprocess
