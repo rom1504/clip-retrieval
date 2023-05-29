@@ -28,15 +28,15 @@ const assets = [
 const polyfills = [
   {
     from: resolve(`${webcomponentsjs}/webcomponents-*.js`),
-    to: join(OUTPUT_PATH, 'vendor'),
+    to: join(OUTPUT_PATH, 'vendor')
   },
   {
     from: resolve(`${webcomponentsjs}/bundles/*.js`),
-    to: join(OUTPUT_PATH, 'vendor', 'bundles'),
+    to: join(OUTPUT_PATH, 'vendor', 'bundles')
   },
   {
     from: resolve(`${webcomponentsjs}/custom-elements-es5-adapter.js`),
-    to: join(OUTPUT_PATH, 'vendor'),
+    to: join(OUTPUT_PATH, 'vendor')
   }
 ]
 
@@ -76,7 +76,7 @@ const developmentConfig = merge([
   {
     devtool: 'cheap-module-source-map',
     plugins: [
-      new CopyWebpackPlugin({patterns:[...polyfills, ...assets]}),
+      new CopyWebpackPlugin({ patterns: [...polyfills, ...assets] }),
       new HtmlWebpackPlugin({
         template: INDEX_TEMPLATE
       })
@@ -96,7 +96,7 @@ const productionConfig = merge([
     devtool: 'nosources-source-map',
     plugins: [
       new CleanWebpackPlugin(),
-      new CopyWebpackPlugin({patterns:[...polyfills, ...assets]}),
+      new CopyWebpackPlugin({ patterns: [...polyfills, ...assets] }),
       new HtmlWebpackPlugin({
         template: INDEX_TEMPLATE,
         filename: 'index.html',

@@ -235,7 +235,7 @@ class ClipFront extends LitElement {
 
   async download () {
     function downloadFile (filename, text) {
-      var element = document.createElement('a')
+      const element = document.createElement('a')
       element.setAttribute('href', 'data:application/json;charset=utf-8,' + encodeURIComponent(text))
       element.setAttribute('download', filename)
 
@@ -289,6 +289,7 @@ class ClipFront extends LitElement {
     this.setUrlParams()
     setTimeout(() => this.initialScroll(), 0)
   }
+
   static get styles () {
     return css`
     input:-webkit-autofill,
@@ -459,7 +460,7 @@ class ClipFront extends LitElement {
   }
 
   updateImage (file) {
-    var reader = new FileReader()
+    const reader = new FileReader()
     reader.readAsDataURL(file)
     reader.onload = () => {
       this.image = reader.result.split(',')[1]
@@ -471,8 +472,8 @@ class ClipFront extends LitElement {
 
   renderImage (image) {
     let src
-    if (image['image'] !== undefined) {
-      src = `data:image/png;base64, ${image['image']}`
+    if (image.image !== undefined) {
+      src = `data:image/png;base64, ${image.image}`
     }
     if (image[this.urlColumn] !== undefined) {
       src = image[this.urlColumn]
@@ -487,24 +488,29 @@ class ClipFront extends LitElement {
     return html`
     <figure style="margin:5px;display:table" 
     style=${'margin:1px; ' + (this.blacklist[src] !== undefined ? 'display:none' : 'display:inline')}>
-     ${this.displaySimilarities ? html`<p>${(image['similarity']).toFixed(4)}</p>` : ``}
-      ${image['caption'] !== undefined
-    ? html`<img src="assets/search.png" class="subTextSearch" @click=${() => { this.text = image['caption']; this.textSearch() }} />` : ``}
+     ${this.displaySimilarities ? html`<p>${(image.similarity).toFixed(4)}</p>` : ''}
+      ${image.caption !== undefined
+    ? html`<img src="assets/search.png" class="subTextSearch" @click=${() => { this.text = image.caption; this.textSearch() }} />`
+: ''}
      
      <img src="assets/image-search.png" class="subImageSearch" @click=${() => {
-    if (image['image'] !== undefined) {
-      this.image = image['image']
+    if (image.image !== undefined) {
+      this.image = image.image
     } else if (image[this.urlColumn] !== undefined) {
       this.imageUrl = image[this.urlColumn]
     }
   }} />
-      <img class="pic" src="${src}" alt="${image['caption'] !== undefined ? image['caption'] : ''}"" 
-      title="${image['caption'] !== undefined ? image['caption'] : ''}"
+      <img class="pic" src="${src}" alt="${image.caption !== undefined ? image.caption : ''}"" 
+      title="${image.caption !== undefined ? image.caption : ''}"
       @error=${() => { this.blacklist = { ...this.blacklist, ...{ [src]: true } } }} />
       
-      ${this.displayCaptions ? html`<figcaption>
-      ${image['caption'] !== undefined && image['caption'].length > 50 &&
-      !this.displayFullCaptions ? image['caption'].substr(0, 50) + '...' : image['caption']}</figcaption>` : ''}
+      ${this.displayCaptions
+? html`<figcaption>
+      ${image.caption !== undefined && image.caption.length > 50 &&
+      !this.displayFullCaptions
+? image.caption.substr(0, 50) + '...'
+: image.caption}</figcaption>`
+: ''}
     
     
     </figure>
@@ -530,7 +536,7 @@ class ClipFront extends LitElement {
       return html`<div id="all"></div>`
     }
     const preFiltered = this.images
-      .filter(image => image['caption'] !== undefined || image[this.urlColumn] !== undefined || image['image'] !== undefined)
+      .filter(image => image.caption !== undefined || image[this.urlColumn] !== undefined || image.image !== undefined)
     const filteredImages = this.hideDuplicateUrls ? this.filterDuplicateUrls(preFiltered) : preFiltered
 
     return html`
@@ -550,8 +556,8 @@ class ClipFront extends LitElement {
     Backend url: <br /><input type="text" style="width:80px" value=${this.backendHost} @input=${e => { this.backendHost = e.target.value }}/><br />
     Index: <br /><select style="margin-bottom:50px;" @input=${e => { this.currentIndex = e.target.value }}>${this.indices.map(index =>
   html`<option value=${index} ?selected=${index === this.currentIndex}>${index}</option>`)}</select><br />
-      ${this.image !== undefined ? html`<img width="100px" src="data:image/png;base64, ${this.image}"" /><br />` : ``}
-      ${this.imageUrl !== undefined ? html`<img width="100px" src="${this.imageUrl}"" /><br />` : ``}
+      ${this.image !== undefined ? html`<img width="100px" src="data:image/png;base64, ${this.image}"" /><br />` : ''}
+      ${this.imageUrl !== undefined ? html`<img width="100px" src="${this.imageUrl}"" /><br />` : ''}
       <a href="https://github.com/rom1504/clip-retrieval">Clip retrieval</a> works by converting the text query to a CLIP embedding
       , then using that embedding to query a knn index of clip image embedddings<br /><br />
       <label>Display captions<input type="checkbox" ?checked="${this.displayCaptions}" @click=${() => { this.displayCaptions = !this.displayCaptions }} /></label><br />
