@@ -1,10 +1,10 @@
 'use strict'
 
 const { resolve, join } = require('path')
-const merge = require('webpack-merge')
+const { merge } = require('webpack-merge')
 const CopyWebpackPlugin = require('copy-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-const CleanWebpackPlugin = require('clean-webpack-plugin')
+const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 
 const ENV = process.argv.find(arg => arg.includes('production'))
   ? 'production'
@@ -29,17 +29,14 @@ const polyfills = [
   {
     from: resolve(`${webcomponentsjs}/webcomponents-*.js`),
     to: join(OUTPUT_PATH, 'vendor'),
-    flatten: true
   },
   {
     from: resolve(`${webcomponentsjs}/bundles/*.js`),
     to: join(OUTPUT_PATH, 'vendor', 'bundles'),
-    flatten: true
   },
   {
     from: resolve(`${webcomponentsjs}/custom-elements-es5-adapter.js`),
     to: join(OUTPUT_PATH, 'vendor'),
-    flatten: true
   }
 ]
 
@@ -79,19 +76,16 @@ const developmentConfig = merge([
   {
     devtool: 'cheap-module-source-map',
     plugins: [
-      new CopyWebpackPlugin([...polyfills, ...assets]),
+      new CopyWebpackPlugin({patterns:[...polyfills, ...assets]}),
       new HtmlWebpackPlugin({
         template: INDEX_TEMPLATE
       })
     ],
 
     devServer: {
-      contentBase: OUTPUT_PATH,
       compress: true,
-      overlay: true,
       port: 3005,
       historyApiFallback: true,
-      disableHostCheck: true,
       host: '0.0.0.0'
     }
   }
@@ -101,8 +95,8 @@ const productionConfig = merge([
   {
     devtool: 'nosources-source-map',
     plugins: [
-      new CleanWebpackPlugin([OUTPUT_PATH], { verbose: true }),
-      new CopyWebpackPlugin([...polyfills, ...assets]),
+      new CleanWebpackPlugin(),
+      new CopyWebpackPlugin({patterns:[...polyfills, ...assets]}),
       new HtmlWebpackPlugin({
         template: INDEX_TEMPLATE,
         filename: 'index.html',
@@ -118,9 +112,10 @@ const productionConfig = merge([
 ])
 
 module.exports = mode => {
-  if (mode === 'production') {
-    return merge(commonConfig, productionConfig, { mode })
+  if (mode.production) {
+    return merge(commonConfig, productionConfig, { mode: 'production' })
   }
+  const config = merge(commonConfig, developmentConfig, { mode: 'development' })
 
-  return merge(commonConfig, developmentConfig, { mode })
+  return config
 }

@@ -13,7 +13,7 @@ class ClipFront extends LitElement {
     })
   }
 
-  init () {
+  async init () {
     const urlParams = new URLSearchParams(window.location.search)
     const back = urlParams.get('back')
     const index = urlParams.get('index')
@@ -61,7 +61,8 @@ class ClipFront extends LitElement {
     this.hideDuplicateImages = true
     this.aestheticScore = ''
     this.aestheticWeight = '0.5'
-    this.initIndices()
+    await this.initIndices()
+    this.postInit()
   }
 
   setBackendToDefault () {
@@ -69,8 +70,8 @@ class ClipFront extends LitElement {
     this.initIndices(true)
   }
 
-  initIndices (forceChange) {
-    this.service.getIndices().then(l => {
+  async initIndices (forceChange) {
+    await this.service.getIndices().then(l => {
       this.indices = l
       if (forceChange || this.currentIndex === '') {
         this.currentIndex = this.indices[0]
@@ -109,7 +110,7 @@ class ClipFront extends LitElement {
     }
   }
 
-  firstUpdated () {
+  postInit () {
     const searchElem = this.shadowRoot.getElementById('searchBar')
     searchElem.addEventListener('keyup', e => { if (e.keyCode === 13) { this.textSearch() } })
     const productsElement = this.shadowRoot.getElementById('products')
@@ -525,6 +526,9 @@ class ClipFront extends LitElement {
   }
 
   render () {
+    if (this.images === undefined) {
+      return html`<div id="all"></div>`
+    }
     const preFiltered = this.images
       .filter(image => image['caption'] !== undefined || image[this.urlColumn] !== undefined || image['image'] !== undefined)
     const filteredImages = this.hideDuplicateUrls ? this.filterDuplicateUrls(preFiltered) : preFiltered
