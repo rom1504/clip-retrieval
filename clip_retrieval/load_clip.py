@@ -44,8 +44,10 @@ def load_open_clip(clip_model, use_jit=True, device="cuda", clip_cache_path=None
 
     torch.backends.cuda.matmul.allow_tf32 = True
 
-    pretrained = dict(open_clip.list_pretrained())
-    checkpoint = pretrained[clip_model]
+    clip_model = clip_model.split(" | ")
+    checkpoint = dict(open_clip.list_pretrained())[clip_model[0]] if len(clip_model)<2 else clip_model[1]
+    clip_model = clip_model[0]
+    print(f"Loading OpenClip model {clip_model} with {checkpoint} checkpoint")
     model, _, preprocess = open_clip.create_model_and_transforms(
         clip_model, pretrained=checkpoint, device=device, jit=use_jit, cache_dir=clip_cache_path
     )
@@ -61,6 +63,8 @@ def get_tokenizer(clip_model):
         import open_clip  # pylint: disable=import-outside-toplevel
 
         clip_model = clip_model[len("open_clip:") :]
+        clip_model = clip_model.split(" | ")
+        clip_model = clip_model[0]
         return open_clip.get_tokenizer(clip_model)
     else:
         return lambda t: clip.tokenize(t, truncate=True)
@@ -71,6 +75,8 @@ def load_clip_without_warmup(clip_model, use_jit, device, clip_cache_path):
     """Load clip"""
     if clip_model.startswith("open_clip:"):
         clip_model = clip_model[len("open_clip:") :]
+        clip_model = clip_model.split(" | ")
+        clip_model = clip_model[0]
         model, preprocess = load_open_clip(clip_model, use_jit, device, clip_cache_path)
     else:
         model, preprocess = clip.load(clip_model, device=device, jit=use_jit, download_root=clip_cache_path)
