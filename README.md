@@ -167,7 +167,7 @@ clip_inference turn a set of text+image into clip embeddings
 * **write_batch_size** Write batch size (default *10**6*)
 * **wds_image_key** Key to use for images in webdataset. (default *jpg*)
 * **wds_caption_key** Key to use for captions in webdataset. (default *txt*)
-* **clip_model** CLIP model to load (default *ViT-B/32*). Specify it as `"open_clip:ViT-B-32-quickgelu"` to use the [open_clip](https://github.com/mlfoundations/open_clip).
+* **clip_model** CLIP model to load (default *ViT-B/32*). Specify it as `"open_clip:ViT-B-32-quickgelu"` to use the [open_clip](https://github.com/mlfoundations/open_clip). You can also specify a checkpoint of openclip model that you need to download like this: `"open_clip:ViT-L-14 | datacomp_xl_s13b_b90k"`. To see a list of available openclip models, you can use this code:```import open_clip; print(open_clip.list_pretrained())```
 * **mclip_model** MCLIP model to load (default *sentence-transformers/clip-ViT-B-32-multilingual-v1*)
 * **use_mclip** If False it performs the inference using CLIP; MCLIP otherwise (default *False*)
 * **use_jit** uses jit for the clip model (default *True*)
@@ -221,7 +221,7 @@ The API is very similar to `clip-retrieval inference` with some minor changes:
 * **enable_metadata** Enable metadata processing (default *False*)
 * **wds_image_key** Key to use for images in webdataset. (default *jpg*)
 * **wds_caption_key** Key to use for captions in webdataset. (default *txt*)
-* **clip_model** CLIP model to load (default *ViT-B/32*). Specify it as `"open_clip:ViT-B-32-quickgelu"` to use the [open_clip](https://github.com/mlfoundations/open_clip).
+* **clip_model** CLIP model to load (default *ViT-B/32*). Specify it as `"open_clip:ViT-B-32-quickgelu"` to use the [open_clip](https://github.com/mlfoundations/open_clip). You can also specify a checkpoint of openclip model that you need to download like this: `"open_clip:ViT-L-14 | datacomp_xl_s13b_b90k"`. To see a list of available openclip models, you can use this code:```import open_clip; print(open_clip.list_pretrained())```
 * **mclip_model** MCLIP model to load (default *sentence-transformers/clip-ViT-B-32-multilingual-v1*)
 * **use_mclip** If False it performs the inference using CLIP; MCLIP otherwise (default *False*)
 * **use_jit** uses jit for the clip model (default *True*)
@@ -302,7 +302,7 @@ clip-retrieval back --port 1234 --indices-paths indices_paths.json
 
 Options:
 * `--use_jit True` uses jit for the clip model
-* `--clip_model "ViT-B/32"` allows choosing the clip model to use. Prefix with `"open_clip:"` to use an [open_clip](https://github.com/mlfoundations/open_clip) model.
+* `--clip_model "ViT-B/32"` allows choosing the clip model to use. Prefix with `"open_clip:"` to use an [open_clip](https://github.com/mlfoundations/open_clip) model. You can also specify a checkpoint of openclip model that you need to download like this: `"open_clip:ViT-L-14 | datacomp_xl_s13b_b90k"`. To see a list of available openclip models, you can use this code:```import open_clip; print(open_clip.list_pretrained())```
 * `--enable_mclip_option True` loads the mclip model, making it possible to search in any language.
 * `--columns_to_return='["url", "image_path", "caption", "NSFW"]` allows you to specify which columns should be fetched from the metadata and returned by the backend. It's useful to specify less in case of hdf5 caching to speed up the queries.
 * `--enable_faiss_memory_mapping=True` option can be passed to use an index with memory mapping.
