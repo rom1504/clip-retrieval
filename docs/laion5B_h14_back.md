@@ -1,6 +1,6 @@
 # How to setup clip-back with an H/14 index of Laion5B
 
-1. Create a python virtual environment & install huggingface-cli & clip-retrieval
+1. Create a python virtual environment & install huggingface_hub & clip-retrieval
    - `pip install huggingface-cli clip-retrieval`
 2. Install `aria2` on your system
    https://github.com/aria2/aria2
@@ -11,7 +11,7 @@
    - `for i in {00..79}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion5b-h14-index/resolve/main/index-parts/$i.index; done`
    - `cd ..`
 5. Combine the index parts using the following command
-   - `clip_retrieval index_combiner --input_folder "index-parts" --output_folder "combined-indices"`
+   - `clip-retrieval index_combiner --input_folder "index-parts" --output_folder "combined-indices"`
 6. Now download the metadata parts from the following metadata repos
 
    - ***multi embeddings***
@@ -20,7 +20,7 @@
         - `cd ..`
    - ***english embeddings***
         - `mkdir en-embeddings && cd en-embeddings`
-        - `for i in {0000..2314}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion2b-en-vit-h-14-embeddings/resolve/main/metadata/metadata_$i.parquet; done`
+        - `for i in {0000..2313}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion2b-en-vit-h-14-embeddings/resolve/main/metadata/metadata_$i.parquet; done`
         - `cd ..`
    - ***nolang embeddings***
         - `mkdir nolang-embeddings && nolang en-embeddings`
