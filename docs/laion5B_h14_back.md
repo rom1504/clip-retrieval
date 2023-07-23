@@ -26,6 +26,10 @@
         - `mkdir nolang-embeddings && nolang en-embeddings`
         - `for i in {0000..1273}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion1b-nolang-vit-h-14-embeddings/resolve/main/metadata/metadata_$i.parquet; done`
         - `cd ..`
+6.1 Convert file to parquet
+   - `find multi-embeddings/ -type f -exec '{}' '{}'.parquet \;`
+   - `find en-embeddings/ -type f -exec '{}' '{}'.parquet \;`
+   - `find nolang-embeddings/ -type f -exec '{}' '{}'.parquet \;`
 
 7. Now run the metadata combiner for each of the metadata folders
 
