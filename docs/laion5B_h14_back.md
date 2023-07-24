@@ -1,7 +1,7 @@
 # How to setup clip-back with an H/14 index of Laion5B
 
 1. Create a python virtual environment & install huggingface_hub & clip-retrieval
-   - `pip install huggingface-cli clip-retrieval`
+   - `pip install huggingface_hub clip-retrieval`
 2. Install `aria2` on your system
    https://github.com/aria2/aria2
 3. Navigate to your large storage
