@@ -8,7 +8,7 @@
    - `cd /somehwere/with/lots/of/space`
 4. Download the index parts from the hugging-face repository
    - `mkdir index-parts && cd index-parts`
-   - `for i in {00..79}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion5b-h14-index/resolve/main/index-parts/$i.index; done`
+   - `for i in {00..79}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion5b-h14-index/resolve/main/index-parts/$i.index -o $i.parquet; done`
    - `cd ..`
 5. Combine the index parts using the following command
    - `clip-retrieval index_combiner --input_folder "index-parts" --output_folder "combined-indices"`
@@ -16,20 +16,16 @@
 
    - ***multi embeddings***
         - `mkdir multi-embeddings && cd multi-embeddings`
-        - `for i in {0000..2268}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion2b-multi-vit-h-14-embeddings/resolve/main/metadata/metadata_$i.parquet; done`
+        - `for i in {0000..2268}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion2b-multi-vit-h-14-embeddings/resolve/main/metadata/metadata_$i.parquet -o $i.parquet; done`
         - `cd ..`
    - ***english embeddings***
         - `mkdir en-embeddings && cd en-embeddings`
-        - `for i in {0000..2313}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion2b-en-vit-h-14-embeddings/resolve/main/metadata/metadata_$i.parquet; done`
+        - `for i in {0000..2313}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion2b-en-vit-h-14-embeddings/resolve/main/metadata/metadata_$i.parquet -o $i.parquet; done`
         - `cd ..`
    - ***nolang embeddings***
         - `mkdir nolang-embeddings && nolang en-embeddings`
-        - `for i in {0000..1273}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion1b-nolang-vit-h-14-embeddings/resolve/main/metadata/metadata_$i.parquet; done`
+        - `for i in {0000..1273}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion1b-nolang-vit-h-14-embeddings/resolve/main/metadata/metadata_$i.parquet -o $i.parquet; done`
         - `cd ..`
-6.1 Convert file to parquet
-   - `find multi-embeddings/ -type f -exec '{}' '{}'.parquet \;`
-   - `find en-embeddings/ -type f -exec '{}' '{}'.parquet \;`
-   - `find nolang-embeddings/ -type f -exec '{}' '{}'.parquet \;`
 
 7. Now run the metadata combiner for each of the metadata folders
 
