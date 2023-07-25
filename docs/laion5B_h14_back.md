@@ -44,7 +44,7 @@
    - `mv multi-embeddings/0.arrow Laion5B_H14/metadata/1_multi.arrow`
    - `mv nolang-embeddings/0.arrow Laion5B_H14/metadata/2_nolang.arrow`
 10. Move the files generated from the index combination step into the `image.index` subfolder
-    - `mv combined-indices/* Laion5B_H14/image.index/*`
+    - `mv combined-indices/* Laion5B_H14/image.index/`
 11. Create an indices.json file with the following (edit as necessary, more info on parameters in the [Main README](https://github.com/rom1504/clip-retrieval#clip-back))
 
 ```
