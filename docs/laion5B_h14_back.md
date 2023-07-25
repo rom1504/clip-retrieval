@@ -40,9 +40,9 @@
    - `mkdir Laion5B_H14 && mkdir Laion5B_H14/metadata && mkdir Laion5B_H14/image.index`
 9. Move all of the metadata `arrow files` to the metadata subfolder of our new parent folder
    > **NOTE: in order to maintain the proper ordering, it is important to use the following file names**
-   - `mv en-embeddings/0.arrow Laion5B_H14/metadata/0_en.arrow`
-   - `mv multi-embeddings/0.arrow Laion5B_H14/metadata/1_multi.arrow`
-   - `mv nolang-embeddings/0.arrow Laion5B_H14/metadata/2_nolang.arrow`
+   - `mv en-combined/0.arrow Laion5B_H14/metadata/0_en.arrow`
+   - `mv multi-combined/0.arrow Laion5B_H14/metadata/1_multi.arrow`
+   - `mv nolang-combined/0.arrow Laion5B_H14/metadata/2_nolang.arrow`
 10. Move the files generated from the index combination step into the `image.index` subfolder
     - `mv combined-indices/* Laion5B_H14/image.index/`
 11. Create an indices.json file with the following (edit as necessary, more info on parameters in the [Main README](https://github.com/rom1504/clip-retrieval#clip-back))
