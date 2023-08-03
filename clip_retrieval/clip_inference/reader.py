@@ -22,6 +22,7 @@ def folder_to_keys(folder, enable_text=True, enable_image=True, enable_metadata=
             *path.glob("**/*.jpg"),
             *path.glob("**/*.jpeg"),
             *path.glob("**/*.bmp"),
+            *path.glob("**/*.webp"),
         ]
         image_files = {image_file.stem: image_file for image_file in image_files}
     if enable_metadata:
