@@ -8,7 +8,7 @@
    - `cd /somehwere/with/lots/of/space`
 4. Download the index parts from the hugging-face repository
    - `mkdir index-parts && cd index-parts`
-   - `for i in {00..79}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion5b-h14-index/resolve/main/index-parts/$i.index -o $i.parquet; done`
+   - `for i in {00..79}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion5b-h14-index/resolve/main/index-parts/$i.index -o $i.index; done`
    - `cd ..`
 5. Combine the index parts using the following command
    - `clip-retrieval index_combiner --input_folder "index-parts" --output_folder "combined-indices"`
@@ -16,18 +16,18 @@
 
    - ***multi embeddings***
         - `mkdir multi-embeddings && cd multi-embeddings`
-        - `for i in {0000..2268}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion2b-multi-vit-h-14-embeddings/resolve/main/metadata/metadata_$i.parquet -o $i.parquet; done`
+        - `for i in {0000..2268}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion2b-multi-vit-h-14-embeddings/resolve/main/metadata/metadata_$i.parquet -o metadata_$i.parquet; done`
         - `cd ..`
    - ***english embeddings***
         - `mkdir en-embeddings && cd en-embeddings`
-        - `for i in {0000..2313}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion2b-en-vit-h-14-embeddings/resolve/main/metadata/metadata_$i.parquet -o $i.parquet; done`
+        - `for i in {0000..2313}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion2b-en-vit-h-14-embeddings/resolve/main/metadata/metadata_$i.parquet -o metadata_$i.parquet; done`
         - `cd ..`
    - ***nolang embeddings***
         - `mkdir nolang-embeddings && nolang en-embeddings`
-        - `for i in {0000..1273}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion1b-nolang-vit-h-14-embeddings/resolve/main/metadata/metadata_$i.parquet -o $i.parquet; done`
+        - `for i in {0000..1273}; do aria2c -x 16 https://huggingface.co/datasets/laion/laion1b-nolang-vit-h-14-embeddings/resolve/main/metadata/metadata_$i.parquet -o metadata_$i.parquet; done`
         - `cd ..`
 
-7. Now run the metadata combiner for each of the metadata folders
+7. Now run the metadata combiner for each of the metadata folders  (Warning: ensure all metadata parquet files are present before combining them, or the combined arrow file may be misaligned with the index)
 
    - ***multi embeddings***
         - `clip-retrieval parquet_to_arrow --parquet_folder="multi-embeddings" --output_arrow_folder="multi-combined" --columns_to_return='["url", "caption"]'`
@@ -50,7 +50,7 @@
 ```
 {
         "laion5B-H-14": {
-                "indice_folder": "laion5B_H14",
+                "indice_folder": "Laion5B_H14",
                 "provide_safety_model": true,
                 "enable_faiss_memory_mapping": true,
                 "use_arrow": true,
