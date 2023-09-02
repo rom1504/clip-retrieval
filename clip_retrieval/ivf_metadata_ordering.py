@@ -25,7 +25,7 @@ def search_to_new_ids(index, query, k):
     _, l = faiss.extract_index_ivf(index).quantizer.search(xq, faiss.extract_index_ivf(index).nprobe)
     il = faiss.extract_index_ivf(index).invlists
     list_sizes = [il.list_size(i) for i in range(il.nlist)]
-    starting_offset = [0] + np.cumsum(list_sizes[:len(list_sizes)-1]).tolist()
+    starting_offset = [0] + np.cumsum(list_sizes[: len(list_sizes) - 1]).tolist()
     old_id_to_new_id = {}
     for i in l[0]:
         i = int(i)
