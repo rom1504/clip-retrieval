@@ -51,7 +51,7 @@ def worker(
 
     def reader_builder(sampler):
         _, preprocess = load_clip(
-            clip_model=clip_model, use_jit=use_jit, warmup_batch_size=batch_size, 
+            clip_model=clip_model, use_jit=use_jit, warmup_batch_size=batch_size,
             clip_cache_path=clip_cache_path, checkpoint=clip_checkpoint,
         )
         if input_format == "files":

@@ -213,7 +213,7 @@ def load_clip_without_warmup(clip_model, use_jit, device, clip_cache_path, check
 
 @lru_cache(maxsize=None)
 def load_clip(
-    clip_model="ViT-B/32", use_jit=True, warmup_batch_size=1, 
+    clip_model="ViT-B/32", use_jit=True, warmup_batch_size=1,
     clip_cache_path=None, device=None, checkpoint=None
 ):
     """Load clip then warmup"""
