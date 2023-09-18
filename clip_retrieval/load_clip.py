@@ -96,7 +96,6 @@ def load_open_clip(clip_model, use_jit=True, device="cuda", clip_cache_path=None
     import open_clip  # pylint: disable=import-outside-toplevel
 
     torch.backends.cuda.matmul.allow_tf32 = True
-    
     if checkpoint is None:
         pretrained = dict(open_clip.list_pretrained())
         checkpoint = pretrained[clip_model]
@@ -213,7 +212,10 @@ def load_clip_without_warmup(clip_model, use_jit, device, clip_cache_path, check
 
 
 @lru_cache(maxsize=None)
-def load_clip(clip_model="ViT-B/32", use_jit=True, warmup_batch_size=1, clip_cache_path=None, device=None, checkpoint=None):
+def load_clip(
+    clip_model="ViT-B/32", use_jit=True, warmup_batch_size=1, 
+    clip_cache_path=None, device=None, checkpoint=None
+):
     """Load clip then warmup"""
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
