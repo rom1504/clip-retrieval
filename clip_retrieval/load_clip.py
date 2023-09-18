@@ -50,7 +50,9 @@ class OpenClipWrapper(nn.Module):
         if self.device.type == "cpu":
             self.dtype = torch.float32
         else:
-            self.dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+            self.dtype = (
+                torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+            )
 
     def encode_image(self, image):
         if self.device.type == "cpu":
@@ -90,7 +92,9 @@ def load_hf_clip(clip_model, device="cuda"):
     return model, lambda x: preprocess(x, return_tensors="pt").pixel_values
 
 
-def load_open_clip(clip_model, use_jit=True, device="cuda", clip_cache_path=None, checkpoint=None):
+def load_open_clip(
+    clip_model, use_jit=True, device="cuda", clip_cache_path=None, checkpoint=None
+):
     """load open clip"""
 
     import open_clip  # pylint: disable=import-outside-toplevel
@@ -100,7 +104,11 @@ def load_open_clip(clip_model, use_jit=True, device="cuda", clip_cache_path=None
         pretrained = dict(open_clip.list_pretrained())
         checkpoint = pretrained[clip_model]
     model, _, preprocess = open_clip.create_model_and_transforms(
-        clip_model, pretrained=checkpoint, device=device, jit=use_jit, cache_dir=clip_cache_path
+        clip_model,
+        pretrained=checkpoint,
+        device=device,
+        jit=use_jit,
+        cache_dir=clip_cache_path,
     )
     model = OpenClipWrapper(inner_model=model, device=device)
     model.to(device=device)
@@ -195,11 +203,15 @@ def get_tokenizer(clip_model):
 
 
 @lru_cache(maxsize=None)
-def load_clip_without_warmup(clip_model, use_jit, device, clip_cache_path, checkpoint=None):
+def load_clip_without_warmup(
+    clip_model, use_jit, device, clip_cache_path, checkpoint=None
+):
     """Load clip"""
     if clip_model.startswith("open_clip:"):
         clip_model = clip_model[len("open_clip:") :]
-        model, preprocess = load_open_clip(clip_model, use_jit, device, clip_cache_path, checkpoint=checkpoint)
+        model, preprocess = load_open_clip(
+            clip_model, use_jit, device, clip_cache_path, checkpoint=checkpoint
+        )
     elif clip_model.startswith("hf_clip:"):
         clip_model = clip_model[len("hf_clip:") :]
         model, preprocess = load_hf_clip(clip_model, device)
@@ -207,19 +219,27 @@ def load_clip_without_warmup(clip_model, use_jit, device, clip_cache_path, check
         clip_model = clip_model[len("nm:") :]
         model, preprocess = load_deepsparse(clip_model)
     else:
-        model, preprocess = clip.load(clip_model, device=device, jit=use_jit, download_root=clip_cache_path)
+        model, preprocess = clip.load(
+            clip_model, device=device, jit=use_jit, download_root=clip_cache_path
+        )
     return model, preprocess
 
 
 @lru_cache(maxsize=None)
 def load_clip(
-    clip_model="ViT-B/32", use_jit=True, warmup_batch_size=1,
-    clip_cache_path=None, device=None, checkpoint=None
+    clip_model="ViT-B/32",
+    use_jit=True,
+    warmup_batch_size=1,
+    clip_cache_path=None,
+    device=None,
+    checkpoint=None,
 ):
     """Load clip then warmup"""
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, preprocess = load_clip_without_warmup(clip_model, use_jit, device, clip_cache_path, checkpoint=checkpoint)
+    model, preprocess = load_clip_without_warmup(
+        clip_model, use_jit, device, clip_cache_path, checkpoint=checkpoint
+    )
 
     start = time.time()
     print(f"warming up with batch size {warmup_batch_size} on {device}", flush=True)
@@ -232,7 +252,9 @@ def load_clip(
 def warmup(batch_size, device, preprocess, model):
     fake_img = Image.new("RGB", (224, 224), color="red")
     fake_text = ["fake"] * batch_size
-    image_tensor = torch.cat([torch.unsqueeze(preprocess(fake_img), 0)] * batch_size).to(device)
+    image_tensor = torch.cat(
+        [torch.unsqueeze(preprocess(fake_img), 0)] * batch_size
+    ).to(device)
     text_tokens = clip.tokenize(fake_text).to(device)
     for _ in range(2):
         with torch.no_grad():
