@@ -27,6 +27,7 @@ class ClipMapper:
         mclip_model,
         warmup_batch_size=1,
         clip_cache_path=None,
+        checkpoint=None,
     ):
         self.enable_image = enable_image
         self.enable_text = enable_text
@@ -34,7 +35,7 @@ class ClipMapper:
         self.use_mclip = use_mclip
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         model, _ = load_clip(
-            clip_model=clip_model, use_jit=use_jit, warmup_batch_size=warmup_batch_size, clip_cache_path=clip_cache_path
+            clip_model=clip_model, use_jit=use_jit, warmup_batch_size=warmup_batch_size, clip_cache_path=clip_cache_path, checkpoint=checkpoint,
         )
         self.model_img = model.encode_image
         self.model_txt = model.encode_text
