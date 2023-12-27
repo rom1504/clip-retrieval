@@ -5,7 +5,7 @@ import torch
 import clip
 from PIL import Image
 import time
-
+import numpy as np
 
 class HFClipWrapper(nn.Module):
     """
@@ -95,6 +95,79 @@ def load_open_clip(clip_model, use_jit=True, device="cuda", clip_cache_path=None
     return model, preprocess
 
 
+
+class DeepSparseWrapper(nn.Module):
+    """
+    Wrap DeepSparse for managing input types
+    """
+
+    def __init__(self, model_path):
+        super().__init__()
+
+        import deepsparse
+
+        ##### Fix for two-input model
+        from deepsparse.clip import CLIPTextPipeline
+
+        def custom_process_inputs(self, inputs):
+            if not isinstance(inputs.text, list):
+                inputs.text = [inputs.text]
+            if not isinstance(inputs.text[0], str):
+                return inputs.text
+            tokens = [np.array(t).astype(np.int32) for t in self.tokenizer(inputs.text)]
+            tokens = np.stack(tokens, axis=0)
+            tokens_lengths = np.array(tokens.shape[0] * [tokens.shape[1] - 1])
+            return [tokens, tokens_lengths]
+
+        # This overrides the process_inputs function globally for all CLIPTextPipeline classes
+        CLIPTextPipeline.process_inputs = custom_process_inputs
+        ####
+
+        self.textual_model_path = model_path + "/textual.onnx"
+        self.visual_model_path = model_path + "/visual.onnx"
+
+        self.textual_model = deepsparse.Pipeline(task="clip_text", model_path=self.textual_model_path)
+        self.visual_model = deepsparse.Pipeline(task="clip_visual", model_path=self.visual_model_path)
+
+    def encode_image(self, image):
+        return self.visual_model(images=image).image_embeddings[0]
+
+    def encode_text(self, text):
+        return self.textual_model(text=text).text_embeddings[0]
+
+    def forward(self, *args, **kwargs):
+        return NotImplemented
+
+
+def load_deepsparse(clip_model):
+    """load deepsparse"""
+
+    from huggingface_hub import snapshot_download
+
+    # Download the model from HF
+    model_folder = snapshot_download(repo_id=clip_model)
+    # Compile the model with DeepSparse
+    model = DeepSparseWrapper(model_path=model_folder)
+
+    from deepsparse.clip.constants import CLIP_RGB_MEANS, CLIP_RGB_STDS
+
+    def process_image(image):
+        image = image.convert("RGB")
+        image = model.visual_model._preprocess_transforms(image)
+        image_array = np.array(image)
+
+        # make channel dim the first dim
+        image_array = image_array.transpose(2, 0, 1).astype("float32")
+
+        image_array /= 255.0
+        image_array = (
+            image_array - np.array(CLIP_RGB_MEANS).reshape((3, 1, 1))
+        ) / np.array(CLIP_RGB_STDS).reshape((3, 1, 1))
+        return np.ascontiguousarray(image_array, dtype=np.float32)
+
+    return model, process_image
+
+
 @lru_cache(maxsize=None)
 def get_tokenizer(clip_model):
     """Load clip"""
@@ -116,6 +189,9 @@ def load_clip_without_warmup(clip_model, use_jit, device, clip_cache_path):
     elif clip_model.startswith("hf_clip:"):
         clip_model = clip_model[len("hf_clip:") :]
         model, preprocess = load_hf_clip(clip_model, device)
+    elif clip_model.startswith("nm:"):
+        clip_model = clip_model[len("nm:") :]
+        model, preprocess = load_deepsparse(clip_model)
     else:
         model, preprocess = clip.load(clip_model, device=device, jit=use_jit, download_root=clip_cache_path)
     return model, preprocess
