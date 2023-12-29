@@ -113,7 +113,8 @@ class DeepSparseWrapper(nn.Module):
             if not isinstance(inputs.text, list):
                 inputs.text = [inputs.text]
             if not isinstance(inputs.text[0], str):
-                return inputs.text
+                tokens = np.stack(inputs.text, axis=0, dtype=np.int32)
+                return [tokens, np.array(tokens.shape[0] * [tokens.shape[1] - 1])]
             tokens = [np.array(t).astype(np.int32) for t in self.tokenizer(inputs.text)]
             tokens = np.stack(tokens, axis=0)
             tokens_lengths = np.array(tokens.shape[0] * [tokens.shape[1] - 1])
@@ -126,14 +127,18 @@ class DeepSparseWrapper(nn.Module):
         self.textual_model_path = model_path + "/textual.onnx"
         self.visual_model_path = model_path + "/visual.onnx"
 
-        self.textual_model = deepsparse.Pipeline(task="clip_text", model_path=self.textual_model_path)
-        self.visual_model = deepsparse.Pipeline(task="clip_visual", model_path=self.visual_model_path)
+        self.textual_model = deepsparse.Pipeline.create(task="clip_text", model_path=self.textual_model_path)
+        self.visual_model = deepsparse.Pipeline.create(task="clip_visual", model_path=self.visual_model_path)
 
     def encode_image(self, image):
-        return self.visual_model(images=image).image_embeddings[0]
+        image = [i.numpy() for i in image]
+        embeddings = self.visual_model(images=image).image_embeddings[0]
+        return torch.from_numpy(embeddings)
 
     def encode_text(self, text):
-        return self.textual_model(text=text).text_embeddings[0]
+        text = [t.numpy() for t in text]
+        embeddings = self.textual_model(text=text).text_embeddings[0]
+        return torch.from_numpy(embeddings)
 
     def forward(self, *args, **kwargs):
         return NotImplemented
@@ -163,7 +168,7 @@ def load_deepsparse(clip_model):
         image_array = (
             image_array - np.array(CLIP_RGB_MEANS).reshape((3, 1, 1))
         ) / np.array(CLIP_RGB_STDS).reshape((3, 1, 1))
-        return np.ascontiguousarray(image_array, dtype=np.float32)
+        return torch.from_numpy(np.ascontiguousarray(image_array, dtype=np.float32))
 
     return model, process_image
 
