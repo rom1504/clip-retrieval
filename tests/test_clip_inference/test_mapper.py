@@ -6,7 +6,14 @@ import numpy as np
 from clip_retrieval.clip_inference.mapper import ClipMapper
 
 
-@pytest.mark.parametrize("model", ["ViT-B/32", "open_clip:ViT-B-32-quickgelu", "hf_clip:patrickjohncyh/fashion-clip"])
+@pytest.mark.parametrize(
+    "model",
+    [
+        "ViT-B/32",
+        "open_clip:ViT-B-32-quickgelu", "hf_clip:patrickjohncyh/fashion-clip",
+        "nm:neuralmagic/CLIP-ViT-B-32-256x256-DataComp-s34B-b86K-quant-ds",
+    ],
+)
 def test_mapper(model):
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
 

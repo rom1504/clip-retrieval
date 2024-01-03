@@ -104,21 +104,23 @@ class DeepSparseWrapper(nn.Module):
     def __init__(self, model_path):
         super().__init__()
 
-        import deepsparse
+        import deepsparse # pylint: disable=import-outside-toplevel
 
-        ##### Fix for two-input model
+        ##### Fix for two-input models
         from deepsparse.clip import CLIPTextPipeline
 
         def custom_process_inputs(self, inputs):
             if not isinstance(inputs.text, list):
+                # Always wrap in a list
                 inputs.text = [inputs.text]
             if not isinstance(inputs.text[0], str):
+                # If not a string, assume it's already been tokenized
                 tokens = np.stack(inputs.text, axis=0, dtype=np.int32)
                 return [tokens, np.array(tokens.shape[0] * [tokens.shape[1] - 1])]
-            tokens = [np.array(t).astype(np.int32) for t in self.tokenizer(inputs.text)]
-            tokens = np.stack(tokens, axis=0)
-            tokens_lengths = np.array(tokens.shape[0] * [tokens.shape[1] - 1])
-            return [tokens, tokens_lengths]
+            else:
+                tokens = [np.array(t).astype(np.int32) for t in self.tokenizer(inputs.text)]
+                tokens = np.stack(tokens, axis=0)
+                return [tokens, np.array(tokens.shape[0] * [tokens.shape[1] - 1])]
 
         # This overrides the process_inputs function globally for all CLIPTextPipeline classes
         CLIPTextPipeline.process_inputs = custom_process_inputs
@@ -131,7 +133,7 @@ class DeepSparseWrapper(nn.Module):
         self.visual_model = deepsparse.Pipeline.create(task="clip_visual", model_path=self.visual_model_path)
 
     def encode_image(self, image):
-        image = [i.numpy() for i in image]
+        image = [np.array(image)]
         embeddings = self.visual_model(images=image).image_embeddings[0]
         return torch.from_numpy(embeddings)
 
@@ -147,7 +149,7 @@ class DeepSparseWrapper(nn.Module):
 def load_deepsparse(clip_model):
     """load deepsparse"""
 
-    from huggingface_hub import snapshot_download
+    from huggingface_hub import snapshot_download # pylint: disable=import-outside-toplevel
 
     # Download the model from HF
     model_folder = snapshot_download(repo_id=clip_model)
@@ -157,13 +159,9 @@ def load_deepsparse(clip_model):
     from deepsparse.clip.constants import CLIP_RGB_MEANS, CLIP_RGB_STDS
 
     def process_image(image):
-        image = image.convert("RGB")
-        image = model.visual_model._preprocess_transforms(image)
+        image = model.visual_model._preprocess_transforms(image.convert("RGB"))
         image_array = np.array(image)
-
-        # make channel dim the first dim
         image_array = image_array.transpose(2, 0, 1).astype("float32")
-
         image_array /= 255.0
         image_array = (
             image_array - np.array(CLIP_RGB_MEANS).reshape((3, 1, 1))
