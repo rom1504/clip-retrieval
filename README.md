@@ -189,6 +189,10 @@ clip_inference turn a set of text+image into clip embeddings
 * **slurm_cache_path**, cache path to use for slurm-related tasks. (default *None*)
 * **slurm_verbose_wait=False**, wether to print the status of your slurm job (default *False*)
 
+#### DeepSparse Backend
+
+[DeepSparse](https://github.com/neuralmagic/deepsparse) is an inference runtime for fast sparse model inference on CPUs. There is a backend available within clip-retrieval by installing it with `pip install deepsparse-nightly[clip]`, and specifying a `clip_model` with a prepended `"nm:"`, such as [`"nm:neuralmagic/CLIP-ViT-B-32-256x256-DataComp-s34B-b86K-quant-ds"`](https://huggingface.co/neuralmagic/CLIP-ViT-B-32-256x256-DataComp-s34B-b86K-quant-ds) or [`"nm:mgoin/CLIP-ViT-B-32-laion2b_s34b_b79k-ds"`](https://huggingface.co/mgoin/CLIP-ViT-B-32-laion2b_s34b_b79k-ds).
+
 ### Inference Worker
 
 If you wish to have more control over how inference is run, you can create and call workers directly using `clip-retrieval inference.worker`
