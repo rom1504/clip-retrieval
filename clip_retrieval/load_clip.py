@@ -107,7 +107,7 @@ class DeepSparseWrapper(nn.Module):
         import deepsparse # pylint: disable=import-outside-toplevel
 
         ##### Fix for two-input models
-        from deepsparse.clip import CLIPTextPipeline
+        from deepsparse.clip import CLIPTextPipeline # pylint: disable=import-outside-toplevel
 
         def custom_process_inputs(self, inputs):
             if not isinstance(inputs.text, list):
@@ -142,7 +142,7 @@ class DeepSparseWrapper(nn.Module):
         embeddings = self.textual_model(text=text).text_embeddings[0]
         return torch.from_numpy(embeddings)
 
-    def forward(self, *args, **kwargs):
+    def forward(self, *args, **kwargs): # pylint: disable=unused-argument
         return NotImplemented
 
 
@@ -156,10 +156,10 @@ def load_deepsparse(clip_model):
     # Compile the model with DeepSparse
     model = DeepSparseWrapper(model_path=model_folder)
 
-    from deepsparse.clip.constants import CLIP_RGB_MEANS, CLIP_RGB_STDS
+    from deepsparse.clip.constants import CLIP_RGB_MEANS, CLIP_RGB_STDS # pylint: disable=import-outside-toplevel
 
     def process_image(image):
-        image = model.visual_model._preprocess_transforms(image.convert("RGB"))
+        image = model.visual_model._preprocess_transforms(image.convert("RGB")) # pylint: disable=protected-access
         image_array = np.array(image)
         image_array = image_array.transpose(2, 0, 1).astype("float32")
         image_array /= 255.0
