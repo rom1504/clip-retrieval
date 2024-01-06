@@ -9,3 +9,4 @@ types-setuptools
 types-requests
 types-certifi
 pyspark
+deepsparse-nightly[clip]
