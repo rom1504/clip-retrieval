@@ -1,3 +1,7 @@
+## 2.40.0
+
+* Add support for the full open clip model name format : ViT-B-32/laion2b_s34b_b79k (thanks @mehdidc @barinov274)
+
 ## 2.39.0
 
 * Add DeepSparse backend for CLIP inference (thanks @mgoin)
