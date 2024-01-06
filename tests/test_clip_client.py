@@ -1,5 +1,6 @@
 """Test the ClipClient class."""
 import logging
+import pytest
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.info("Test ClipClient.query()")
@@ -14,6 +15,7 @@ knn_service_url = "https://knn.laion.ai/knn-service"
 
 
 # NOTE: This test may fail if the backend is down.
+@pytest.mark.skip(reason="temporarily skipping this test while laion knn is down")
 def test_query():
     """
     Test the ClipClient.query() method.
