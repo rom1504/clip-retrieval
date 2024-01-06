@@ -22,6 +22,8 @@ Also see [laion5B](https://laion.ai/laion-5b-a-new-era-of-open-large-scale-multi
 
 [<img src="https://github.com/rom1504/clip-retrieval/raw/main/doc_assets/clip-front-pic.png" alt="clip front" width="500">](https://rom1504.github.io/clip-retrieval/)
 
+If you believe in making reusable tools to make data easy to use for ML and you would like to contribute, please join the [DataToML](https://discord.gg/ep8yUUtCnp) chat.
+
 ## Who is using clip retrieval ?
 
 * [cah-prepro](https://github.com/rom1504/cah-prepro) preprocess the 400M image+text crawling at home dataset. clip-retrieval is used to compute 400M clip embeddings and the indices
@@ -47,7 +49,7 @@ During initialization you can specify a few parameters:
 
 * `backend_url`: the url of the backend. (required)
 * `indice_name`: specify the name of the index you want to use. (required)
-* `aesthetic_score`: the aesthetic score as rated by [aesthetic_detector](https://github.com/rom1504/aesthetic_detector). Default is `9`.
+* `aesthetic_score`: the aesthetic score as rated by [aesthetic-predictor](https://github.com/LAION-AI/aesthetic-predictor). Default is `9`.
 * `use_mclip`: whether to use a multi-lingual version of CLIP. Default is `False`.
 * `aesthetic_weight`: the weight of the aesthetic score. Default is `0.5`
 * `modality`: search over image or text in the index, one of `Multimodal.IMAGE` or `Multimodal.TEXT`. Default is `Multimodal.IMAGE`.

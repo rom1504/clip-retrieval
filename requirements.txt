@@ -15,7 +15,7 @@ autofaiss>=2.9.6,<3
 webdataset>=0.2,<0.3
 h5py>=3.1.0,<4
 prometheus-client>=0.13.1,<1
-fsspec==2022.11.0
+fsspec
 sentence-transformers>=2.2.0,<3
 wandb>=0.12.10,<0.13
 open-clip-torch>=2.0.0,<3.0.0

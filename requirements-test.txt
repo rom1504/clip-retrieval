@@ -1,6 +1,6 @@
 img2dataset
 black==22.3.0
-mypy==0.942
+mypy==0.950
 pylint==2.13.4
 pytest-cov==3.0.0
 pytest-xdist==2.5.0

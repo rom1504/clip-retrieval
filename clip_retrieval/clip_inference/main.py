@@ -41,6 +41,8 @@ def calculate_partition_count(
             enable_image = False
         if metadata_files is None or len(metadata_files) == 0:
             enable_metadata = False
+        if not enable_text and not enable_image and not enable_metadata:
+            raise ValueError("no sample found")
         keys, text_files, image_files, metadata_files = folder_to_keys(
             input_dataset,
             enable_text=enable_text,
@@ -51,14 +53,12 @@ def calculate_partition_count(
     elif input_format == "webdataset":
         sample_count = len(input_dataset) * wds_number_file_per_input_file
     else:
-        print("Unsupported input_format")
-        return None
+        raise ValueError(f"Unsupported input_format {input_format}")
 
     if sample_count == 0:
-        print("no sample found")
-        return None
-    else:
-        print(f"The number of samples has been estimated to be {sample_count}")
+        raise ValueError("no sample found")
+
+    print(f"The number of samples has been estimated to be {sample_count}")
 
     output_partition_count = math.ceil(sample_count / write_batch_size)
 
