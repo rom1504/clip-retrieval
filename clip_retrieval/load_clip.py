@@ -7,6 +7,7 @@ from PIL import Image
 import time
 import numpy as np
 
+
 class HFClipWrapper(nn.Module):
     """
     Wrap Huggingface ClipModel
@@ -95,7 +96,6 @@ def load_open_clip(clip_model, use_jit=True, device="cuda", clip_cache_path=None
     return model, preprocess
 
 
-
 class DeepSparseWrapper(nn.Module):
     """
     Wrap DeepSparse for managing input types
@@ -104,10 +104,10 @@ class DeepSparseWrapper(nn.Module):
     def __init__(self, model_path):
         super().__init__()
 
-        import deepsparse # pylint: disable=import-outside-toplevel
+        import deepsparse  # pylint: disable=import-outside-toplevel
 
         ##### Fix for two-input models
-        from deepsparse.clip import CLIPTextPipeline # pylint: disable=import-outside-toplevel
+        from deepsparse.clip import CLIPTextPipeline  # pylint: disable=import-outside-toplevel
 
         def custom_process_inputs(self, inputs):
             if not isinstance(inputs.text, list):
@@ -142,30 +142,30 @@ class DeepSparseWrapper(nn.Module):
         embeddings = self.textual_model(text=text).text_embeddings[0]
         return torch.from_numpy(embeddings)
 
-    def forward(self, *args, **kwargs): # pylint: disable=unused-argument
+    def forward(self, *args, **kwargs):  # pylint: disable=unused-argument
         return NotImplemented
 
 
 def load_deepsparse(clip_model):
     """load deepsparse"""
 
-    from huggingface_hub import snapshot_download # pylint: disable=import-outside-toplevel
+    from huggingface_hub import snapshot_download  # pylint: disable=import-outside-toplevel
 
     # Download the model from HF
     model_folder = snapshot_download(repo_id=clip_model)
     # Compile the model with DeepSparse
     model = DeepSparseWrapper(model_path=model_folder)
 
-    from deepsparse.clip.constants import CLIP_RGB_MEANS, CLIP_RGB_STDS # pylint: disable=import-outside-toplevel
+    from deepsparse.clip.constants import CLIP_RGB_MEANS, CLIP_RGB_STDS  # pylint: disable=import-outside-toplevel
 
     def process_image(image):
-        image = model.visual_model._preprocess_transforms(image.convert("RGB")) # pylint: disable=protected-access
+        image = model.visual_model._preprocess_transforms(image.convert("RGB"))  # pylint: disable=protected-access
         image_array = np.array(image)
         image_array = image_array.transpose(2, 0, 1).astype("float32")
         image_array /= 255.0
-        image_array = (
-            image_array - np.array(CLIP_RGB_MEANS).reshape((3, 1, 1))
-        ) / np.array(CLIP_RGB_STDS).reshape((3, 1, 1))
+        image_array = (image_array - np.array(CLIP_RGB_MEANS).reshape((3, 1, 1))) / np.array(CLIP_RGB_STDS).reshape(
+            (3, 1, 1)
+        )
         return torch.from_numpy(np.ascontiguousarray(image_array, dtype=np.float32))
 
     return model, process_image

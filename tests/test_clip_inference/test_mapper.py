@@ -10,7 +10,8 @@ from clip_retrieval.clip_inference.mapper import ClipMapper
     "model",
     [
         "ViT-B/32",
-        "open_clip:ViT-B-32-quickgelu", "hf_clip:patrickjohncyh/fashion-clip",
+        "open_clip:ViT-B-32-quickgelu",
+        "hf_clip:patrickjohncyh/fashion-clip",
         "nm:mgoin/CLIP-ViT-B-32-laion2b_s34b_b79k-ds",
     ],
 )
