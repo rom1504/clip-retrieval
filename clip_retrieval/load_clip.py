@@ -79,17 +79,6 @@ def load_hf_clip(clip_model, device="cuda"):
     return model, lambda x: preprocess(x, return_tensors="pt").pixel_values
 
 
-def load_hf_clip(clip_model, device="cuda"):
-    """load hf clip"""
-    from transformers import CLIPProcessor, CLIPModel  # pylint: disable=import-outside-toplevel
-
-    model = CLIPModel.from_pretrained(clip_model)
-    preprocess = CLIPProcessor.from_pretrained(clip_model).image_processor
-    model = HFClipWrapper(inner_model=model, device=device)
-    model.to(device=device)
-    return model, lambda x: preprocess(x, return_tensors="pt").pixel_values
-
-
 def load_open_clip(clip_model, use_jit=True, device="cuda", clip_cache_path=None):
     """load open clip"""
 
