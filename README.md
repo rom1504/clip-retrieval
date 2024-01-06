@@ -169,7 +169,7 @@ clip_inference turn a set of text+image into clip embeddings
 * **write_batch_size** Write batch size (default *10**6*)
 * **wds_image_key** Key to use for images in webdataset. (default *jpg*)
 * **wds_caption_key** Key to use for captions in webdataset. (default *txt*)
-* **clip_model** CLIP model to load (default *ViT-B/32*). Specify it as `"open_clip:ViT-B-32-quickgelu"` to use the [open_clip](https://github.com/mlfoundations/open_clip) or `"hf_clip:patrickjohncyh/fashion-clip"` to use the [hugging face](https://huggingface.co/docs/transformers/model_doc/clip) clip model.
+* **clip_model** CLIP model to load (default *ViT-B/32*). Specify it as `"open_clip:ViT-B-32/laion2b_s34b_b79k"` to use the [open_clip](https://github.com/mlfoundations/open_clip) or `"hf_clip:patrickjohncyh/fashion-clip"` to use the [hugging face](https://huggingface.co/docs/transformers/model_doc/clip) clip model.
 * **mclip_model** MCLIP model to load (default *sentence-transformers/clip-ViT-B-32-multilingual-v1*)
 * **use_mclip** If False it performs the inference using CLIP; MCLIP otherwise (default *False*)
 * **use_jit** uses jit for the clip model (default *True*)
@@ -183,7 +183,7 @@ clip_inference turn a set of text+image into clip embeddings
 * **slurm_partition** (default *None*), the slurm partition to create a job in.
 * **slurm_jobs**, the number of jobs to create in slurm. (default *None*)
 * **slurm_job_comment**, the job comment to use. (default *None*)
-* **slurm_nodelist**, a list of specific nodes to use .(default *None*
+* **slurm_nodelist**, a list of specific nodes to use .(default *None*)
 * **slurm_exclude**, a list of nodes to exclude when creating jobs. (default *None*)
 * **slurm_job_timeout**, if not supplied it will default to 2 weeks. (default *None*)
 * **slurm_cache_path**, cache path to use for slurm-related tasks. (default *None*)

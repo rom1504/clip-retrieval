@@ -34,7 +34,6 @@ def worker(
     wds_image_key="jpg",
     wds_caption_key="txt",
     clip_model="ViT-B/32",
-    clip_checkpoint=None,
     mclip_model="sentence-transformers/clip-ViT-B-32-multilingual-v1",
     use_mclip=False,
     use_jit=True,
@@ -55,7 +54,6 @@ def worker(
             use_jit=use_jit,
             warmup_batch_size=batch_size,
             clip_cache_path=clip_cache_path,
-            checkpoint=clip_checkpoint,
         )
         if input_format == "files":
             return FilesReader(
@@ -96,7 +94,6 @@ def worker(
             mclip_model=mclip_model,
             clip_cache_path=clip_cache_path,
             warmup_batch_size=batch_size,
-            checkpoint=clip_checkpoint,
         )
 
     def writer_builder(i):

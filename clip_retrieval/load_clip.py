@@ -90,13 +90,16 @@ def load_hf_clip(clip_model, device="cuda"):
     return model, lambda x: preprocess(x, return_tensors="pt").pixel_values
 
 
-def load_open_clip(clip_model, use_jit=True, device="cuda", clip_cache_path=None, checkpoint=None):
+def load_open_clip(clip_model, use_jit=True, device="cuda", clip_cache_path=None):
     """load open clip"""
 
     import open_clip  # pylint: disable=import-outside-toplevel
 
     torch.backends.cuda.matmul.allow_tf32 = True
-    if checkpoint is None:
+    clip_model_parts = clip_model.split("/")
+    clip_model = clip_model_parts[0]
+    checkpoint = "/".join(clip_model_parts[1:])
+    if checkpoint == "":
         pretrained = dict(open_clip.list_pretrained())
         checkpoint = pretrained[clip_model]
     model, _, preprocess = open_clip.create_model_and_transforms(
@@ -199,11 +202,11 @@ def get_tokenizer(clip_model):
 
 
 @lru_cache(maxsize=None)
-def load_clip_without_warmup(clip_model, use_jit, device, clip_cache_path, checkpoint=None):
+def load_clip_without_warmup(clip_model, use_jit, device, clip_cache_path):
     """Load clip"""
     if clip_model.startswith("open_clip:"):
         clip_model = clip_model[len("open_clip:") :]
-        model, preprocess = load_open_clip(clip_model, use_jit, device, clip_cache_path, checkpoint=checkpoint)
+        model, preprocess = load_open_clip(clip_model, use_jit, device, clip_cache_path)
     elif clip_model.startswith("hf_clip:"):
         clip_model = clip_model[len("hf_clip:") :]
         model, preprocess = load_hf_clip(clip_model, device)
@@ -222,12 +225,11 @@ def load_clip(
     warmup_batch_size=1,
     clip_cache_path=None,
     device=None,
-    checkpoint=None,
 ):
     """Load clip then warmup"""
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, preprocess = load_clip_without_warmup(clip_model, use_jit, device, clip_cache_path, checkpoint=checkpoint)
+    model, preprocess = load_clip_without_warmup(clip_model, use_jit, device, clip_cache_path)
 
     start = time.time()
     print(f"warming up with batch size {warmup_batch_size} on {device}", flush=True)
