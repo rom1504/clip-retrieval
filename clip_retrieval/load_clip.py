@@ -33,6 +33,9 @@ class HFClipWrapper(nn.Module):
         with autocast(device_type=self.device.type, dtype=self.dtype):
             return self.inner_model.get_text_features(text)
 
+    def forward(self, *args, **kwargs):
+        return self.inner_model(*args, **kwargs)
+
 
 class OpenClipWrapper(nn.Module):
     """

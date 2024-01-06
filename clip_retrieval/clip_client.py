@@ -4,7 +4,7 @@ import base64
 import enum
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import requests
 
@@ -55,9 +55,9 @@ class ClipClient:
 
     def query(
         self,
-        text: str = None,
-        image: str = None,
-        embedding_input: list = None,
+        text: Optional[str] = None,
+        image: Optional[str] = None,
+        embedding_input: Optional[list] = None,
     ) -> List[Dict]:
         """
         Given text or image/s, search for other captions/images that are semantically similar.
@@ -95,10 +95,10 @@ class ClipClient:
 
     def __search_knn_api__(
         self,
-        text: str = None,
-        image: str = None,
-        image_url: str = None,
-        embedding_input: list = None,
+        text: Optional[str] = None,
+        image: Optional[str] = None,
+        image_url: Optional[str] = None,
+        embedding_input: Optional[list] = None,
     ) -> List:
         """
         This function is used to send the request to the knn service.
