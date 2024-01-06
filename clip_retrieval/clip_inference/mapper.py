@@ -27,7 +27,6 @@ class ClipMapper:
         mclip_model,
         warmup_batch_size=1,
         clip_cache_path=None,
-        checkpoint=None,
     ):
         self.enable_image = enable_image
         self.enable_text = enable_text
