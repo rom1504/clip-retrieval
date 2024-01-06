@@ -72,7 +72,7 @@ def main(
     input_format="files",
     cache_path=None,
     batch_size=256,
-    num_prepro_workers=8,
+    num_prepro_workers=4,
     enable_text=True,
     enable_image=True,
     enable_metadata=False,
