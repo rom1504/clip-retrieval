@@ -29,7 +29,7 @@ if __name__ == "__main__":
         packages=find_packages(),
         package_data={"": extra_files},
         include_package_data=True,
-        version="2.36.1",
+        version="2.39.0",
         license="MIT",
         description="Easily computing clip embeddings and building a clip retrieval system with them",
         long_description=long_description,
@@ -48,6 +48,6 @@ if __name__ == "__main__":
             "Intended Audience :: Developers",
             "Topic :: Scientific/Engineering :: Artificial Intelligence",
             "License :: OSI Approved :: MIT License",
-            "Programming Language :: Python :: 3.6",
+            "Programming Language :: Python :: 3.8",
         ],
     )

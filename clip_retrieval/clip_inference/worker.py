@@ -27,7 +27,7 @@ def worker(
     input_format="files",
     cache_path=None,
     batch_size=256,
-    num_prepro_workers=8,
+    num_prepro_workers=4,
     enable_text=True,
     enable_image=True,
     enable_metadata=False,
@@ -50,7 +50,10 @@ def worker(
 
     def reader_builder(sampler):
         _, preprocess = load_clip(
-            clip_model=clip_model, use_jit=use_jit, warmup_batch_size=batch_size, clip_cache_path=clip_cache_path
+            clip_model=clip_model,
+            use_jit=use_jit,
+            warmup_batch_size=batch_size,
+            clip_cache_path=clip_cache_path,
         )
         tokenizer = get_tokenizer(clip_model)
         if input_format == "files":

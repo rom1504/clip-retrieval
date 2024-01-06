@@ -22,6 +22,8 @@ Also see [laion5B](https://laion.ai/laion-5b-a-new-era-of-open-large-scale-multi
 
 [<img src="https://github.com/rom1504/clip-retrieval/raw/main/doc_assets/clip-front-pic.png" alt="clip front" width="500">](https://rom1504.github.io/clip-retrieval/)
 
+If you believe in making reusable tools to make data easy to use for ML and you would like to contribute, please join the [DataToML](https://discord.gg/ep8yUUtCnp) chat.
+
 ## Who is using clip retrieval ?
 
 * [cah-prepro](https://github.com/rom1504/cah-prepro) preprocess the 400M image+text crawling at home dataset. clip-retrieval is used to compute 400M clip embeddings and the indices
@@ -47,7 +49,7 @@ During initialization you can specify a few parameters:
 
 * `backend_url`: the url of the backend. (required)
 * `indice_name`: specify the name of the index you want to use. (required)
-* `aesthetic_score`: the aesthetic score as rated by [aesthetic_detector](https://github.com/rom1504/aesthetic_detector). Default is `9`.
+* `aesthetic_score`: the aesthetic score as rated by [aesthetic-predictor](https://github.com/LAION-AI/aesthetic-predictor). Default is `9`.
 * `use_mclip`: whether to use a multi-lingual version of CLIP. Default is `False`.
 * `aesthetic_weight`: the weight of the aesthetic score. Default is `0.5`
 * `modality`: search over image or text in the index, one of `Multimodal.IMAGE` or `Multimodal.TEXT`. Default is `Multimodal.IMAGE`.
@@ -118,7 +120,7 @@ First pick a dataset of image urls and captions ([examples](https://github.com/r
 You may want to run `export CUDA_VISIBLE_DEVICES=` to avoid using your GPU if it doesn't have enough VRAM.
 
 ```
-wget https://github.com/rom1504/img2dataset/raw/main/tests/test_1000.parquet
+wget https://github.com/rom1504/img2dataset/raw/main/tests/test_files/test_1000.parquet
 clip-retrieval end2end test_1000.parquet /tmp/my_output
 ```
 
@@ -167,7 +169,7 @@ clip_inference turn a set of text+image into clip embeddings
 * **write_batch_size** Write batch size (default *10**6*)
 * **wds_image_key** Key to use for images in webdataset. (default *jpg*)
 * **wds_caption_key** Key to use for captions in webdataset. (default *txt*)
-* **clip_model** CLIP model to load (default *ViT-B/32*). Specify it as `"open_clip:ViT-B-32-quickgelu"` to use the [open_clip](https://github.com/mlfoundations/open_clip).
+* **clip_model** CLIP model to load (default *ViT-B/32*). Specify it as `"open_clip:ViT-B-32/laion2b_s34b_b79k"` to use the [open_clip](https://github.com/mlfoundations/open_clip) or `"hf_clip:patrickjohncyh/fashion-clip"` to use the [hugging face](https://huggingface.co/docs/transformers/model_doc/clip) clip model.
 * **mclip_model** MCLIP model to load (default *sentence-transformers/clip-ViT-B-32-multilingual-v1*)
 * **use_mclip** If False it performs the inference using CLIP; MCLIP otherwise (default *False*)
 * **use_jit** uses jit for the clip model (default *True*)
@@ -181,11 +183,15 @@ clip_inference turn a set of text+image into clip embeddings
 * **slurm_partition** (default *None*), the slurm partition to create a job in.
 * **slurm_jobs**, the number of jobs to create in slurm. (default *None*)
 * **slurm_job_comment**, the job comment to use. (default *None*)
-* **slurm_nodelist**, a list of specific nodes to use .(default *None*
+* **slurm_nodelist**, a list of specific nodes to use .(default *None*)
 * **slurm_exclude**, a list of nodes to exclude when creating jobs. (default *None*)
 * **slurm_job_timeout**, if not supplied it will default to 2 weeks. (default *None*)
 * **slurm_cache_path**, cache path to use for slurm-related tasks. (default *None*)
 * **slurm_verbose_wait=False**, wether to print the status of your slurm job (default *False*)
+
+#### DeepSparse Backend
+
+[DeepSparse](https://github.com/neuralmagic/deepsparse) is an inference runtime for fast sparse model inference on CPUs. There is a backend available within clip-retrieval by installing it with `pip install deepsparse-nightly[clip]`, and specifying a `clip_model` with a prepended `"nm:"`, such as [`"nm:neuralmagic/CLIP-ViT-B-32-256x256-DataComp-s34B-b86K-quant-ds"`](https://huggingface.co/neuralmagic/CLIP-ViT-B-32-256x256-DataComp-s34B-b86K-quant-ds) or [`"nm:mgoin/CLIP-ViT-B-32-laion2b_s34b_b79k-ds"`](https://huggingface.co/mgoin/CLIP-ViT-B-32-laion2b_s34b_b79k-ds).
 
 ### Inference Worker
 
@@ -221,7 +227,7 @@ The API is very similar to `clip-retrieval inference` with some minor changes:
 * **enable_metadata** Enable metadata processing (default *False*)
 * **wds_image_key** Key to use for images in webdataset. (default *jpg*)
 * **wds_caption_key** Key to use for captions in webdataset. (default *txt*)
-* **clip_model** CLIP model to load (default *ViT-B/32*). Specify it as `"open_clip:ViT-B-32-quickgelu"` to use the [open_clip](https://github.com/mlfoundations/open_clip).
+* **clip_model** CLIP model to load (default *ViT-B/32*). Specify it as `"open_clip:ViT-B-32-quickgelu"` to use the [open_clip](https://github.com/mlfoundations/open_clip) or `"hf_clip:patrickjohncyh/fashion-clip"` to use the [hugging face](https://huggingface.co/docs/transformers/model_doc/clip) clip model.
 * **mclip_model** MCLIP model to load (default *sentence-transformers/clip-ViT-B-32-multilingual-v1*)
 * **use_mclip** If False it performs the inference using CLIP; MCLIP otherwise (default *False*)
 * **use_jit** uses jit for the clip model (default *True*)
@@ -475,3 +481,18 @@ npm run build
 cd ..
 pip install -e .
 ```
+
+## Citation
+
+```
+@misc{beaumont-2022-clip-retrieval,
+  author = {Romain Beaumont},
+  title = {Clip Retrieval: Easily compute clip embeddings and build a clip retrieval system with them},
+  year = {2022},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/rom1504/clip-retrieval}}
+}
+```
+
+

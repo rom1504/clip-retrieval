@@ -12,6 +12,7 @@ import json
 from io import BytesIO
 from PIL import Image
 import base64
+import ssl
 import os
 import fire
 from pathlib import Path
@@ -154,12 +155,16 @@ class IndicesList(Resource):
 
 @DOWNLOAD_TIME.time()
 def download_image(url):
+    """Download an image from a url and return a byte stream"""
     urllib_request = urllib.request.Request(
         url,
         data=None,
         headers={"User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0"},
     )
-    with urllib.request.urlopen(urllib_request, timeout=10) as r:
+    urllib_context = ssl.create_default_context()
+    urllib_context.set_alpn_protocols(["http/1.1"])
+
+    with urllib.request.urlopen(urllib_request, timeout=10, context=urllib_context) as r:
         img_stream = io.BytesIO(r.read())
     return img_stream
 
