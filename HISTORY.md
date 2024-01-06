@@ -1,3 +1,8 @@
+## 2.38.0
+
+* Add webp to list of supported files in reader.
+* Remove version constraint of fsspec.
+
 ## 2.37.0
 
 * Update versions to fix pex and npm build
