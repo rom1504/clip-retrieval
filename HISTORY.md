@@ -1,3 +1,9 @@
+## 2.39.0
+
+* Add DeepSparse backend for CLIP inference (thanks @mgoin)
+* fix parquet to arrow script failed when number of samples is small (thanks @luke-han)
+* Integration with hugging face ClipModel (thanks @Sofianel5)
+
 ## 2.38.0
 
 * Add webp to list of supported files in reader.
