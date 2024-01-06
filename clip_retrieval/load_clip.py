@@ -85,11 +85,18 @@ def load_open_clip(clip_model, use_jit=True, device="cuda", clip_cache_path=None
     import open_clip  # pylint: disable=import-outside-toplevel
 
     torch.backends.cuda.matmul.allow_tf32 = True
-
-    pretrained = dict(open_clip.list_pretrained())
-    checkpoint = pretrained[clip_model]
+    clip_model_parts = clip_model.split("/")
+    clip_model = clip_model_parts[0]
+    checkpoint = "/".join(clip_model_parts[1:])
+    if checkpoint == "":
+        pretrained = dict(open_clip.list_pretrained())
+        checkpoint = pretrained[clip_model]
     model, _, preprocess = open_clip.create_model_and_transforms(
-        clip_model, pretrained=checkpoint, device=device, jit=use_jit, cache_dir=clip_cache_path
+        clip_model,
+        pretrained=checkpoint,
+        device=device,
+        jit=use_jit,
+        cache_dir=clip_cache_path,
     )
     model = OpenClipWrapper(inner_model=model, device=device)
     model.to(device=device)
@@ -201,7 +208,13 @@ def load_clip_without_warmup(clip_model, use_jit, device, clip_cache_path):
 
 
 @lru_cache(maxsize=None)
-def load_clip(clip_model="ViT-B/32", use_jit=True, warmup_batch_size=1, clip_cache_path=None, device=None):
+def load_clip(
+    clip_model="ViT-B/32",
+    use_jit=True,
+    warmup_batch_size=1,
+    clip_cache_path=None,
+    device=None,
+):
     """Load clip then warmup"""
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"

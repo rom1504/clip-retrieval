@@ -50,7 +50,10 @@ def worker(
 
     def reader_builder(sampler):
         _, preprocess = load_clip(
-            clip_model=clip_model, use_jit=use_jit, warmup_batch_size=batch_size, clip_cache_path=clip_cache_path
+            clip_model=clip_model,
+            use_jit=use_jit,
+            warmup_batch_size=batch_size,
+            clip_cache_path=clip_cache_path,
         )
         if input_format == "files":
             return FilesReader(
