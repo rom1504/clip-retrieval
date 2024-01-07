@@ -3,7 +3,7 @@ from clip_retrieval.clip_inference.runner import Runner
 from clip_retrieval.clip_inference.reader import FilesReader
 from clip_retrieval.clip_inference.mapper import ClipMapper
 from clip_retrieval.clip_inference.writer import NumpyWriter
-from clip_retrieval.load_clip import load_clip
+from all_clip import load_clip
 import os
 import numpy as np
 import tempfile
@@ -21,7 +21,7 @@ def test_runner():
     with tempfile.TemporaryDirectory() as tmpdir:
 
         def reader_builder(sampler):
-            _, preprocess = load_clip(warmup_batch_size=batch_size)
+            _, preprocess, _ = load_clip(warmup_batch_size=batch_size)
             return FilesReader(
                 sampler,
                 preprocess,
