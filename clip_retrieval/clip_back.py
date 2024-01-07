@@ -862,12 +862,10 @@ def load_mclip(clip_model):
 def load_clip_index(clip_options):
     """load the clip index"""
     import torch  # pylint: disable=import-outside-toplevel
-    from clip_retrieval.load_clip import load_clip, get_tokenizer  # pylint: disable=import-outside-toplevel
+    from all_clip import load_clip  # pylint: disable=import-outside-toplevel
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, preprocess = load_clip(clip_options.clip_model, use_jit=clip_options.use_jit, device=device)
-
-    tokenizer = get_tokenizer(clip_options.clip_model)
+    model, preprocess, tokenizer = load_clip(clip_options.clip_model, use_jit=clip_options.use_jit, device=device)
 
     if clip_options.enable_mclip_option:
         model_txt_mclip = load_mclip(clip_options.clip_model)
