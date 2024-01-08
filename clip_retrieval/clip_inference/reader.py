@@ -15,7 +15,7 @@ def folder_to_keys(folder, enable_text=True, enable_image=True, enable_metadata=
     image_files = None
     if enable_text:
         text_files = [*path.glob("**/*.txt")]
-        text_files = {text_file.stem: text_file for text_file in text_files}
+        text_files = {text_file.relative_to(path).as_posix(): text_file for text_file in text_files}
     if enable_image:
         image_files = [
             *path.glob("**/*.png"),
@@ -23,11 +23,16 @@ def folder_to_keys(folder, enable_text=True, enable_image=True, enable_metadata=
             *path.glob("**/*.jpeg"),
             *path.glob("**/*.bmp"),
             *path.glob("**/*.webp"),
+            *path.glob("**/*.PNG"),
+            *path.glob("**/*.JPG"),
+            *path.glob("**/*.JPEG"),
+            *path.glob("**/*.BMP"),
+            *path.glob("**/*.WEBP"),
         ]
-        image_files = {image_file.stem: image_file for image_file in image_files}
+        image_files = {image_file.relative_to(path).as_posix(): image_file for image_file in image_files}
     if enable_metadata:
         metadata_files = [*path.glob("**/*.json")]
-        metadata_files = {metadata_file.stem: metadata_file for metadata_file in metadata_files}
+        metadata_files = {metadata_file.relative_to(path).as_posix(): metadata_file for metadata_file in metadata_files}
 
     keys = None
     join = lambda new_set: new_set & keys if keys is not None else new_set
