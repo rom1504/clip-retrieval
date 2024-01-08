@@ -23,8 +23,13 @@ def folder_to_keys(folder, enable_text=True, enable_image=True, enable_metadata=
             *path.glob("**/*.jpeg"),
             *path.glob("**/*.bmp"),
             *path.glob("**/*.webp"),
+            *path.glob("**/*.PNG"),
+            *path.glob("**/*.JPG"),
+            *path.glob("**/*.JPEG"),
+            *path.glob("**/*.BMP"),
+            *path.glob("**/*.WEBP"),
         ]
-        image_files = {image_file.stem: image_file for image_file in image_files}
+        image_files = {image_file.relative_to(path).as_posix(): image_file for image_file in image_files}
     if enable_metadata:
         metadata_files = [*path.glob("**/*.json")]
         metadata_files = {metadata_file.stem: metadata_file for metadata_file in metadata_files}
