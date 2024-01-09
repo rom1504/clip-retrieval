@@ -1,7 +1,7 @@
 """Reader module provides files and webdataset readers"""
 
 from pathlib import Path
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
 import io
@@ -94,7 +94,11 @@ def get_image_dataset():
 
             if self.enable_image:
                 image_file = self.image_files[key]
-                image_tensor = self.image_transform(Image.open(image_file))
+                try:
+                    image_tensor = self.image_transform(Image.open(image_file))
+                except (UnidentifiedImageError, OSError) as e:
+                    print(f"Failed to load image {image_file}. Error: {e}. Skipping.")
+                    return None  # return None to be filtered in the batch collate_fn
                 output["image_filename"] = str(image_file)
                 output["image_tensor"] = image_tensor
 
