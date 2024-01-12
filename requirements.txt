@@ -1,7 +1,7 @@
 img2dataset>=1.25.5,<2
 clip-anytorch>=2.5.0,<3
 tqdm>=4.62.3,<5
-fire>=0.4.0,<0.5.0
+fire>=0.4.0,<0.6.0
 torch>=1.7.1,<2
 torchvision>=0.10.1,<2
 numpy>=1.19.5,<2
@@ -9,7 +9,7 @@ faiss-cpu>=1.7.2,<2
 flask>=3.0.0,<4
 flask_restful>=0.3.9,<1
 flask_cors>=4.0.0,<5
-pandas>=1.1.5,<2
+pandas>=1.1.5,<3
 pyarrow>=6.0.1,<15
 autofaiss>=2.9.6,<3
 webdataset>=0.2,<0.3
