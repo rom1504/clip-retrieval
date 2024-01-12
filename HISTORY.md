@@ -1,3 +1,7 @@
+## 2.42.0
+
+* Update deps
+
 ## 2.41.0
 
 * Update scipy requirement from <1.9.2 to <1.11.5
