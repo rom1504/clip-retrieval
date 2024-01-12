@@ -35,7 +35,10 @@ def folder_to_keys(folder, enable_text=True, enable_image=True, enable_metadata=
         metadata_files = {metadata_file.relative_to(path).as_posix(): metadata_file for metadata_file in metadata_files}
 
     keys = None
-    join = lambda new_set: new_set & keys if keys is not None else new_set
+
+    def join(new_set):
+        return new_set & keys if keys is not None else new_set
+
     if enable_text:
         keys = join(text_files.keys())
     elif enable_image:
@@ -137,7 +140,9 @@ def create_webdataset(
     urls = input_sampler(urls)
 
     dataset = wds.WebDataset(urls, cache_dir=cache_path, cache_size=10**10, handler=wds.handlers.warn_and_continue)
-    tokenizer = lambda text: clip.tokenize([text], truncate=True)[0]
+
+    def tokenizer(text):
+        return clip.tokenize([text], truncate=True)[0]
 
     def filter_dataset(item):
         if enable_text and caption_key not in item:
