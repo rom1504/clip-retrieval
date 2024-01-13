@@ -8,7 +8,7 @@ install-dev: ## [Local development] Install test requirements
 lint: ## [Local development] Run mypy, pylint and black
 	python -m mypy clip_retrieval
 	python -m pylint clip_retrieval
-	python -m black --check -l 120 clip_retrieval
+	python -m black --check -l 120 .
 
 black: ## [Local development] Auto-format python code using black
 	python -m black -l 120 .
