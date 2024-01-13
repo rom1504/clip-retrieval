@@ -1,5 +1,6 @@
 """Test the ClipClient class."""
 import logging
+import pytest
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.info("Test ClipClient.query()")
@@ -10,10 +11,11 @@ test_caption = "an image of a cat"
 test_image_1 = "tests/test_clip_inference/test_images/123_456.jpg"
 test_image_2 = "tests/test_clip_inference/test_images/416_264.jpg"
 
-knn_service_url = "https://knn5.laion.ai/knn-service"
+knn_service_url = "https://knn.laion.ai/knn-service"
 
 
 # NOTE: This test may fail if the backend is down.
+@pytest.mark.skip(reason="temporarily skipping this test while laion knn is down")
 def test_query():
     """
     Test the ClipClient.query() method.
@@ -21,7 +23,7 @@ def test_query():
     # Create a client
     client = ClipClient(
         url=knn_service_url,
-        indice_name="laion5B",
+        indice_name="laion5B-L-14",
         use_mclip=False,
         aesthetic_score=9,
         aesthetic_weight=0.5,

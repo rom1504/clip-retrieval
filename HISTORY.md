@@ -1,3 +1,50 @@
+## 2.43.0
+
+* Update more deps (fire, pyarrow, pandas, torch)
+
+## 2.42.0
+
+* Update deps
+
+## 2.41.0
+
+* Update scipy requirement from <1.9.2 to <1.11.5
+* catch and skip images that fail to load (thanks @heyalexchoi)
+* Handle images in multiple folder for files reader and handle uppercase extension (thanks @BIGBALLON)
+
+## 2.40.0
+
+* Add support for the full open clip model name format : ViT-B-32/laion2b_s34b_b79k (thanks @mehdidc @barinov274)
+
+## 2.39.0
+
+* Add DeepSparse backend for CLIP inference (thanks @mgoin)
+* fix parquet to arrow script failed when number of samples is small (thanks @luke-han)
+* Integration with hugging face ClipModel (thanks @Sofianel5)
+
+## 2.38.0
+
+* Add webp to list of supported files in reader.
+* Remove version constraint of fsspec.
+
+## 2.37.0
+
+* Update versions to fix pex and npm build
+* Improve errors for empty input folders.
+* Default context to fix bug with some requests returning 404
+
+## 2.36.1
+
+* Fix truncate
+
+## 2.36.0
+
+* Make jit=False the default in clip inference
+* update webdataset and fsspec
+* Add H14 NSFW detector
+* Support get tokenizer in clip back  (thanks @nousr)
+* enable filtering by image with clip-retrieval filter
+
 ## 2.35.1
 
 * update key toggles in inf.main (thanks @nousr)

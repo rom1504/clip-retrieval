@@ -36,7 +36,7 @@ def parquet_to_arrow(parquet_folder, output_arrow_folder, columns_to_return):
     sink = None
     current_batch_count = 0
     batch_counter = 0
-    key_format = int(math.log10(number_samples / 10**10)) + 1
+    key_format = max(0, int(math.log10(number_samples / 10**10))) + 1
     for parquet_files in tqdm(files):
         if sink is None or current_batch_count > 10**10:
             if sink is not None:
