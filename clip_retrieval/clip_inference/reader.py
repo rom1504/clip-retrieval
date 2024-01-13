@@ -141,7 +141,7 @@ def create_webdataset(
 
     dataset = wds.WebDataset(urls, cache_dir=cache_path, cache_size=10**10, handler=wds.handlers.warn_and_continue)
 
-    def tokenizer(text):
+    def _tokenizer(text):
         return tokenizer([text])[0]
 
     def filter_dataset(item):
@@ -167,7 +167,7 @@ def create_webdataset(
         if enable_text:
             text = item[caption_key]
             caption = text.decode("utf-8")
-            tokenized_text = tokenizer(caption)
+            tokenized_text = _tokenizer(caption)
             output["text_tokens"] = tokenized_text
             output["text"] = caption
 
