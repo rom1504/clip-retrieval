@@ -149,4 +149,5 @@ class ClipClient:
                     "num_result_ids": self.num_images,
                 }
             ),
+            timeout=3600,
         ).json()

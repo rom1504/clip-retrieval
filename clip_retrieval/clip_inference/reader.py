@@ -1,7 +1,7 @@
 """Reader module provides files and webdataset readers"""
 
 from pathlib import Path
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
 import io
@@ -15,7 +15,7 @@ def folder_to_keys(folder, enable_text=True, enable_image=True, enable_metadata=
     image_files = None
     if enable_text:
         text_files = [*path.glob("**/*.txt")]
-        text_files = {text_file.stem: text_file for text_file in text_files}
+        text_files = {text_file.relative_to(path).as_posix(): text_file for text_file in text_files}
     if enable_image:
         image_files = [
             *path.glob("**/*.png"),
@@ -23,14 +23,22 @@ def folder_to_keys(folder, enable_text=True, enable_image=True, enable_metadata=
             *path.glob("**/*.jpeg"),
             *path.glob("**/*.bmp"),
             *path.glob("**/*.webp"),
+            *path.glob("**/*.PNG"),
+            *path.glob("**/*.JPG"),
+            *path.glob("**/*.JPEG"),
+            *path.glob("**/*.BMP"),
+            *path.glob("**/*.WEBP"),
         ]
-        image_files = {image_file.stem: image_file for image_file in image_files}
+        image_files = {image_file.relative_to(path).as_posix(): image_file for image_file in image_files}
     if enable_metadata:
         metadata_files = [*path.glob("**/*.json")]
-        metadata_files = {metadata_file.stem: metadata_file for metadata_file in metadata_files}
+        metadata_files = {metadata_file.relative_to(path).as_posix(): metadata_file for metadata_file in metadata_files}
 
     keys = None
-    join = lambda new_set: new_set & keys if keys is not None else new_set
+
+    def join(new_set):
+        return new_set & keys if keys is not None else new_set
+
     if enable_text:
         keys = join(text_files.keys())
     elif enable_image:
@@ -89,7 +97,11 @@ def get_image_dataset():
 
             if self.enable_image:
                 image_file = self.image_files[key]
-                image_tensor = self.image_transform(Image.open(image_file))
+                try:
+                    image_tensor = self.image_transform(Image.open(image_file))
+                except (UnidentifiedImageError, OSError) as e:
+                    print(f"Failed to load image {image_file}. Error: {e}. Skipping.")
+                    return None  # return None to be filtered in the batch collate_fn
                 output["image_filename"] = str(image_file)
                 output["image_tensor"] = image_tensor
 
@@ -128,7 +140,9 @@ def create_webdataset(
     urls = input_sampler(urls)
 
     dataset = wds.WebDataset(urls, cache_dir=cache_path, cache_size=10**10, handler=wds.handlers.warn_and_continue)
-    tokenizer = lambda text: tokenizer([text])[0]
+
+    def tokenizer(text):
+        return tokenizer([text])[0]
 
     def filter_dataset(item):
         if enable_text and caption_key not in item:

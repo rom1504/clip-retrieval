@@ -1,3 +1,17 @@
+## 2.42.0
+
+* Update deps
+
+## 2.41.0
+
+* Update scipy requirement from <1.9.2 to <1.11.5
+* catch and skip images that fail to load (thanks @heyalexchoi)
+* Handle images in multiple folder for files reader and handle uppercase extension (thanks @BIGBALLON)
+
+## 2.40.0
+
+* Add support for the full open clip model name format : ViT-B-32/laion2b_s34b_b79k (thanks @mehdidc @barinov274)
+
 ## 2.39.0
 
 * Add DeepSparse backend for CLIP inference (thanks @mgoin)

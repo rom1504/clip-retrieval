@@ -11,7 +11,6 @@ def test_worker():
     input_dataset = os.path.join(current_folder, "test_images")
 
     with tempfile.TemporaryDirectory() as tmpdir:
-
         worker(
             tasks=[0, 1],
             input_dataset=input_dataset,

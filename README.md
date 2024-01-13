@@ -24,6 +24,13 @@ Also see [laion5B](https://laion.ai/laion-5b-a-new-era-of-open-large-scale-multi
 
 If you believe in making reusable tools to make data easy to use for ML and you would like to contribute, please join the [DataToML](https://discord.gg/ep8yUUtCnp) chat.
 
+## Related projects
+
+* [all_clip](https://github.com/rom1504/all_clip) to load any clip model
+* [img2dataset](https://github.com/rom1504/img2dataset) to download images from urls
+* [open_clip](https://github.com/mlfoundations/open_clip) to train clip models
+* [CLIP_benchmark](https://github.com/LAION-AI/CLIP_benchmark) to evaluate clip models
+
 ## Who is using clip retrieval ?
 
 * [cah-prepro](https://github.com/rom1504/cah-prepro) preprocess the 400M image+text crawling at home dataset. clip-retrieval is used to compute 400M clip embeddings and the indices

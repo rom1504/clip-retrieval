@@ -1,7 +1,7 @@
 """mapper module transform images and text to embeddings"""
 
 import torch
-from clip_retrieval.load_clip import load_clip
+from all_clip import load_clip
 from sentence_transformers import SentenceTransformer
 
 
@@ -33,7 +33,7 @@ class ClipMapper:
         self.enable_metadata = enable_metadata
         self.use_mclip = use_mclip
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        model, _ = load_clip(
+        model, _, _ = load_clip(
             clip_model=clip_model,
             use_jit=use_jit,
             warmup_batch_size=warmup_batch_size,
