@@ -1,3 +1,7 @@
+## 2.43.0
+
+* Update more deps (fire, pyarrow, pandas, torch)
+
 ## 2.42.0
 
 * Update deps
