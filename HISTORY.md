@@ -1,3 +1,7 @@
+## 2.44.0
+
+* Support get_tokenizer in clip back inf
+
 ## 2.43.0
 
 * Update more deps (fire, pyarrow, pandas, torch)
