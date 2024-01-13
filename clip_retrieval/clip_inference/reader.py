@@ -62,6 +62,7 @@ def get_image_dataset():
         def __init__(
             self,
             preprocess,
+            tokenizer,
             folder,
             enable_text=True,
             enable_image=True,
@@ -69,7 +70,6 @@ def get_image_dataset():
             input_sampler=lambda a: a,
         ):
             super().__init__()
-            import clip  # pylint: disable=import-outside-toplevel
 
             self.keys, text_files, image_files, metadata_files = folder_to_keys(
                 folder, enable_text, enable_image, enable_metadata
@@ -80,7 +80,7 @@ def get_image_dataset():
             self.enable_metadata = enable_metadata
             keys_set = set(self.keys)
             if self.enable_text:
-                self.tokenizer = lambda text: clip.tokenize([text], truncate=True)[0]
+                self.tokenizer = lambda text: tokenizer([text])[0]
                 self.text_files = {k: v for k, v in text_files.items() if k in keys_set}
             if self.enable_image:
                 self.image_files = {k: v for k, v in image_files.items() if k in keys_set}
@@ -125,6 +125,7 @@ def get_image_dataset():
 def create_webdataset(
     urls,
     image_transform,
+    tokenizer,
     enable_text=True,
     enable_image=True,
     image_key="jpg",
@@ -134,15 +135,14 @@ def create_webdataset(
     input_sampler=lambda a: a,
 ):
     """Create a WebDataset reader, it can read a webdataset of image, text and json"""
-    import clip  # pylint: disable=import-outside-toplevel
     import webdataset as wds  # pylint: disable=import-outside-toplevel
 
     urls = input_sampler(urls)
 
     dataset = wds.WebDataset(urls, cache_dir=cache_path, cache_size=10**10, handler=wds.handlers.warn_and_continue)
 
-    def tokenizer(text):
-        return clip.tokenize([text], truncate=True)[0]
+    def _tokenizer(text):
+        return tokenizer([text])[0]
 
     def filter_dataset(item):
         if enable_text and caption_key not in item:
@@ -167,7 +167,7 @@ def create_webdataset(
         if enable_text:
             text = item[caption_key]
             caption = text.decode("utf-8")
-            tokenized_text = tokenizer(caption)
+            tokenized_text = _tokenizer(caption)
             output["text_tokens"] = tokenized_text
             output["text"] = caption
 
@@ -207,6 +207,7 @@ class FilesReader:
         self,
         sampler,
         preprocess,
+        tokenizer,
         input_dataset,
         batch_size,
         num_prepro_workers,
@@ -215,7 +216,9 @@ class FilesReader:
         enable_metadata=False,
     ) -> None:
         super().__init__()
-        dataset = get_image_dataset()(preprocess, input_dataset, enable_text, enable_image, enable_metadata, sampler)
+        dataset = get_image_dataset()(
+            preprocess, tokenizer, input_dataset, enable_text, enable_image, enable_metadata, sampler
+        )
         self.dataloader = dataset_to_dataloader(dataset, batch_size, num_prepro_workers, "files")
 
     def __iter__(self):
@@ -230,6 +233,7 @@ class WebdatasetReader:
         self,
         sampler,
         preprocess,
+        tokenizer,
         input_dataset,
         batch_size,
         num_prepro_workers,
@@ -244,6 +248,7 @@ class WebdatasetReader:
         dataset = create_webdataset(
             input_dataset,
             preprocess,
+            tokenizer,
             enable_text=enable_text,
             enable_image=enable_image,
             image_key=wds_image_key,

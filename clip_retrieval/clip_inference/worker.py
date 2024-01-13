@@ -49,7 +49,7 @@ def worker(
     print(f"dataset is {len(input_dataset)}", flush=True)
 
     def reader_builder(sampler):
-        _, preprocess, _ = load_clip(
+        _, preprocess, tokenizer = load_clip(
             clip_model=clip_model,
             use_jit=use_jit,
             warmup_batch_size=batch_size,
@@ -59,6 +59,7 @@ def worker(
             return FilesReader(
                 sampler,
                 preprocess,
+                tokenizer,
                 input_dataset,
                 batch_size,
                 num_prepro_workers,
@@ -70,6 +71,7 @@ def worker(
             return WebdatasetReader(
                 sampler,
                 preprocess,
+                tokenizer,
                 input_dataset,
                 batch_size,
                 num_prepro_workers,

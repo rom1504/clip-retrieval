@@ -21,10 +21,11 @@ def test_runner():
     with tempfile.TemporaryDirectory() as tmpdir:
 
         def reader_builder(sampler):
-            _, preprocess, _ = load_clip(warmup_batch_size=batch_size)
+            _, preprocess, tokenizer = load_clip(warmup_batch_size=batch_size)
             return FilesReader(
                 sampler,
                 preprocess,
+                tokenizer,
                 folder,
                 batch_size,
                 num_prepro_workers,
