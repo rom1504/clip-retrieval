@@ -102,7 +102,8 @@ def main(
     # package arguments to pass on to the distributor
     local_args = dict(locals())
 
-    expanded_dataset = list(braceexpand(input_dataset)) if input_format == "webdataset" else input_dataset
+    # expanded_dataset = list(braceexpand(input_dataset)) if input_format == "webdataset" else input_dataset
+    expanded_dataset = input_dataset
 
     # compute this now for the distributors to use
     if output_partition_count is None:
