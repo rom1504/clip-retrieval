@@ -792,6 +792,7 @@ class ClipOptions:
 
     indice_folder: str
     clip_model: str
+    clip_cache_path: str
     enable_hdf5: bool
     enable_faiss_memory_mapping: bool
     columns_to_return: List[str]
@@ -808,6 +809,7 @@ def dict_to_clip_options(d, clip_options):
     return ClipOptions(
         indice_folder=d["indice_folder"] if "indice_folder" in d else clip_options.indice_folder,
         clip_model=d["clip_model"] if "clip_model" in d else clip_options.clip_model,
+        clip_cache_path=d["clip_cache_path"] if "clip_cache_path" in d else clip_options.clip_cache_path,
         enable_hdf5=d["enable_hdf5"] if "enable_hdf5" in d else clip_options.enable_hdf5,
         enable_faiss_memory_mapping=d["enable_faiss_memory_mapping"]
         if "enable_faiss_memory_mapping" in d
@@ -865,7 +867,7 @@ def load_clip_index(clip_options):
     from all_clip import load_clip  # pylint: disable=import-outside-toplevel
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, preprocess, tokenizer = load_clip(clip_options.clip_model, use_jit=clip_options.use_jit, device=device)
+    model, preprocess, tokenizer = load_clip(clip_options.clip_model, use_jit=clip_options.use_jit, device=device, clip_cache_path=clip_options.clip_cache_path)
 
     if clip_options.enable_mclip_option:
         model_txt_mclip = load_mclip(clip_options.clip_model)
@@ -961,6 +963,7 @@ def clip_back(
     url_column="url",
     enable_mclip_option=True,
     clip_model="ViT-B/32",
+    clip_cache_path=None,
     use_jit=True,
     use_arrow=False,
     provide_safety_model=False,
@@ -976,6 +979,7 @@ def clip_back(
         clip_options=ClipOptions(
             indice_folder="",
             clip_model=clip_model,
+            clip_cache_path=clip_cache_path,
             enable_hdf5=enable_hdf5,
             enable_faiss_memory_mapping=enable_faiss_memory_mapping,
             columns_to_return=columns_to_return,
