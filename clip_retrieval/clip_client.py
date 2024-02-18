@@ -52,12 +52,15 @@ class ClipClient:
         self.deduplicate = deduplicate
         self.use_safety_model = use_safety_model
         self.use_violence_detector = use_violence_detector
+        print('-' * 64)
+        print('hi verbose')
 
     def query(
         self,
         text: Optional[str] = None,
         image: Optional[str] = None,
         embedding_input: Optional[list] = None,
+        verbose = False,
     ) -> List[Dict]:
         """
         Given text or image/s, search for other captions/images that are semantically similar.
@@ -81,10 +84,10 @@ class ClipClient:
         if text and image:
             raise ValueError("Only one of text or image can be provided.")
         if text:
-            return self.__search_knn_api__(text=text)
+            return self.__search_knn_api__(text=text, verbose=verbose)
         elif image:
             if image.startswith("http"):
-                return self.__search_knn_api__(image_url=image)
+                return self.__search_knn_api__(image_url=image, verbose=verbose)
             else:
                 assert Path(image).exists(), f"{image} does not exist."
                 return self.__search_knn_api__(image=image)
@@ -99,6 +102,7 @@ class ClipClient:
         image: Optional[str] = None,
         image_url: Optional[str] = None,
         embedding_input: Optional[list] = None,
+        verbose=False,
     ) -> List:
         """
         This function is used to send the request to the knn service.
@@ -147,6 +151,7 @@ class ClipClient:
                     "num_images": self.num_images,
                     # num_results_ids is hardcoded to the num_images parameter.
                     "num_result_ids": self.num_images,
+                    "verbose": verbose,
                 }
             ),
             timeout=3600,
