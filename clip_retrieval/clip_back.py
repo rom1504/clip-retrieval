@@ -42,6 +42,19 @@ from dataclasses import dataclass
 
 
 LOGGER = logging.getLogger(__name__)
+# DEBUG:10, INFO:20, WARNING:30(default), ERROR:40, CRITICAL:50
+LOGGER.setLevel(logging.INFO)
+print(f"The current log level is: {LOGGER.getEffectiveLevel()}")
+
+# NOTE: 在Python的logging模块中，日志记录器（Logger）负责决定哪些日志消息要被处理，而日志处理器（Handler）则决定了日志消息的去处。
+# 创建一个StreamHandler，将日志消息输出到控制台
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+# 创建一个Formatter，定义日志消息的格式
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+# 将Handler添加到Logger
+LOGGER.addHandler(console_handler)
 
 
 for coll in list(REGISTRY._collector_to_names.keys()):  # pylint: disable=protected-access
@@ -214,9 +227,11 @@ class KnnService(Resource):
         use_mclip,
         aesthetic_score,
         aesthetic_weight,
+        **kwargs
     ):
         """compute the query embedding"""
         import torch  # pylint: disable=import-outside-toplevel
+        verbose = kwargs.pop("verbose", False) 
 
         if text_input is not None and text_input != "":
             if use_mclip:
@@ -230,6 +245,11 @@ class KnnService(Resource):
                         text_features = clip_resource.model.encode_text(text)
                     text_features /= text_features.norm(dim=-1, keepdim=True)
                     query = text_features.cpu().to(torch.float32).detach().numpy()
+            if verbose:
+                LOGGER.info(f'text:{text_input}')
+                LOGGER.info(f'text_token:{text}')
+                LOGGER.info(f'normalized_text_features:{text_features[0][0:16]}')
+
         elif image_input is not None or image_url_input is not None:
             if image_input is not None:
                 binary_data = base64.b64decode(image_input)
@@ -341,9 +361,10 @@ class KnnService(Resource):
         return to_remove
 
     def knn_search(
-        self, query, modality, num_result_ids, clip_resource, deduplicate, use_safety_model, use_violence_detector
+        self, query, modality, num_result_ids, clip_resource, deduplicate, use_safety_model, use_violence_detector, **kwargs
     ):
         """compute the knn search"""
+        verbose = kwargs.pop("verbose", False) 
 
         image_index = clip_resource.image_index
         text_index = clip_resource.text_index
@@ -377,6 +398,10 @@ class KnnService(Resource):
         result_distances = distances[0][:nb_results]
         result_embeddings = embeddings[0][:nb_results]
         result_embeddings = normalized(result_embeddings)
+        if verbose:
+            LOGGER.info(f'embeddings:{embeddings}')
+            LOGGER.info(f'normalized_result_embeddings:{result_embeddings[0][0:16]}')
+
         local_indices_to_remove = self.post_filter(
             clip_resource.safety_model,
             result_embeddings,
@@ -432,6 +457,7 @@ class KnnService(Resource):
         use_violence_detector=False,
         aesthetic_score=None,
         aesthetic_weight=None,
+        **kwargs
     ):
         """implement the querying functionality of the knn service: from text and image to nearest neighbors"""
 
@@ -451,6 +477,7 @@ class KnnService(Resource):
             use_mclip=use_mclip,
             aesthetic_score=aesthetic_score,
             aesthetic_weight=aesthetic_weight,
+            **kwargs
         )
         distances, indices = self.knn_search(
             query,
@@ -460,6 +487,7 @@ class KnnService(Resource):
             deduplicate=deduplicate,
             use_safety_model=use_safety_model,
             use_violence_detector=use_violence_detector,
+            **kwargs
         )
         if len(distances) == 0:
             return []
@@ -489,6 +517,7 @@ class KnnService(Resource):
         aesthetic_score = int(aesthetic_score) if aesthetic_score != "" else None
         aesthetic_weight = json_data.get("aesthetic_weight", "")
         aesthetic_weight = float(aesthetic_weight) if aesthetic_weight != "" else None
+        verbose = json_data.get("verbose", False)
         return self.query(
             text_input,
             image_input,
@@ -504,6 +533,7 @@ class KnnService(Resource):
             use_violence_detector,
             aesthetic_score,
             aesthetic_weight,
+            verbose=verbose
         )
 
 
