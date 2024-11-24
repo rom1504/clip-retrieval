@@ -5,6 +5,7 @@ from PIL import Image, UnidentifiedImageError
 from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
 import io
+from torch.utils.data import Dataset  # pylint: disable=import-outside-toplevel
 
 
 def folder_to_keys(folder, enable_text=True, enable_image=True, enable_metadata=False):
@@ -50,75 +51,71 @@ def folder_to_keys(folder, enable_text=True, enable_image=True, enable_metadata=
 
     return keys, text_files, image_files, metadata_files
 
+class ImageDataset(Dataset):
+    """ImageDataset is a pytorch Dataset exposing image and text tensors from a folder of image and text"""
+
+    def __init__(
+        self,
+        preprocess,
+        tokenizer,
+        folder,
+        enable_text=True,
+        enable_image=True,
+        enable_metadata=False,
+        input_sampler=lambda a: a,
+    ):
+        super().__init__()
+
+        self.keys, text_files, image_files, metadata_files = folder_to_keys(
+            folder, enable_text, enable_image, enable_metadata
+        )
+        self.keys = input_sampler(self.keys)
+        self.enable_text = enable_text
+        self.enable_image = enable_image
+        self.enable_metadata = enable_metadata
+        keys_set = set(self.keys)
+        if self.enable_text:
+            self.tokenizer = lambda text: tokenizer([text])[0]
+            self.text_files = {k: v for k, v in text_files.items() if k in keys_set}
+        if self.enable_image:
+            self.image_files = {k: v for k, v in image_files.items() if k in keys_set}
+            self.image_transform = preprocess
+        if self.enable_metadata:
+            self.metadata_files = {k: v for k, v in metadata_files.items() if k in keys_set}
+
+    def __len__(self):
+        return len(self.keys)
+
+    def __getitem__(self, ind):
+        key = self.keys[ind]
+        output = {}
+
+        if self.enable_image:
+            image_file = self.image_files[key]
+            try:
+                image_tensor = self.image_transform(Image.open(image_file))
+            except (UnidentifiedImageError, OSError) as e:
+                print(f"Failed to load image {image_file}. Error: {e}. Skipping.")
+                return None  # return None to be filtered in the batch collate_fn
+            output["image_filename"] = str(image_file)
+            output["image_tensor"] = image_tensor
+
+        if self.enable_text:
+            text_file = self.text_files[key]
+            caption = text_file.read_text()
+            tokenized_text = self.tokenizer(caption)
+            output["text_tokens"] = tokenized_text
+            output["text"] = caption
+
+        if self.enable_metadata:
+            metadata_file = self.metadata_files[key]
+            metadata = metadata_file.read_text()
+            output["metadata"] = metadata
+
+        return output
 
 def get_image_dataset():
     """retrieve image dataset module without importing torch at the top level"""
-
-    from torch.utils.data import Dataset  # pylint: disable=import-outside-toplevel
-
-    class ImageDataset(Dataset):
-        """ImageDataset is a pytorch Dataset exposing image and text tensors from a folder of image and text"""
-
-        def __init__(
-            self,
-            preprocess,
-            tokenizer,
-            folder,
-            enable_text=True,
-            enable_image=True,
-            enable_metadata=False,
-            input_sampler=lambda a: a,
-        ):
-            super().__init__()
-
-            self.keys, text_files, image_files, metadata_files = folder_to_keys(
-                folder, enable_text, enable_image, enable_metadata
-            )
-            self.keys = input_sampler(self.keys)
-            self.enable_text = enable_text
-            self.enable_image = enable_image
-            self.enable_metadata = enable_metadata
-            keys_set = set(self.keys)
-            if self.enable_text:
-                self.tokenizer = lambda text: tokenizer([text])[0]
-                self.text_files = {k: v for k, v in text_files.items() if k in keys_set}
-            if self.enable_image:
-                self.image_files = {k: v for k, v in image_files.items() if k in keys_set}
-                self.image_transform = preprocess
-            if self.enable_metadata:
-                self.metadata_files = {k: v for k, v in metadata_files.items() if k in keys_set}
-
-        def __len__(self):
-            return len(self.keys)
-
-        def __getitem__(self, ind):
-            key = self.keys[ind]
-            output = {}
-
-            if self.enable_image:
-                image_file = self.image_files[key]
-                try:
-                    image_tensor = self.image_transform(Image.open(image_file))
-                except (UnidentifiedImageError, OSError) as e:
-                    print(f"Failed to load image {image_file}. Error: {e}. Skipping.")
-                    return None  # return None to be filtered in the batch collate_fn
-                output["image_filename"] = str(image_file)
-                output["image_tensor"] = image_tensor
-
-            if self.enable_text:
-                text_file = self.text_files[key]
-                caption = text_file.read_text()
-                tokenized_text = self.tokenizer(caption)
-                output["text_tokens"] = tokenized_text
-                output["text"] = caption
-
-            if self.enable_metadata:
-                metadata_file = self.metadata_files[key]
-                metadata = metadata_file.read_text()
-                output["metadata"] = metadata
-
-            return output
-
     return ImageDataset
 
 
@@ -180,13 +177,12 @@ def create_webdataset(
     transformed_dataset = filtered_dataset.map(preprocess_dataset, handler=wds.handlers.warn_and_continue)
     return transformed_dataset
 
+def collate_fn(batch):
+    batch = list(filter(lambda x: x is not None, batch))
+    return default_collate(batch)
 
 def dataset_to_dataloader(dataset, batch_size, num_prepro_workers, input_format):
     """Create a pytorch dataloader from a dataset"""
-
-    def collate_fn(batch):
-        batch = list(filter(lambda x: x is not None, batch))
-        return default_collate(batch)
 
     data = DataLoader(
         dataset,
