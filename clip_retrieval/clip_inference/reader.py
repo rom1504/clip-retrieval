@@ -184,13 +184,17 @@ def collate_fn(batch):
 def dataset_to_dataloader(dataset, batch_size, num_prepro_workers, input_format):
     """Create a pytorch dataloader from a dataset"""
 
+    prefetch_factor = None
+    if num_prepro_workers > 0:
+        prefetch_factor = 2
+
     data = DataLoader(
         dataset,
         batch_size=batch_size,
         shuffle=False,
         num_workers=num_prepro_workers,
         pin_memory=True,
-        prefetch_factor=2,
+        prefetch_factor=prefetch_factor,
         collate_fn=collate_fn if input_format == "files" else None,
     )
     return data
