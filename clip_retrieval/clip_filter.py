@@ -1,6 +1,5 @@
 """clip filter is a tool to use a knn index and a image/text collection to extract interesting subsets"""
 
-
 import fire
 
 

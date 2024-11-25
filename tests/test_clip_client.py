@@ -1,4 +1,5 @@
 """Test the ClipClient class."""
+
 import logging
 import pytest
 
@@ -6,7 +7,7 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.info("Test ClipClient.query()")
 from clip_retrieval.clip_client import ClipClient, Modality
 
-test_url = "https://placekitten.com/400/600"
+test_url = "https://upload.wikimedia.org/wikipedia/commons/3/3a/Cat03.jpg"
 test_caption = "an image of a cat"
 test_image_1 = "tests/test_clip_inference/test_images/123_456.jpg"
 test_image_2 = "tests/test_clip_inference/test_images/416_264.jpg"

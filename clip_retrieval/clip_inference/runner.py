@@ -55,9 +55,9 @@ class Runner:
                     "inference_duration": inference_duration,
                     "write_duration": write_duration,
                     "total_duration": end_time - begin_time,
-                    "sample_count": batch["image_tensor"].shape[0]
-                    if "image_tensor" in batch
-                    else batch["text_tokens"].shape[0],
+                    "sample_count": (
+                        batch["image_tensor"].shape[0] if "image_tensor" in batch else batch["text_tokens"].shape[0]
+                    ),
                 }
             )
         logger.end()
