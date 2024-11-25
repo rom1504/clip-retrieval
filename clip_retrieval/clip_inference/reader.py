@@ -51,6 +51,7 @@ def folder_to_keys(folder, enable_text=True, enable_image=True, enable_metadata=
 
     return keys, text_files, image_files, metadata_files
 
+
 class ImageDataset(Dataset):
     """ImageDataset is a pytorch Dataset exposing image and text tensors from a folder of image and text"""
 
@@ -113,6 +114,7 @@ class ImageDataset(Dataset):
             output["metadata"] = metadata
 
         return output
+
 
 def get_image_dataset():
     """retrieve image dataset module without importing torch at the top level"""
@@ -177,9 +179,11 @@ def create_webdataset(
     transformed_dataset = filtered_dataset.map(preprocess_dataset, handler=wds.handlers.warn_and_continue)
     return transformed_dataset
 
+
 def collate_fn(batch):
     batch = list(filter(lambda x: x is not None, batch))
     return default_collate(batch)
+
 
 def dataset_to_dataloader(dataset, batch_size, num_prepro_workers, input_format):
     """Create a pytorch dataloader from a dataset"""

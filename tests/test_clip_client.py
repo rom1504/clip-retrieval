@@ -1,4 +1,5 @@
 """Test the ClipClient class."""
+
 import logging
 import pytest
 

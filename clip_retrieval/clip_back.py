@@ -1,6 +1,5 @@
 """Clip back: host a knn service using clip as an encoder"""
 
-
 from typing import Callable, Dict, Any, List
 from flask import Flask, request, make_response
 from flask_restful import Resource, Api
@@ -809,27 +808,35 @@ def dict_to_clip_options(d, clip_options):
         indice_folder=d["indice_folder"] if "indice_folder" in d else clip_options.indice_folder,
         clip_model=d["clip_model"] if "clip_model" in d else clip_options.clip_model,
         enable_hdf5=d["enable_hdf5"] if "enable_hdf5" in d else clip_options.enable_hdf5,
-        enable_faiss_memory_mapping=d["enable_faiss_memory_mapping"]
-        if "enable_faiss_memory_mapping" in d
-        else clip_options.enable_faiss_memory_mapping,
+        enable_faiss_memory_mapping=(
+            d["enable_faiss_memory_mapping"]
+            if "enable_faiss_memory_mapping" in d
+            else clip_options.enable_faiss_memory_mapping
+        ),
         columns_to_return=d["columns_to_return"] if "columns_to_return" in d else clip_options.columns_to_return,
-        reorder_metadata_by_ivf_index=d["reorder_metadata_by_ivf_index"]
-        if "reorder_metadata_by_ivf_index" in d
-        else clip_options.reorder_metadata_by_ivf_index,
-        enable_mclip_option=d["enable_mclip_option"]
-        if "enable_mclip_option" in d
-        else clip_options.enable_mclip_option,
+        reorder_metadata_by_ivf_index=(
+            d["reorder_metadata_by_ivf_index"]
+            if "reorder_metadata_by_ivf_index" in d
+            else clip_options.reorder_metadata_by_ivf_index
+        ),
+        enable_mclip_option=(
+            d["enable_mclip_option"] if "enable_mclip_option" in d else clip_options.enable_mclip_option
+        ),
         use_jit=d["use_jit"] if "use_jit" in d else clip_options.use_jit,
         use_arrow=d["use_arrow"] if "use_arrow" in d else clip_options.use_arrow,
-        provide_safety_model=d["provide_safety_model"]
-        if "provide_safety_model" in d
-        else clip_options.provide_safety_model,
-        provide_violence_detector=d["provide_violence_detector"]
-        if "provide_violence_detector" in d
-        else clip_options.provide_violence_detector,
-        provide_aesthetic_embeddings=d["provide_aesthetic_embeddings"]
-        if "provide_aesthetic_embeddings" in d
-        else clip_options.provide_aesthetic_embeddings,
+        provide_safety_model=(
+            d["provide_safety_model"] if "provide_safety_model" in d else clip_options.provide_safety_model
+        ),
+        provide_violence_detector=(
+            d["provide_violence_detector"]
+            if "provide_violence_detector" in d
+            else clip_options.provide_violence_detector
+        ),
+        provide_aesthetic_embeddings=(
+            d["provide_aesthetic_embeddings"]
+            if "provide_aesthetic_embeddings" in d
+            else clip_options.provide_aesthetic_embeddings
+        ),
     )
 
 
