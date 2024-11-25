@@ -16,12 +16,12 @@ import logging
 LOGGER = logging.getLogger(__name__)
 
 test_list = [
-    ["first", "https://placekitten.com/400/600"],
-    ["second", "https://placekitten.com/200/300"],
-    ["third", "https://placekitten.com/300/200"],
-    ["fourth", "https://placekitten.com/400/400"],
-    ["fifth", "https://placekitten.com/200/200"],
-    [None, "https://placekitten.com/200/200"],
+    ["first", "https://upload.wikimedia.org/wikipedia/commons/3/3a/Cat03.jpg"],
+    ["second", "https://upload.wikimedia.org/wikipedia/commons/3/32/Cat02.jpg"],
+    ["third", "https://upload.wikimedia.org/wikipedia/commons/3/3e/Cat01.jpg"],
+    ["fourth", "https://upload.wikimedia.org/wikipedia/commons/7/7f/Cat04.jpg"],
+    ["fifth", "https://upload.wikimedia.org/wikipedia/commons/b/b1/VAN_CAT.png"],
+    [None, "https://upload.wikimedia.org/wikipedia/commons/0/0b/Cat_poster_1.jpg"],
 ]
 
 
