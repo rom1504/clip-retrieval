@@ -17,11 +17,11 @@ LOGGER = logging.getLogger(__name__)
 
 test_list = [
     ["first", "https://upload.wikimedia.org/wikipedia/commons/3/3a/Cat03.jpg"],
-    ["second", "https://upload.wikimedia.org/wikipedia/commons/3/32/Cat02.jpg"],
-    ["third", "https://upload.wikimedia.org/wikipedia/commons/3/3e/Cat01.jpg"],
-    ["fourth", "https://upload.wikimedia.org/wikipedia/commons/7/7f/Cat04.jpg"],
-    ["fifth", "https://upload.wikimedia.org/wikipedia/commons/b/b1/VAN_CAT.png"],
-    [None, "https://upload.wikimedia.org/wikipedia/commons/0/0b/Cat_poster_1.jpg"],
+    ["second", "https://upload.wikimedia.org/wikipedia/commons/d/d4/Cat_March_2010-1a.jpg"],
+    ["third", "https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Baby_cat_turning.jpg/800px-Baby_cat_turning.jpg"],
+    ["fourth", "https://upload.wikimedia.org/wikipedia/commons/5/51/Boscoe2_%288571299519%29.jpg"],
+    ["fifth", "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Cat_004_%286098630659%29.jpg/1280px-Cat_004_%286098630659%29.jpg"],
+    [None, "https://upload.wikimedia.org/wikipedia/commons/e/e1/Cats_144_%287179618326%29.jpg"],
 ]
 
 
