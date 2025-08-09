@@ -10,19 +10,19 @@ flask>=3.0.0,<4
 flask_restful>=0.3.9,<1
 flask_cors>=4.0.0,<5
 pandas>=1.1.5,<3
-pyarrow>=6.0.1,<16
-autofaiss>=2.9.6,<3
+pyarrow>=16.0.0
+# autofaiss>=2.9.6,<3  # Temporarily disabled due to pyarrow<16 conflict
 webdataset>=0.2,<0.3
 h5py>=3.1.0,<4
 prometheus-client>=0.13.1,<1
 fsspec
 sentence-transformers>=2.2.0,<3
-wandb>=0.12.0,<0.17
+wandb>=0.17.0
 open-clip-torch>=2.0.0,<3.0.0
-requests>=2.27.1,<3
+requests>=2.28.0,<3
 aiohttp>=3.8.1,<4
 multilingual-clip>=1.0.10,<2
 transformers
-urllib3<2
-scipy<1.13
+urllib3>=1.26.0
+scipy>=1.11.0
 all_clip<2
