@@ -59,12 +59,12 @@ def test_end2end():
 
     LOGGER.info(f"Download completed. Checking if output exists: {image_folder_name}")
     assert os.path.exists(image_folder_name)
-    
+
     # Check what files were created
     if os.path.exists(image_folder_name):
         files = os.listdir(image_folder_name)
         LOGGER.info(f"Files created in {image_folder_name}: {files}")
-        
+
         # Check if the expected webdataset file exists
         webdataset_file = f"{image_folder_name}/00000.tar"
         if os.path.exists(webdataset_file):
@@ -86,7 +86,6 @@ def test_end2end():
         batch_size=8,
         cache_path=None,
         num_prepro_workers=0,  # Disable multiprocessing in tests
-        prefetch_factor=None,  # Required when num_workers=0
     )
 
     assert os.path.exists(embeddings_folder)
