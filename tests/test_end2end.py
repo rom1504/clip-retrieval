@@ -85,7 +85,7 @@ def test_end2end():
         write_batch_size=100000,
         batch_size=8,
         cache_path=None,
-        num_prepro_workers=0,  # Disable multiprocessing in tests
+        num_prepro_workers=1,  # Enable minimal multiprocessing in tests
     )
 
     assert os.path.exists(embeddings_folder)
