@@ -9,4 +9,3 @@ types-setuptools
 types-requests
 types-certifi
 pyspark
-# deepsparse-nightly[clip]  # Not available for Python 3.12
