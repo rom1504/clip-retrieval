@@ -14,7 +14,7 @@ black: ## [Local development] Auto-format python code using black
 	python -m black -l 120 .
 
 build-pex:
-	python3 -m venv .pexing
+	python3.12 -m venv .pexing
 	. .pexing/bin/activate && python -m pip install -U pip && python -m pip install pex
 	. .pexing/bin/activate && python -m pex --layout packed setuptools gcsfs charset-normalizer s3fs pyspark torch torchvision . -o clip_retrieval.pex -v
 	rm -rf .pexing

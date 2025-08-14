@@ -1,7 +1,7 @@
 .env
+.venv
 *.egg-info
 .vscode
-.env
 __pycache__
 myimglist.txt
 .ipynb_checkpoints
