@@ -15,8 +15,8 @@ black: ## [Local development] Auto-format python code using black
 
 build-pex:
 	python3.12 -m venv .pexing
-	. .pexing/bin/activate && python -m pip install -U pip && python -m pip install pex
-	. .pexing/bin/activate && python -m pex --layout packed setuptools gcsfs charset-normalizer s3fs pyspark torch torchvision . -o clip_retrieval.pex -v
+	. .pexing/bin/activate && python3.12 -m pip install -U pip && python3.12 -m pip install pex
+	. .pexing/bin/activate && python3.12 -m pex --layout packed setuptools gcsfs charset-normalizer s3fs pyspark torch torchvision "numpy==1.26.4" "opencv-python-headless==4.11.0.86" . -o clip_retrieval.pex -v
 	rm -rf .pexing
 	tar czf clip_retrieval_torch.tgz clip_retrieval.pex/.deps/torch-*
 	tar czf clip_retrieval.tgz --exclude clip_retrieval.pex/.deps/torch-* clip_retrieval.pex
