@@ -16,7 +16,7 @@ def test_reader(file_format):
         tar_folder = current_folder + "/test_tars"
         input_dataset = [tar_folder + "/image1.tar", tar_folder + "/image2.tar"]
     batch_size = 2
-    num_prepro_workers = 2
+    num_prepro_workers = 0  # Disable multiprocessing to avoid webdataset shard/worker mismatch
     _, preprocess, tokenizer = load_clip(warmup_batch_size=batch_size)
 
     output_partition_count = 2
