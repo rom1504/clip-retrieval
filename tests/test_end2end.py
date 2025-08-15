@@ -12,16 +12,17 @@ import time
 import requests
 import logging
 
-
+# Configure logging to see debug output
+logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger(__name__)
 
 test_list = [
-    ["first", "https://placekitten.com/400/600"],
-    ["second", "https://placekitten.com/200/300"],
-    ["third", "https://placekitten.com/300/200"],
-    ["fourth", "https://placekitten.com/400/400"],
-    ["fifth", "https://placekitten.com/200/200"],
-    [None, "https://placekitten.com/200/200"],
+    ["first", "https://picsum.photos/400/600"],
+    ["second", "https://picsum.photos/200/300"],
+    ["third", "https://picsum.photos/300/200"],
+    ["fourth", "https://picsum.photos/400/400"],
+    ["fifth", "https://picsum.photos/200/200"],
+    [None, "https://picsum.photos/200/200"],
 ]
 
 
@@ -42,7 +43,9 @@ def test_end2end():
 
     url_list_name += ".parquet"
     generate_parquet(url_list_name)
+    LOGGER.info(f"Generated parquet file: {url_list_name}")
 
+    LOGGER.info(f"Starting img2dataset download to: {image_folder_name}")
     download(
         url_list_name,
         image_size=256,
@@ -54,7 +57,23 @@ def test_end2end():
         caption_col="caption",
     )
 
+    LOGGER.info(f"Download completed. Checking if output exists: {image_folder_name}")
     assert os.path.exists(image_folder_name)
+
+    # Check what files were created
+    if os.path.exists(image_folder_name):
+        files = os.listdir(image_folder_name)
+        LOGGER.info(f"Files created in {image_folder_name}: {files}")
+
+        # Check if the expected webdataset file exists
+        webdataset_file = f"{image_folder_name}/00000.tar"
+        if os.path.exists(webdataset_file):
+            file_size = os.path.getsize(webdataset_file)
+            LOGGER.info(f"Webdataset file {webdataset_file} exists with size: {file_size} bytes")
+        else:
+            LOGGER.error(f"Expected webdataset file {webdataset_file} does not exist")
+    else:
+        LOGGER.error(f"Output folder {image_folder_name} does not exist after download")
 
     embeddings_folder = os.path.join(test_folder, "embeddings")
 
@@ -66,6 +85,7 @@ def test_end2end():
         write_batch_size=100000,
         batch_size=8,
         cache_path=None,
+        num_prepro_workers=1,  # Enable minimal multiprocessing in tests
     )
 
     assert os.path.exists(embeddings_folder)

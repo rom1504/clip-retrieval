@@ -188,15 +188,20 @@ def dataset_to_dataloader(dataset, batch_size, num_prepro_workers, input_format)
         batch = list(filter(lambda x: x is not None, batch))
         return default_collate(batch)
 
-    data = DataLoader(
-        dataset,
-        batch_size=batch_size,
-        shuffle=False,
-        num_workers=num_prepro_workers,
-        pin_memory=True,
-        prefetch_factor=2,
-        collate_fn=collate_fn if input_format == "files" else None,
-    )
+    dataloader_kwargs = {
+        "dataset": dataset,
+        "batch_size": batch_size,
+        "shuffle": False,
+        "num_workers": num_prepro_workers,
+        "pin_memory": True,
+        "collate_fn": collate_fn if input_format == "files" else None,
+    }
+
+    # Only set prefetch_factor when multiprocessing is enabled
+    if num_prepro_workers > 0:
+        dataloader_kwargs["prefetch_factor"] = 2
+
+    data = DataLoader(**dataloader_kwargs)
     return data
 
 

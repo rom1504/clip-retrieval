@@ -9,9 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@master
+      uses: actions/checkout@v4
     - name: Set up Node.js
-      uses: actions/setup-node@master
+      uses: actions/setup-node@v4
       with:
         node-version: 18.0.0
     - run: cd front && npm install

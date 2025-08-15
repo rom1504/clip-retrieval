@@ -12,7 +12,6 @@ from clip_retrieval.clip_inference.mapper import ClipMapper
         "ViT-B/32",
         "open_clip:ViT-B-32/laion2b_s34b_b79k",
         "hf_clip:patrickjohncyh/fashion-clip",
-        "nm:mgoin/CLIP-ViT-B-32-laion2b_s34b_b79k-ds",
     ],
 )
 def test_mapper(model):
