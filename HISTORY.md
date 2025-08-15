@@ -1,3 +1,10 @@
+## 2.45.0
+
+* Update Python version support to 3.10-3.12
+* Fix PyTorch 2.8 compatibility issues with upstream all-clip 1.3.0
+* Update dependencies to latest versions
+* Update GitHub Actions to latest versions
+
 ## 2.44.0
 
 * Support get_tokenizer in clip back inf
