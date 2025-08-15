@@ -14,9 +14,14 @@ def test_reader(file_format):
         input_dataset = current_folder + "/test_images"
     else:
         tar_folder = current_folder + "/test_tars"
-        input_dataset = [tar_folder + "/image1.tar", tar_folder + "/image2.tar"]
+        input_dataset = [
+            tar_folder + "/image1.tar",
+            tar_folder + "/image2.tar",
+            tar_folder + "/image3.tar",
+            tar_folder + "/image4.tar",
+        ]
     batch_size = 2
-    num_prepro_workers = 0  # Disable multiprocessing to avoid webdataset shard/worker mismatch
+    num_prepro_workers = 2
     _, preprocess, tokenizer = load_clip(warmup_batch_size=batch_size)
 
     output_partition_count = 2
@@ -50,4 +55,7 @@ def test_reader(file_format):
         vals = [i["image_tensor"].shape[0] for i in reader]
         actual_values.append(vals)
 
-    assert actual_values == [[2, 2], [2, 1]]
+    if file_format == "files":
+        assert actual_values == [[2, 2], [2, 1]]  # 7 images: 4+3 = [2,2]+[2,1]
+    else:  # webdataset
+        assert actual_values == [[2, 2, 2], [2, 2, 1]]  # 11 images: 6+5 = [2,2,2]+[2,2,1]
