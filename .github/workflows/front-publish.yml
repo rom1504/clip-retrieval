@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - main # Change this to your default branch
+permissions:
+  id-token: write
+  contents: write
 jobs:
   npm-publish:
     name: npm-publish
@@ -14,13 +17,13 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: 18.0.0
+        registry-url: 'https://registry.npmjs.org'
     - run: cd front && npm install
     - run: cd front && npm run build
     - run: cd front && npm test
     - id: publish
-      uses: JS-DevTools/npm-publish@v1
+      uses: JS-DevTools/npm-publish@v4
       with:
-        token: ${{ secrets.NPM_AUTH_TOKEN }}
         package: front/package.json
     - name: Create Release
       if: steps.publish.outputs.type != 'none'
