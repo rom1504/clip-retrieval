@@ -26,7 +26,7 @@ jobs:
       with:
         package: front/package.json
     - name: Create Release
-      if: steps.publish.outputs.type != 'none'
+      if: ${{ steps.publish.outputs.type }}
       id: create_release
       uses: actions/create-release@v1
       env:
