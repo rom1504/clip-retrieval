@@ -1,11 +1,12 @@
 """Reader module provides files and webdataset readers"""
 
 from pathlib import Path
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, UnidentifiedImageError, PngImagePlugin
 from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
 import io
 
+PngImagePlugin.MAX_TEXT_CHUNK = 10 * 1024 * 1024  # 10MB - increase if necessary
 
 def folder_to_keys(folder, enable_text=True, enable_image=True, enable_metadata=False):
     """returns a list of keys from a folder of images and text"""
