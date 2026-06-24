@@ -200,6 +200,10 @@ clip_inference turn a set of text+image into clip embeddings
 
 [DeepSparse](https://github.com/neuralmagic/deepsparse) is an inference runtime for fast sparse model inference on CPUs. There is a backend available within clip-retrieval by installing it with `pip install deepsparse-nightly[clip]`, and specifying a `clip_model` with a prepended `"nm:"`, such as [`"nm:neuralmagic/CLIP-ViT-B-32-256x256-DataComp-s34B-b86K-quant-ds"`](https://huggingface.co/neuralmagic/CLIP-ViT-B-32-256x256-DataComp-s34B-b86K-quant-ds) or [`"nm:mgoin/CLIP-ViT-B-32-laion2b_s34b_b79k-ds"`](https://huggingface.co/mgoin/CLIP-ViT-B-32-laion2b_s34b_b79k-ds).
 
+#### TwelveLabs Marengo Backend
+
+[Marengo](https://www.twelvelabs.io/) is a video-native multimodal embedding model from TwelveLabs that embeds text and images into the same vector space as the video segments it produces, making it a useful alternative to CLIP when your corpus is video. It is served through the TwelveLabs API rather than a local torch model. Install the optional dependency with `pip install clip-retrieval[twelvelabs]`, set the `TWELVELABS_API_KEY` environment variable (grab a free key at [twelvelabs.io](https://twelvelabs.io)), and specify a `clip_model` with a prepended `"twelvelabs:"`, such as `"twelvelabs:marengo3.0"`. Embeddings are computed via API calls, so no GPU is required on the backend. This is fully opt-in and does not affect the default CLIP behavior.
+
 ### Inference Worker
 
 If you wish to have more control over how inference is run, you can create and call workers directly using `clip-retrieval inference.worker`
@@ -315,7 +319,7 @@ clip-retrieval back --port 1234 --indices-paths indices_paths.json
 
 Options:
 * `--use_jit True` uses jit for the clip model
-* `--clip_model "ViT-B/32"` allows choosing the clip model to use. Prefix with `"open_clip:"` to use an [open_clip](https://github.com/mlfoundations/open_clip) model.
+* `--clip_model "ViT-B/32"` allows choosing the clip model to use. Prefix with `"open_clip:"` to use an [open_clip](https://github.com/mlfoundations/open_clip) model, or with `"twelvelabs:"` (e.g. `"twelvelabs:marengo3.0"`) to use the TwelveLabs Marengo backend.
 * `--enable_mclip_option True` loads the mclip model, making it possible to search in any language.
 * `--columns_to_return='["url", "image_path", "caption", "NSFW"]` allows you to specify which columns should be fetched from the metadata and returned by the backend. It's useful to specify less in case of hdf5 caching to speed up the queries.
 * `--enable_faiss_memory_mapping=True` option can be passed to use an index with memory mapping.
