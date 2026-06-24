@@ -38,14 +38,14 @@ class MarengoModel:
     """
 
     def __init__(self, model_name=DEFAULT_MARENGO_MODEL, api_key=None):
-        from twelvelabs import TwelveLabs  # pylint: disable=import-outside-toplevel
-
         api_key = api_key or os.environ.get("TWELVELABS_API_KEY")
         if not api_key:
             raise ValueError(
                 "TwelveLabs API key not found. Set the TWELVELABS_API_KEY environment variable "
                 "or pass api_key=. Get a free key at https://twelvelabs.io"
             )
+        from twelvelabs import TwelveLabs  # pylint: disable=import-outside-toplevel
+
         self.model_name = model_name
         self._client = TwelveLabs(api_key=api_key)
 
