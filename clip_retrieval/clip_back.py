@@ -219,7 +219,10 @@ class KnnService(Resource):
         import torch  # pylint: disable=import-outside-toplevel
 
         if text_input is not None and text_input != "":
-            if use_mclip:
+            if clip_resource.marengo_model is not None:
+                with TEXT_CLIP_INFERENCE_TIME.time():
+                    query = clip_resource.marengo_model.encode_text(text_input)
+            elif use_mclip:
                 with TEXT_CLIP_INFERENCE_TIME.time():
                     query = normalized(clip_resource.model_txt_mclip(text_input))
             else:
@@ -236,14 +239,18 @@ class KnnService(Resource):
                 img_data = BytesIO(binary_data)
             elif image_url_input is not None:
                 img_data = download_image(image_url_input)
-            with IMAGE_PREPRO_TIME.time():
-                img = Image.open(img_data)
-                prepro = clip_resource.preprocess(img).unsqueeze(0).to(clip_resource.device)
-            with IMAGE_CLIP_INFERENCE_TIME.time():
-                with torch.no_grad():
-                    image_features = clip_resource.model.encode_image(prepro)
-                image_features /= image_features.norm(dim=-1, keepdim=True)
-                query = image_features.cpu().to(torch.float32).detach().numpy()
+            if clip_resource.marengo_model is not None:
+                with IMAGE_CLIP_INFERENCE_TIME.time():
+                    query = clip_resource.marengo_model.encode_image(img_data.read())
+            else:
+                with IMAGE_PREPRO_TIME.time():
+                    img = Image.open(img_data)
+                    prepro = clip_resource.preprocess(img).unsqueeze(0).to(clip_resource.device)
+                with IMAGE_CLIP_INFERENCE_TIME.time():
+                    with torch.no_grad():
+                        image_features = clip_resource.model.encode_image(prepro)
+                    image_features /= image_features.norm(dim=-1, keepdim=True)
+                    query = image_features.cpu().to(torch.float32).detach().numpy()
         elif embedding_input is not None:
             query = np.expand_dims(np.array(embedding_input).astype("float32"), 0)
 
@@ -784,6 +791,7 @@ class ClipResource:
     columns_to_return: List[str]
     metadata_is_ordered_by_ivf: bool
     aesthetic_embeddings: Any
+    marengo_model: Any = None
 
 
 @dataclass
@@ -863,22 +871,37 @@ def load_clip_index(clip_options):
     """load the clip index"""
     import torch  # pylint: disable=import-outside-toplevel
     from all_clip import load_clip  # pylint: disable=import-outside-toplevel
+    from clip_retrieval.marengo import is_marengo_model, load_marengo  # pylint: disable=import-outside-toplevel
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, preprocess, tokenizer = load_clip(clip_options.clip_model, use_jit=clip_options.use_jit, device=device)
 
-    if clip_options.enable_mclip_option:
-        model_txt_mclip = load_mclip(clip_options.clip_model)
-    else:
+    # TwelveLabs Marengo is a video-native embedding API: it has no torch model, tokenizer or
+    # preprocess, and the CLIP-specific safety / violence / aesthetic / mclip helpers do not apply.
+    marengo_model = None
+    if is_marengo_model(clip_options.clip_model):
+        marengo_model = load_marengo(clip_options.clip_model)
+        model = None
+        preprocess = None
+        tokenizer = None
         model_txt_mclip = None
+        safety_model = None
+        violence_detector = None
+        aesthetic_embeddings = None
+    else:
+        model, preprocess, tokenizer = load_clip(clip_options.clip_model, use_jit=clip_options.use_jit, device=device)
 
-    safety_model = load_safety_model(clip_options.clip_model) if clip_options.provide_safety_model else None
-    violence_detector = (
-        load_violence_detector(clip_options.clip_model) if clip_options.provide_violence_detector else None
-    )
-    aesthetic_embeddings = (
-        get_aesthetic_embedding(clip_options.clip_model) if clip_options.provide_aesthetic_embeddings else None
-    )
+        if clip_options.enable_mclip_option:
+            model_txt_mclip = load_mclip(clip_options.clip_model)
+        else:
+            model_txt_mclip = None
+
+        safety_model = load_safety_model(clip_options.clip_model) if clip_options.provide_safety_model else None
+        violence_detector = (
+            load_violence_detector(clip_options.clip_model) if clip_options.provide_violence_detector else None
+        )
+        aesthetic_embeddings = (
+            get_aesthetic_embedding(clip_options.clip_model) if clip_options.provide_aesthetic_embeddings else None
+        )
 
     image_present = os.path.exists(clip_options.indice_folder + "/image.index")
     text_present = os.path.exists(clip_options.indice_folder + "/text.index")
@@ -921,6 +944,7 @@ def load_clip_index(clip_options):
         columns_to_return=clip_options.columns_to_return,
         metadata_is_ordered_by_ivf=clip_options.reorder_metadata_by_ivf_index,
         aesthetic_embeddings=aesthetic_embeddings,
+        marengo_model=marengo_model,
     )
 
 

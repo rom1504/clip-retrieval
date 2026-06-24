@@ -43,6 +43,7 @@ if __name__ == "__main__":
         ],
         keywords=["machine learning", "computer vision", "download", "image", "dataset"],
         install_requires=REQUIREMENTS,
+        extras_require={"twelvelabs": ["twelvelabs>=1.2.8,<2"]},
         classifiers=[
             "Development Status :: 4 - Beta",
             "Intended Audience :: Developers",
